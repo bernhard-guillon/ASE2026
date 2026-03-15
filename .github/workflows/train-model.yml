@@ -1,6 +1,9 @@
 name: Train Character Recognition Model
 
 on:
+  push:
+    branches:
+      - copilot/sub-pr-2-again
   workflow_dispatch:
     inputs:
       epochs:
