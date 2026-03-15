@@ -42,6 +42,7 @@ def generate_character_generation_dataset(output_path="dataset.npz"):
     debug_dir = "debug_chars"
     os.makedirs(debug_dir, exist_ok=True)
     
+    invalid_filename_chars = set('<>:"/\\|?*')
     for ascii_code in range(255):
         try:
             # Try to convert ASCII code to character
@@ -87,7 +88,8 @@ def generate_character_generation_dataset(output_path="dataset.npz"):
         
         # Save individual character image for debugging (sample every 10)
         if ascii_code % 10 == 0:
-            char_display = char if (32 <= ascii_code < 127) else f'{ascii_code}'
+            # Use ASCII code number for characters invalid in filenames
+            char_display = char if (32 <= ascii_code < 127 and char not in invalid_filename_chars) else f'{ascii_code}'
             img.save(f"{debug_dir}/{ascii_code:03d}_{char_display}.png")
     
     x_data = np.array(x_data, dtype=np.float32)  # Shape: (255, 255)
