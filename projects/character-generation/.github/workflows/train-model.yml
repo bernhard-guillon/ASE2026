@@ -17,7 +17,9 @@ on:
 jobs:
   train:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -30,11 +32,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r projects/character-generation/requirements.txt
     
     - name: Run dataset generation and training
       run: |
-        cd src
+        cd projects/character-generation/src
         python train.py ${{ inputs.epochs }} ${{ inputs.batch_size }}
     
     - name: Upload model artifact
@@ -43,22 +45,30 @@ jobs:
       with:
         name: trained-model
         path: |
-          src/model.pth
-          src/metrics.json
-          src/char_map.json
-          src/dataset.npz
+          projects/character-generation/src/model.pth
+          projects/character-generation/src/metrics.json
+          projects/character-generation/src/char_map.json
+          projects/character-generation/src/dataset.npz
         retention-days: 30
+    
+    - name: Upload debug character images
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: debug-characters
+        path: projects/character-generation/src/debug_chars/
+        retention-days: 7
     
     - name: Print training summary
       if: always()
       run: |
         echo "=== Training Job Summary ==="
-        echo "Model saved: src/model.pth"
-        echo "Metrics saved: src/metrics.json"
-        echo "Character map: src/char_map.json"
-        echo "Dataset saved: src/dataset.npz"
-        if [ -f src/metrics.json ]; then
+        echo "Model saved: projects/character-generation/src/model.pth"
+        echo "Metrics saved: projects/character-generation/src/metrics.json"
+        echo "Character map: projects/character-generation/src/char_map.json"
+        echo "Dataset saved: projects/character-generation/src/dataset.npz"
+        if [ -f projects/character-generation/src/metrics.json ]; then
           echo ""
           echo "=== Final Metrics ==="
-          tail -20 src/metrics.json
+          tail -20 projects/character-generation/src/metrics.json
         fi
