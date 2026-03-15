@@ -1,0 +1,45 @@
+name: Build PDF
+
+on:
+  push:
+    paths:
+      - 'documentation/idea.md'
+      - '.github/workflows/build-pdf.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pandoc and LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-latex-recommended texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra texlive-xetex
+
+      - name: Download eisvogel template
+        run: |
+          mkdir -p ~/.local/share/pandoc/templates
+          curl -sSL https://github.com/Wandmalfarbe/pandoc-latex-template/releases/download/v3.4.0/Eisvogel-3.4.0.tar.gz \
+            -o /tmp/eisvogel.tar.gz
+          tar -xzf /tmp/eisvogel.tar.gz -C /tmp/
+          find /tmp -name 'eisvogel.latex' | head -1 | xargs -I{} cp {} ~/.local/share/pandoc/templates/eisvogel.latex
+
+      - name: Convert idea.md to idea.pdf
+        run: |
+          pandoc documentation/idea.md \
+            -o documentation/idea.pdf \
+            --from markdown \
+            --template eisvogel \
+            --pdf-engine=xelatex
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: idea-pdf
+          path: documentation/idea.pdf
