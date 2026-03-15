@@ -123,17 +123,21 @@ if __name__ == "__main__":
     # Setup device
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
-    
+
+    # Allow overriding hyperparameters via environment variables
+    epochs = int(sys.argv[1]) if len(sys.argv) > 1 else 150
+    batch_size = int(sys.argv[2]) if len(sys.argv) > 2 else 8
+
     # Generate dataset
     print("\n1. Generating dataset...")
     x_data, y_data, char_map = generate_character_generation_dataset("dataset.npz")
-    
+
     # Train model
     print("\n2. Training model...")
     model, metrics = train_model(
         x_data, y_data,
-        epochs=150,
-        batch_size=8,
+        epochs=epochs,
+        batch_size=batch_size,
         learning_rate=0.001,
         device=device
     )
