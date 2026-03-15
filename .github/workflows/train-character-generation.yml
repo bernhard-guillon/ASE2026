@@ -1,6 +1,7 @@
 name: Train Character Generation Model
 
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       epochs:

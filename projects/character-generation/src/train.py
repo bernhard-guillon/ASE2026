@@ -116,7 +116,7 @@ def evaluate_model(model, x_data, y_data, device='cpu'):
             try:
                 char = chr(idx)
             except:
-                char = f'\x{idx:02x}'
+                char = f'\\x{idx:02x}'
             print(f"  ASCII {idx} ({char}): MSE = {sample_loss:.6f}")
 
 if __name__ == "__main__":
