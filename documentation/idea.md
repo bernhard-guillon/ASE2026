@@ -4,7 +4,6 @@ author: [ASE2026 Team]
 date: "2026-03-15"
 subject: "Advanced Systems Engineering"
 keywords: [ASE2026, Systems Engineering, Idea]
-lang: "en"
 titlepage: true
 titlepage-color: "435488"
 titlepage-text-color: "FFFFFF"

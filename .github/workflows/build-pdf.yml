@@ -25,8 +25,8 @@ jobs:
       - name: Download eisvogel template
         run: |
           mkdir -p ~/.local/share/pandoc/templates
-          curl -sSL https://raw.githubusercontent.com/enhuiz/eisvogel/a0a62623802e5f92474d2ebe125b49a91ddacc6a/eisvogel.tex \
-            -o ~/.local/share/pandoc/templates/eisvogel.latex
+          curl -sSL https://github.com/Wandmalfarbe/pandoc-latex-template/releases/download/v2.4.2/Eisvogel-2.4.2.tar.gz \
+            | tar -xz -C ~/.local/share/pandoc/templates eisvogel.latex
 
       - name: Convert idea.md to idea.pdf
         run: |
