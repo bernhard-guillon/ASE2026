@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'documentation/idea.md'
+      - '.github/workflows/build-pdf.yml'
   workflow_dispatch:
 
 jobs:
