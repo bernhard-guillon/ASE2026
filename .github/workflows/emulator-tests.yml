@@ -1,0 +1,131 @@
+name: Emulator Build & Tests
+
+on:
+  push:
+    paths:
+      - 'projects/emulator/**'
+      - '.github/workflows/emulator-tests.yml'
+    branches:
+      - main
+      - develop
+  pull_request:
+    paths:
+      - 'projects/emulator/**'
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update Arch Linux packages
+        run: |
+          pacman -Syu --noconfirm
+
+      - name: Install build dependencies
+        run: |
+          pacman -S --noconfirm \
+            base-devel \
+            cmake \
+            gcc \
+            git \
+            python
+
+      - name: Install RISC-V toolchain
+        run: |
+          pacman -S --noconfirm \
+            riscv64-elf-binutils \
+            riscv64-elf-gcc \
+            riscv64-elf-newlib \
+            riscv64-elf-gdb
+
+      - name: Verify toolchain installation
+        run: |
+          echo "=== GCC Version ==="
+          gcc --version
+          echo ""
+          echo "=== G++ Version ==="
+          g++ --version
+          echo ""
+          echo "=== CMake Version ==="
+          cmake --version
+          echo ""
+          echo "=== RISC-V Toolchain Version ==="
+          riscv64-elf-gcc --version
+          echo ""
+          echo "=== RISC-V Assembler Version ==="
+          riscv64-elf-as --version
+          echo ""
+          echo "=== RISC-V Linker Version ==="
+          riscv64-elf-ld --version
+
+      - name: Configure CMake
+        run: |
+          cd projects/emulator
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build emulator
+        run: |
+          cd projects/emulator/build
+          cmake --build . -j4 --verbose
+
+      - name: Run unit tests
+        run: |
+          cd projects/emulator/build
+          ctest --output-on-failure --verbose
+
+      - name: Test summary
+        if: always()
+        run: |
+          cd projects/emulator/build
+          echo "=== Final Test Summary ==="
+          ctest -N | tail -20
+          ctest --output-on-failure 2>&1 | grep -E "passed|failed|skipped" | tail -5
+
+  code-quality:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    needs: build-and-test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update Arch Linux packages
+        run: |
+          pacman -Syu --noconfirm
+
+      - name: Install development tools
+        run: |
+          pacman -S --noconfirm \
+            base-devel \
+            clang \
+            gcc \
+            cppcheck
+
+      - name: Run static analysis (cppcheck)
+        continue-on-error: true
+        run: |
+          cd projects/emulator
+          cppcheck --enable=all --suppress=missingIncludeSystem \
+            --error-exitcode=1 \
+            CPU.cpp CPU.h \
+            Memory.cpp Memory.h \
+            Instruction.cpp Instruction.h \
+            Emulator.cpp Emulator.h || true
+
+      - name: Check code formatting
+        continue-on-error: true
+        run: |
+          cd projects/emulator
+          echo "Note: Code formatting check skipped. Consider adding clang-format."

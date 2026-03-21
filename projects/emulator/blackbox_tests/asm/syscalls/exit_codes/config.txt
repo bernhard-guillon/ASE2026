@@ -1,0 +1,3 @@
+exit_code=42
+timeout_ms=1000
+instruction_limit=10000
