@@ -37,7 +37,8 @@ jobs:
             gcc \
             git \
             python \
-            python-pytest
+            python-pytest \
+            python-numpy
 
       - name: Install RISC-V toolchain
         run: |
