@@ -173,36 +173,32 @@ if(PYTHON_EXECUTABLE)
     )
     
     # Phase 3: Linker Script Configuration Tests (requires RISC-V toolchain)
-    if(RISCV_TOOLCHAIN_FOUND)
-        add_test(
-            NAME python/phase3/linker_script_unit
-            COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3.py -v
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        )
-        
-        add_test(
-            NAME python/phase3/linker_script_blackbox
-            COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3_blackbox.py -v
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        )
-        
-        add_test(
-            NAME python/phase3/linker_script_integration
-            COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3_integration.py -v
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        )
-        
-        # Phase 4: Full Pipeline Integration Tests (requires RISC-V toolchain)
-        add_test(
-            NAME python/phase4/pipeline_integration
-            COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase4_integration.py -v
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        )
-        
-        message(STATUS "Phase 3-4 Python tests registered (RISC-V toolchain available)")
-    else()
-        message(WARNING "RISC-V toolchain not found - Phase 3-4 Python tests skipped (require riscv64-elf-as, riscv64-elf-ld, riscv64-elf-objcopy)")
-    endif()
+    add_test(
+        NAME python/phase3/linker_script_unit
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    add_test(
+        NAME python/phase3/linker_script_blackbox
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3_blackbox.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    add_test(
+        NAME python/phase3/linker_script_integration
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3_integration.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    # Phase 4: Full Pipeline Integration Tests (requires RISC-V toolchain)
+    add_test(
+        NAME python/phase4/pipeline_integration
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase4_integration.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    message(STATUS "Phase 3-4 Python tests registered")
     
     # Phase 5: CMake Build System Tests (no toolchain needed)
     add_test(
@@ -212,15 +208,13 @@ if(PYTHON_EXECUTABLE)
     )
     
     # Phase 6: Comprehensive Integration Tests (requires RISC-V toolchain)
-    if(RISCV_TOOLCHAIN_FOUND)
-        add_test(
-            NAME python/phase6/comprehensive_integration
-            COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase6_integration.py -v
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        )
-        
-        message(STATUS "Phase 6 Python tests registered (RISC-V toolchain available)")
-    endif()
+    add_test(
+        NAME python/phase6/comprehensive_integration
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase6_integration.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    message(STATUS "Phase 6 Python tests registered")
     
     # Static Character Generation Tests
     add_test(
