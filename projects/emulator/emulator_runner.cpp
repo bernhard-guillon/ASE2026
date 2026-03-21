@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     
     // Run the program
     try {
-        emulator.run(10000);  // Max 10000 instructions
+        emulator.run(1000000);  // Max 1M instructions (for recursive functions)
         
         if (verbose) {
             std::cout << "----------------------------------------" << std::endl;
