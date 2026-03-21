@@ -62,6 +62,10 @@ target_link_libraries(test_memory_syscalls emulator cpu memory instruction gtest
 add_executable(test_instruction_edges test_instruction_edges.cpp)
 target_link_libraries(test_instruction_edges cpu memory instruction gtest_main)
 
+# Model loading tests
+add_executable(test_model_loading test_model_loading.cpp)
+target_link_libraries(test_model_loading emulator cpu memory instruction)
+
 # Binary loader and runner
 add_executable(emulator_runner emulator_runner.cpp)
 target_link_libraries(emulator_runner emulator cpu memory instruction)
