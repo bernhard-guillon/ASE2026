@@ -36,7 +36,9 @@ jobs:
             cmake \
             gcc \
             git \
-            python
+            python \
+            python-pytest \
+            python-numpy
 
       - name: Install RISC-V toolchain
         run: |
