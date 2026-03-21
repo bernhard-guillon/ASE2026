@@ -123,6 +123,70 @@ else()
     endif()
 endif()
 
+# ============================================================================
+# Python Bootloader Tests (Phase 1-3)
+# ============================================================================
+
+# Find Python
+find_program(PYTHON_EXECUTABLE python3)
+if(PYTHON_EXECUTABLE)
+    message(STATUS "Python found: ${PYTHON_EXECUTABLE}")
+    
+    # Phase 1: Model Compiler Tests (no toolchain needed)
+    add_test(
+        NAME python/phase1/model_compiler_unit
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_model_compiler.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    add_test(
+        NAME python/phase1/model_compiler_blackbox
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_model_compiler_blackbox.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    # Phase 2: Bootloader Code Generation Tests (no toolchain needed)
+    add_test(
+        NAME python/phase2/bootloader_unit
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase2.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    add_test(
+        NAME python/phase2/bootloader_blackbox
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase2_blackbox.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    # Phase 3: Linker Script Configuration Tests (requires RISC-V toolchain)
+    if(RISCV_TOOLCHAIN_FOUND)
+        add_test(
+            NAME python/phase3/linker_script_unit
+            COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3.py -v
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        
+        add_test(
+            NAME python/phase3/linker_script_blackbox
+            COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3_blackbox.py -v
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        
+        add_test(
+            NAME python/phase3/linker_script_integration
+            COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3_integration.py -v
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        
+        message(STATUS "Phase 3 Python tests registered (RISC-V toolchain available)")
+    else()
+        message(WARNING "RISC-V toolchain not found - Phase 3 Python tests skipped (require riscv64-elf-as, riscv64-elf-ld)")
+    endif()
+    
+else()
+    message(WARNING "Python3 not found - Python tests will be skipped")
+endif()
+
 if(RISCV_TOOLCHAIN_FOUND)
     # Include blackbox testing functions
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/BlackboxTests.cmake)
