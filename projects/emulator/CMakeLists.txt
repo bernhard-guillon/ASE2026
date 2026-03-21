@@ -217,6 +217,19 @@ if(PYTHON_EXECUTABLE)
         message(STATUS "Phase 6 Python tests registered (RISC-V toolchain available)")
     endif()
     
+    # Static Character Generation Tests
+    add_test(
+        NAME python/static_char_gen/integration
+        COMMAND ${PYTHON_EXECUTABLE} test_static_char_gen_integration.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    add_test(
+        NAME python/static_char_gen/basic
+        COMMAND ${PYTHON_EXECUTABLE} test_static_char_gen_basic.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
 else()
     message(WARNING "Python3 not found - Python tests will be skipped")
 endif()
