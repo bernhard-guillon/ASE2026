@@ -68,6 +68,9 @@ int main(int argc, char** argv) {
             std::cout << "Final PC: 0x" << std::hex << emulator.getCPU().getPC() << std::endl;
         }
         
+        // Return the program's exit code
+        return emulator.getExitCode();
+        
     } catch (const std::exception& e) {
         std::cerr << "Error during execution: " << e.what() << std::endl;
         return 1;

@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 Emulator::Emulator(size_t memory_size) 
-    : cpu_(), memory_(memory_size), halted_(false) {
+    : cpu_(), memory_(memory_size), halted_(false), exit_code_(0) {
 }
 
 void Emulator::loadProgram(const std::vector<uint32_t>& program, uint32_t start_address) {
@@ -88,7 +88,8 @@ void Emulator::handleSystemCall() {
         
         case 93: { // exit(status)
             halted_ = true;
-            // Exit code is in a0 (x10), but we just halt
+            // Exit code is in a0 (x10)
+            exit_code_ = cpu_.getReg(10);
             break;
         }
         
@@ -101,4 +102,5 @@ void Emulator::reset() {
     cpu_.reset();
     memory_.reset();
     halted_ = false;
+    exit_code_ = 0;
 }

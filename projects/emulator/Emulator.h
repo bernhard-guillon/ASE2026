@@ -28,6 +28,9 @@ public:
     // Check if halted
     bool isHalted() const { return halted_; }
     
+    // Get exit code (set by exit syscall)
+    int getExitCode() const { return exit_code_; }
+    
     // Reset emulator state
     void reset();
     
@@ -35,6 +38,7 @@ private:
     CPU cpu_;
     Memory memory_;
     bool halted_;
+    int exit_code_;
     
     void handleSystemCall();
 };
