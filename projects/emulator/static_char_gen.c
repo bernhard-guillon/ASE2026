@@ -11,24 +11,28 @@
 #define FRAMEBUFFER_ADDR 0x20000
 
 int main() {
-    /* Read character code from a0 register */
     register int char_code __asm__("a0");
-    
-    /* Validate character code is in valid ASCII range [0, 254] */
-    if (char_code >= 255) {
-        return 1;  /* Invalid character code */
-    }
-    
-    /* Get pointer to the 400 bytes of pixel data for this character */
-    const unsigned char *pixels = char_images[char_code];
-    
-    /* Copy 400 bytes to framebuffer memory location */
     unsigned char *framebuffer = (unsigned char *)FRAMEBUFFER_ADDR;
-    for (int i = 0; i < 400; ++i) {
-        framebuffer[i] = pixels[i];
+    
+    /* Run infinitely, reading a0 each iteration and updating framebuffer */
+    while (1) {
+        /* Read current character code from a0 register */
+        asm volatile ("" : "=r" (char_code) : "0" (char_code));
+        
+        /* Validate character code is in valid ASCII range [0, 254] */
+        if (char_code < 255) {
+            /* Get pointer to the 400 bytes of pixel data for this character */
+            const unsigned char *pixels = char_images[char_code];
+            
+            /* Copy 400 bytes to framebuffer memory location */
+            for (int i = 0; i < 400; ++i) {
+                framebuffer[i] = pixels[i];
+            }
+        }
+        /* Loop continues; Ctrl+C will terminate the emulator */
     }
     
-    return 0;
+    return 0;  /* Unreachable, but needed for compilation */
 }
 
 
