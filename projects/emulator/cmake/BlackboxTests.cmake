@@ -1,5 +1,6 @@
 # CMake helper functions for blackbox testing
 # Discovers and registers assembly and C test programs with CTest
+# All artifacts are built in CMAKE_BINARY_DIR to keep source tree clean
 
 function(add_blackbox_asm_tests)
     # Discover and register all assembly tests
@@ -23,16 +24,22 @@ function(add_blackbox_asm_tests)
     set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/linker.ld")
     
     foreach(TEST_S ${ASM_TESTS})
-        # Get test directory
+        # Get test directory and metadata
         get_filename_component(TEST_DIR ${TEST_S} DIRECTORY)
         get_filename_component(TEST_NAME ${TEST_DIR} NAME)
         get_filename_component(TEST_CATEGORY ${TEST_DIR} DIRECTORY)
         get_filename_component(TEST_CATEGORY ${TEST_CATEGORY} NAME)
         
-        # Set test file paths
-        set(TEST_O "${TEST_DIR}/test.o")
-        set(TEST_ELF "${TEST_DIR}/test.elf")
-        set(TEST_BIN "${TEST_DIR}/test.bin")
+        # Compute relative path from source root
+        file(RELATIVE_PATH TEST_REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${TEST_DIR}")
+        
+        # Output files go to build directory, mirroring source structure
+        set(BUILD_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${TEST_REL_PATH}")
+        file(MAKE_DIRECTORY "${BUILD_OUTPUT_DIR}")
+        
+        set(TEST_O "${BUILD_OUTPUT_DIR}/test.o")
+        set(TEST_ELF "${BUILD_OUTPUT_DIR}/test.elf")
+        set(TEST_BIN "${BUILD_OUTPUT_DIR}/test.bin")
         set(CONFIG_FILE "${TEST_DIR}/config.txt")
         set(EXPECTED_FILE "${TEST_DIR}/expected.txt")
         
@@ -151,9 +158,15 @@ function(add_blackbox_c_tests)
             continue()
         endif()
         
-        # Set output paths
-        set(TEST_ELF "${TEST_DIR}/${TEST_FILE}.elf")
-        set(TEST_BIN "${TEST_DIR}/${TEST_FILE}.bin")
+        # Compute relative path from source root
+        file(RELATIVE_PATH TEST_REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${TEST_DIR}")
+        
+        # Output files go to build directory, mirroring source structure
+        set(BUILD_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${TEST_REL_PATH}")
+        file(MAKE_DIRECTORY "${BUILD_OUTPUT_DIR}")
+        
+        set(TEST_ELF "${BUILD_OUTPUT_DIR}/${TEST_FILE}.elf")
+        set(TEST_BIN "${BUILD_OUTPUT_DIR}/${TEST_FILE}.bin")
         
         # Check if malloc.c exists in same directory (for malloc tests)
         set(MALLOC_C "")
@@ -223,12 +236,14 @@ function(add_blackbox_all_target)
     # Find all test *.c files
     file(GLOB_RECURSE C_TESTS "${CMAKE_CURRENT_SOURCE_DIR}/blackbox_tests/c/*/*.c")
     
-    # Create list of all artifacts
+    # Create list of all artifacts in build directory
     set(ALL_ARTIFACTS "")
     
     foreach(TEST_S ${ASM_TESTS})
         get_filename_component(TEST_DIR ${TEST_S} DIRECTORY)
-        list(APPEND ALL_ARTIFACTS "${TEST_DIR}/test.bin")
+        file(RELATIVE_PATH TEST_REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${TEST_DIR}")
+        set(BUILD_BIN "${CMAKE_CURRENT_BINARY_DIR}/${TEST_REL_PATH}/test.bin")
+        list(APPEND ALL_ARTIFACTS "${BUILD_BIN}")
     endforeach()
     
     foreach(TEST_C ${C_TESTS})
@@ -240,7 +255,9 @@ function(add_blackbox_all_target)
             continue()
         endif()
         
-        list(APPEND ALL_ARTIFACTS "${TEST_DIR}/${TEST_FILE}.bin")
+        file(RELATIVE_PATH TEST_REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${TEST_DIR}")
+        set(BUILD_BIN "${CMAKE_CURRENT_BINARY_DIR}/${TEST_REL_PATH}/${TEST_FILE}.bin")
+        list(APPEND ALL_ARTIFACTS "${BUILD_BIN}")
     endforeach()
     
     # Create master target
