@@ -50,6 +50,10 @@ target_link_libraries(test_execution cpu memory instruction gtest_main)
 add_executable(test_emulator test_emulator.cpp)
 target_link_libraries(test_emulator emulator cpu memory instruction gtest_main)
 
+# Binary loader and runner
+add_executable(emulator_runner emulator_runner.cpp)
+target_link_libraries(emulator_runner emulator cpu memory instruction)
+
 # Register tests with CTest
 include(GoogleTest)
 gtest_discover_tests(test_memory)
