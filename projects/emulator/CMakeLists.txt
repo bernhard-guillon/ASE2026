@@ -50,6 +50,10 @@ target_link_libraries(test_execution cpu memory instruction gtest_main)
 add_executable(test_emulator test_emulator.cpp)
 target_link_libraries(test_emulator emulator cpu memory instruction gtest_main)
 
+# File I/O syscall tests
+add_executable(test_file_io_syscalls test_file_io_syscalls.cpp)
+target_link_libraries(test_file_io_syscalls emulator cpu memory instruction gtest_main)
+
 # Binary loader and runner
 add_executable(emulator_runner emulator_runner.cpp)
 target_link_libraries(emulator_runner emulator cpu memory instruction)
@@ -61,6 +65,7 @@ gtest_discover_tests(test_cpu)
 gtest_discover_tests(test_instruction)
 gtest_discover_tests(test_execution)
 gtest_discover_tests(test_emulator)
+gtest_discover_tests(test_file_io_syscalls)
 
 # ============================================================================
 # Blackbox Testing
