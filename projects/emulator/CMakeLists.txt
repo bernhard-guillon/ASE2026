@@ -201,6 +201,17 @@ if(PYTHON_EXECUTABLE)
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
+    # Phase 6: Comprehensive Integration Tests (requires RISC-V toolchain)
+    if(RISCV_TOOLCHAIN_FOUND)
+        add_test(
+            NAME python/phase6/comprehensive_integration
+            COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase6_integration.py -v
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        
+        message(STATUS "Phase 6 Python tests registered (RISC-V toolchain available)")
+    endif()
+    
 else()
     message(WARNING "Python3 not found - Python tests will be skipped")
 endif()
