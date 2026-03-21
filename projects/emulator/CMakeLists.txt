@@ -107,11 +107,11 @@ add_test(NAME test_memory_layout COMMAND run_memory_layout_test)
 # Blackbox Testing
 # ============================================================================
 
-# Find RISC-V toolchain
-find_program(RISCV_GCC riscv64-elf-gcc)
-find_program(RISCV_AS riscv64-elf-as)
-find_program(RISCV_LD riscv64-elf-ld)
-find_program(RISCV_OBJCOPY riscv64-elf-objcopy)
+# Find RISC-V toolchain (support both Arch Linux riscv64-elf-* and Ubuntu riscv64-unknown-elf-* naming)
+find_program(RISCV_GCC    NAMES riscv64-elf-gcc    riscv64-unknown-elf-gcc)
+find_program(RISCV_AS     NAMES riscv64-elf-as     riscv64-unknown-elf-as)
+find_program(RISCV_LD     NAMES riscv64-elf-ld     riscv64-unknown-elf-ld)
+find_program(RISCV_OBJCOPY NAMES riscv64-elf-objcopy riscv64-unknown-elf-objcopy)
 
 if(RISCV_GCC AND RISCV_AS AND RISCV_LD AND RISCV_OBJCOPY)
     set(RISCV_TOOLCHAIN_FOUND TRUE)
@@ -124,16 +124,16 @@ else()
     set(RISCV_TOOLCHAIN_FOUND FALSE)
     message(WARNING "RISC-V toolchain not found - blackbox tests disabled")
     if(NOT RISCV_GCC)
-        message(WARNING "  Missing: riscv64-elf-gcc")
+        message(WARNING "  Missing: riscv64-elf-gcc / riscv64-unknown-elf-gcc")
     endif()
     if(NOT RISCV_AS)
-        message(WARNING "  Missing: riscv64-elf-as")
+        message(WARNING "  Missing: riscv64-elf-as / riscv64-unknown-elf-as")
     endif()
     if(NOT RISCV_LD)
-        message(WARNING "  Missing: riscv64-elf-ld")
+        message(WARNING "  Missing: riscv64-elf-ld / riscv64-unknown-elf-ld")
     endif()
     if(NOT RISCV_OBJCOPY)
-        message(WARNING "  Missing: riscv64-elf-objcopy")
+        message(WARNING "  Missing: riscv64-elf-objcopy / riscv64-unknown-elf-objcopy")
     endif()
 endif()
 
@@ -261,7 +261,37 @@ if(RISCV_TOOLCHAIN_FOUND)
     
     # Build ELF loader test programs for Python blackbox tests
     add_elf_loader_test_programs()
-    
+
+    # Make the C++ ELF loader test depend on the compiled ELF files
+    add_dependencies(test_elf_loader elf_loader_tests)
+
+    # Pass the ELF loader build directory to the C++ test so loadFile() can find the files
+    target_compile_definitions(test_elf_loader PRIVATE
+        ELF_LOADER_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}/elf_loader_tests"
+    )
+
+    # Build static_char_gen.elf for the Python integration tests
+    set(STATIC_CHAR_GEN_ELF "${CMAKE_CURRENT_BINARY_DIR}/static_char_gen.elf")
+    add_custom_command(
+        OUTPUT ${STATIC_CHAR_GEN_ELF}
+        COMMAND ${RISCV_GCC} -march=rv32i -mabi=ilp32 -nostdlib -static
+            -I${CMAKE_CURRENT_SOURCE_DIR}
+            -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            -o ${STATIC_CHAR_GEN_ELF}
+            ${CMAKE_CURRENT_SOURCE_DIR}/crt0.s
+            ${CMAKE_CURRENT_SOURCE_DIR}/syscalls.s
+            ${CMAKE_CURRENT_SOURCE_DIR}/static_char_gen.c
+        DEPENDS
+            ${CMAKE_CURRENT_SOURCE_DIR}/static_char_gen.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/character_font.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/crt0.s
+            ${CMAKE_CURRENT_SOURCE_DIR}/syscalls.s
+            ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+        COMMENT "Compiling static_char_gen.elf"
+        VERBATIM
+    )
+    add_custom_target(static_char_gen_elf ALL DEPENDS ${STATIC_CHAR_GEN_ELF})
+
     # Create target to build all blackbox test artifacts
     add_blackbox_all_target()
 endif()
