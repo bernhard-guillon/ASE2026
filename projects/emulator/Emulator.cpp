@@ -78,6 +78,31 @@ void Emulator::handleSystemCall() {
                 
                 // Return bytes written in a0
                 cpu_.setReg(10, count);
+            } else if (fd >= 3) {
+                // Write to open file
+                auto it = open_files_.find(fd);
+                if (it == open_files_.end()) {
+                    // Invalid fd
+                    cpu_.setReg(10, static_cast<uint32_t>(-1));
+                    cpu_.incrementPC();
+                    break;
+                }
+                
+                std::fstream *file = it->second;
+                uint32_t bytes_written = 0;
+                
+                for (uint32_t i = 0; i < count; ++i) {
+                    uint8_t byte = memory_.read8(buf + i);
+                    file->put(byte);
+                    bytes_written++;
+                }
+                
+                file->flush();
+                
+                // Update position tracking
+                file_positions_[fd] += bytes_written;
+                
+                cpu_.setReg(10, bytes_written);
             } else {
                 // Unsupported fd, return error
                 cpu_.setReg(10, static_cast<uint32_t>(-1));
@@ -261,6 +286,7 @@ void Emulator::handleSystemCall() {
             // Assign file descriptor
             int fd = next_fd_++;
             open_files_[fd] = file;
+            file_positions_[fd] = 0;  // Initialize position tracking
             
             // Return file descriptor
             cpu_.setReg(10, fd);
@@ -301,6 +327,9 @@ void Emulator::handleSystemCall() {
                 bytes_read++;
             }
             
+            // Update position tracking
+            file_positions_[fd] += bytes_read;
+            
             // Return bytes read
             cpu_.setReg(10, bytes_read);
             cpu_.incrementPC();
@@ -331,8 +360,86 @@ void Emulator::handleSystemCall() {
             delete it->second;
             open_files_.erase(it);
             
+            // Clean up position tracking
+            file_positions_.erase(fd);
+            
             // Return success
             cpu_.setReg(10, 0);
+            cpu_.incrementPC();
+            break;
+        }
+        
+        case 19: { // lseek(fd, offset, whence)
+            int fd = cpu_.getReg(10);           // a0
+            int32_t offset = cpu_.getReg(11);   // a1
+            int whence = cpu_.getReg(12);       // a2
+            
+            // Check if fd is valid
+            auto it = open_files_.find(fd);
+            if (it == open_files_.end()) {
+                // Invalid fd
+                cpu_.setReg(10, static_cast<uint32_t>(-1));
+                cpu_.incrementPC();
+                break;
+            }
+            
+            std::fstream *file = it->second;
+            uint32_t new_position = 0;
+            
+            // Get current position
+            auto pos_it = file_positions_.find(fd);
+            uint32_t current_pos = (pos_it != file_positions_.end()) ? pos_it->second : 0;
+            
+            switch (whence) {
+                case 0: { // SEEK_SET - absolute position
+                    if (offset < 0) {
+                        cpu_.setReg(10, static_cast<uint32_t>(-1));
+                        cpu_.incrementPC();
+                        break;
+                    }
+                    new_position = offset;
+                    break;
+                }
+                case 1: { // SEEK_CUR - relative to current position
+                    int32_t result = static_cast<int32_t>(current_pos) + offset;
+                    if (result < 0) {
+                        cpu_.setReg(10, static_cast<uint32_t>(-1));
+                        cpu_.incrementPC();
+                        break;
+                    }
+                    new_position = result;
+                    break;
+                }
+                case 2: { // SEEK_END - relative to end
+                    file->seekg(0, std::ios::end);
+                    uint32_t file_size = file->tellg();
+                    
+                    int32_t result = static_cast<int32_t>(file_size) + offset;
+                    if (result < 0) {
+                        cpu_.setReg(10, static_cast<uint32_t>(-1));
+                        cpu_.incrementPC();
+                        break;
+                    }
+                    new_position = result;
+                    break;
+                }
+                default: {
+                    // Invalid whence
+                    cpu_.setReg(10, static_cast<uint32_t>(-1));
+                    cpu_.incrementPC();
+                    break;
+                }
+            }
+            
+            // Seek to new position
+            file->seekg(new_position);
+            file->seekp(new_position);
+            
+            // Update our position tracking
+            file_positions_[fd] = new_position;
+            
+            // Return new file offset
+            cpu_.setReg(10, new_position);
             cpu_.incrementPC();
             break;
         }
@@ -357,5 +464,6 @@ void Emulator::reset() {
         delete pair.second;
     }
     open_files_.clear();
+    file_positions_.clear();
     next_fd_ = 3;
 }

@@ -77,6 +77,16 @@ int close(int fd);
 - **Returns**: 0 on success, -1 on error
 - **Used by**: Closing files and releasing descriptors
 
+### 19 - lseek(fd, offset, whence)
+```c
+off_t lseek(int fd, off_t offset, int whence);
+```
+- **Status**: ✅ Fully implemented (Phase 4)
+- **Behavior**: Changes file position for reading/writing
+- **Features**: Supports SEEK_SET, SEEK_CUR, SEEK_END
+- **Returns**: New file offset or -1 on error
+- **Used by**: Random access file operations, file seeking
+
 ## Required for musl libc Support
 
 ### Core Syscalls Needed for Initialization
@@ -88,14 +98,14 @@ int close(int fd);
 | 174 | rt_sigaction | Signal handling | High |
 | 180 | pread64 | Positioned read | Medium |
 
-### File I/O (✅ PHASE 3 COMPLETE)
+### File I/O (✅ PHASE 4 COMPLETE)
 | # | Syscall | Purpose | Status |
 |---|---------|---------|--------|
 | 56 | openat | Open file | ✅ Implemented |
 | 57 | close | Close file descriptor | ✅ Implemented |
 | 63 | read | Read from file | ✅ Implemented |
-| 64 | write | Write to file | ✅ Implemented |
-| 82 | lseek | Seek in file | Planned |
+| 64 | write | Write to file | ✅ Implemented (Phase 4: now supports fd≥3) |
+| 19 | lseek | Seek in file | ✅ Implemented |
 
 ### String/Math (Runtime Support)
 These are NOT syscalls but helper functions needed:
@@ -113,6 +123,7 @@ These are NOT syscalls but helper functions needed:
 
 ### What Works
 ✅ Write to stdout/stderr
+✅ Write to open files (fd ≥ 3)
 ✅ Exit with code
 ✅ Stack initialization
 ✅ Local variables and arrays
@@ -121,9 +132,10 @@ These are NOT syscalls but helper functions needed:
 ✅ Heap break tracking (brk syscall)
 ✅ Dynamic malloc/free (mmap2 + munmap syscalls)
 ✅ Multiple concurrent allocations
-✅ File I/O (open, read, close syscalls)
+✅ File I/O (open, read, write, close, lseek syscalls)
 ✅ Reading existing files
 ✅ Creating new files
+✅ Random access file operations (seeking in files)
 
 ### What Doesn't Work  
 ❌ Signal handling (would need rt_sigaction)
@@ -131,7 +143,6 @@ These are NOT syscalls but helper functions needed:
 ❌ Shared libraries (would need mmap + ELF loader)
 ❌ Floating point (would need M extension + FP support)
 ❌ Division operations (would need __divsi3 from libgcc)
-❌ Seeking in files (would need lseek syscall)
 
 ## Integration Roadmap
 
@@ -156,17 +167,19 @@ These are NOT syscalls but helper functions needed:
 - ✅ Test with file creation and reading
 - ✅ Support for O_RDONLY, O_WRONLY, O_RDWR, O_CREAT, O_APPEND
 
-### Phase 4: Advanced I/O (NEXT)
-1. Implement lseek(19) syscall for seeking in files
-2. Add write(64) support for file descriptors (currently only stdout/stderr)
-3. Test random access and file seeking
+### Phase 4: Advanced I/O (✅ DONE)
+- ✅ lseek(19) syscall for seeking in files
+- ✅ Extended write(64) to support file descriptors (fd ≥ 3)
+- ✅ Random access file operations
+- ✅ SEEK_SET, SEEK_CUR, SEEK_END support
+- ✅ File position tracking for each descriptor
 
-### Phase 4: libc Integration (AFTER PHASE 3)
+### Phase 5: libc Integration (FUTURE)
 1. Add division helpers (__divsi3, etc.) via libgcc
 2. Link against musl libc
 3. Test with real C programs using stdio
 
-### Phase 5: Advanced Features (FUTURE)
+### Phase 6: Advanced Features (FUTURE)
 1. Signal handling (rt_sigaction)
 2. Process management (getpid, fork)
 3. ELF file format support

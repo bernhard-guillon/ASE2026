@@ -54,6 +54,9 @@ private:
     std::map<int, std::fstream*> open_files_;
     int next_fd_;  // Next file descriptor to assign (starts at 3 after stdin/stdout/stderr)
     
+    // File position tracking: fd -> offset
+    std::map<int, uint32_t> file_positions_;
+    
     void handleSystemCall();
 };
 

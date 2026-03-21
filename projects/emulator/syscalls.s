@@ -10,6 +10,7 @@
 .globl open
 .globl read
 .globl close
+.globl lseek
 
 # write(int fd, const void *buf, unsigned long count) -> long
 # fd: a0
@@ -84,6 +85,16 @@ read:
 # Returns: a0 (0 on success, -1 on error)
 close:
     li a7, 57              # syscall number for close
+    ecall
+    ret
+
+# lseek(int fd, off_t offset, int whence) -> off_t
+# fd: a0
+# offset: a1
+# whence: a2
+# Returns: a0 (new file offset or -1 on error)
+lseek:
+    li a7, 19              # syscall number for lseek
     ecall
     ret
 
