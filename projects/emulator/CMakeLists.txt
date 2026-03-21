@@ -70,6 +70,10 @@ target_link_libraries(test_instruction_edges cpu memory instruction gtest_main)
 add_executable(test_framebuffer test_framebuffer.cpp)
 target_link_libraries(test_framebuffer emulator cpu memory instruction gtest_main)
 
+# ELF Loader tests
+add_executable(test_elf_loader test_elf_loader.cpp)
+target_link_libraries(test_elf_loader emulator cpu memory instruction gtest_main)
+
 # Model loading tests
 add_executable(test_model_loading test_model_loading.cpp)
 target_link_libraries(test_model_loading emulator cpu memory instruction)
@@ -93,6 +97,7 @@ gtest_discover_tests(test_file_io_syscalls)
 gtest_discover_tests(test_memory_syscalls)
 gtest_discover_tests(test_instruction_edges)
 gtest_discover_tests(test_framebuffer)
+gtest_discover_tests(test_elf_loader)
 
 # Register integration tests
 add_test(NAME test_model_loading COMMAND test_model_loading)
@@ -227,6 +232,13 @@ if(PYTHON_EXECUTABLE)
     add_test(
         NAME python/static_char_gen/basic
         COMMAND ${PYTHON_EXECUTABLE} test_static_char_gen_basic.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    # ELF Loader Tests
+    add_test(
+        NAME python/elf_loader/blackbox
+        COMMAND ${PYTHON_EXECUTABLE} test_elf_loader_blackbox.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     

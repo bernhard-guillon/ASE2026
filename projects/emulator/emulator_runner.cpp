@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <csignal>
 #include "Emulator.h"
+#include "elf_loader.h"
 
 // Global emulator pointer for signal handler
 static Emulator* g_emulator = nullptr;
@@ -164,9 +165,54 @@ int main(int argc, char** argv) {
     // Create emulator with 1GB memory (for mmap and dynamic allocation)
     Emulator emulator(1024 * 1024 * 1024);
     
-    // Load binary into memory at address 0
-    for (size_t i = 0; i < buffer.size(); ++i) {
-        emulator.getMemory().write8(i, buffer[i]);
+    // Parse and load ELF binary or raw binary
+    try {
+        // Check if it's an ELF file
+        if (ElfLoader::validateElf(buffer)) {
+            // Proper ELF loading
+            auto segments = ElfLoader::parseElf(buffer);
+            
+            if (verbose) {
+                std::cout << "Loaded ELF with " << segments.size() << " segment(s)" << std::endl;
+            }
+            
+            // Load each segment into memory at its virtual address
+            for (const auto& segment : segments) {
+                if (verbose) {
+                    std::cout << "  Loading segment at 0x" << std::hex << segment.vaddr 
+                              << " size 0x" << segment.size << std::dec << std::endl;
+                }
+                
+                for (size_t i = 0; i < segment.data.size(); ++i) {
+                    emulator.getMemory().write8(segment.vaddr + i, segment.data[i]);
+                }
+                
+                // Zero-fill remaining BSS if needed
+                for (size_t i = segment.data.size(); i < segment.size; ++i) {
+                    emulator.getMemory().write8(segment.vaddr + i, 0);
+                }
+            }
+            
+            // Get entry point from ELF header
+            uint32_t entry_point = ElfLoader::getEntryPoint(buffer);
+            emulator.getCPU().setPC(entry_point);
+            
+            if (verbose) {
+                std::cout << "Entry point: 0x" << std::hex << entry_point << std::dec << std::endl;
+            }
+        } else {
+            // Fallback to raw binary loading for backward compatibility
+            if (verbose) {
+                std::cout << "Not an ELF file, loading as raw binary at address 0" << std::endl;
+            }
+            
+            for (size_t i = 0; i < buffer.size(); ++i) {
+                emulator.getMemory().write8(i, buffer[i]);
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error loading binary: " << e.what() << std::endl;
+        return 1;
     }
     
     // Initialize stack pointer to 512MB (high in address space for stack growth)
