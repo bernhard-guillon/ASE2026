@@ -66,6 +66,10 @@ target_link_libraries(test_instruction_edges cpu memory instruction gtest_main)
 add_executable(test_model_loading test_model_loading.cpp)
 target_link_libraries(test_model_loading emulator cpu memory instruction)
 
+# RISC-V memory layout test runner
+add_executable(run_memory_layout_test blackbox_tests/neural_network/run_memory_layout_test.cpp)
+target_link_libraries(run_memory_layout_test emulator cpu memory instruction)
+
 # Binary loader and runner
 add_executable(emulator_runner emulator_runner.cpp)
 target_link_libraries(emulator_runner emulator cpu memory instruction)
