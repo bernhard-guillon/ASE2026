@@ -1,7 +1,19 @@
 name: Train Character Generation Model
 
 on:
+  push:
+    paths:
+      - 'projects/character-generation/**'
+      - '.github/workflows/train-character-generation.yml'
+    branches:
+      - main
+      - develop
   pull_request:
+    paths:
+      - 'projects/character-generation/**'
+    branches:
+      - main
+      - develop
   workflow_dispatch:
     inputs:
       epochs:
