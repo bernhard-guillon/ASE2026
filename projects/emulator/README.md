@@ -16,12 +16,23 @@ A complete emulator for the RV32I RISC-V instruction set, implemented in C++ wit
 - **System Calls Support**
   - `write(fd, buf, count)` syscall 64 - Write to stdout/stderr
   - `exit(status)` syscall 93 - Exit with status code
+  - `brk(addr)` syscall 214 - Heap break management
+  - `mmap2(addr, len, prot, flags, fd, offset)` syscall 192 - Memory mapping
+  - `munmap(addr, len)` syscall 215 - Memory unmapping
   - ECALL instruction for syscall handling
+
+- **C Program Support**
+  - Bare-metal C program execution with crt0 runtime
+  - Dynamic memory allocation with malloc/free
+  - Local variables, arrays, and function calls
+  - Stack-based calling conventions
+  - Exit code support
 
 - **Comprehensive Testing**
   - 135 unit tests (GoogleTest)
-  - 5 integration blackbox tests
-  - 100% pass rate
+  - 26 blackbox integration tests
+  - 4 malloc/dynamic memory tests
+  - 140+ total tests with 100% pass rate
 
 ## Prerequisites
 
@@ -93,6 +104,18 @@ riscv64-elf-as -march=rv32i -mabi=ilp32 -o program.o program.s
 riscv64-elf-ld -m elf32lriscv -T linker.ld -o program.elf program.o
 riscv64-elf-objcopy -O binary program.elf program.bin
 ./build/emulator_runner program.bin
+```
+
+### Running C Programs
+```bash
+# Compile C program with stdlib
+riscv64-elf-gcc -march=rv32i -mabi=ilp32 -nostdlib \
+    -o program.elf crt0.s program.c malloc.c syscalls.s -T linker.ld
+riscv64-elf-objcopy -O binary program.elf program.bin
+./build/emulator_runner program.bin
+
+# With verbose output
+./build/emulator_runner program.bin --verbose
 ```
 
 ### Using convenience scripts
