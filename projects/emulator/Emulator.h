@@ -45,7 +45,7 @@ private:
      * threshold: pixel > 127 = block, else = space
      */
     char pixel_to_char(uint8_t pixel) const {
-        return (pixel > 127) ? '█' : ' ';
+        return (pixel > 127) ? '#' : ' ';
     }
     
     /* Clear screen and move cursor to home position */
