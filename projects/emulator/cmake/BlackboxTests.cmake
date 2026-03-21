@@ -223,6 +223,67 @@ function(add_blackbox_c_tests)
     
 endfunction()
 
+function(add_neural_network_test)
+    # Build neural network RISC-V test program in out-of-tree fashion
+    
+    if(NOT RISCV_TOOLCHAIN_FOUND)
+        message(WARNING "RISC-V toolchain not found - neural network test disabled")
+        return()
+    endif()
+    
+    set(TEST_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/blackbox_tests/neural_network/test_model_memory_layout.s")
+    set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/blackbox_tests/neural_network/linker.ld")
+    
+    if(NOT EXISTS ${TEST_SOURCE} OR NOT EXISTS ${LINKER_SCRIPT})
+        message(WARNING "Neural network test files not found, skipping")
+        return()
+    endif()
+    
+    # Output files in build directory
+    set(BUILD_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/blackbox_tests/neural_network")
+    file(MAKE_DIRECTORY "${BUILD_OUTPUT_DIR}")
+    
+    set(TEST_O "${BUILD_OUTPUT_DIR}/test_model_memory_layout.o")
+    set(TEST_ELF "${BUILD_OUTPUT_DIR}/test_model_memory_layout.elf")
+    set(TEST_BIN "${BUILD_OUTPUT_DIR}/test_model_memory_layout.bin")
+    
+    # Assemble
+    add_custom_command(
+        OUTPUT ${TEST_O}
+        COMMAND ${RISCV_AS} -march=rv32i -mabi=ilp32 -o ${TEST_O} ${TEST_SOURCE}
+        DEPENDS ${TEST_SOURCE}
+        COMMENT "Assembling neural_network/test_model_memory_layout"
+        VERBATIM
+    )
+    
+    # Link with custom linker script (32-bit RISC-V)
+    add_custom_command(
+        OUTPUT ${TEST_ELF}
+        COMMAND ${RISCV_LD} -m elf32lriscv -T ${LINKER_SCRIPT} -o ${TEST_ELF} ${TEST_O}
+        DEPENDS ${TEST_O} ${LINKER_SCRIPT}
+        COMMENT "Linking neural_network/test_model_memory_layout"
+        VERBATIM
+    )
+    
+    # Convert to binary
+    add_custom_command(
+        OUTPUT ${TEST_BIN}
+        COMMAND ${RISCV_OBJCOPY} -O binary ${TEST_ELF} ${TEST_BIN}
+        DEPENDS ${TEST_ELF}
+        COMMENT "Converting neural_network/test_model_memory_layout to binary"
+        VERBATIM
+    )
+    
+    # Create custom target
+    add_custom_target(
+        build_neural_network_test
+        DEPENDS ${TEST_BIN}
+    )
+    
+    message(STATUS "Neural network test configured for building at ${BUILD_OUTPUT_DIR}")
+    
+endfunction()
+
 function(add_blackbox_all_target)
     # Create target to build all blackbox test artifacts
     
@@ -259,6 +320,12 @@ function(add_blackbox_all_target)
         set(BUILD_BIN "${CMAKE_CURRENT_BINARY_DIR}/${TEST_REL_PATH}/${TEST_FILE}.bin")
         list(APPEND ALL_ARTIFACTS "${BUILD_BIN}")
     endforeach()
+    
+    # Add neural network test binary
+    if(RISCV_TOOLCHAIN_FOUND)
+        set(NN_BIN "${CMAKE_CURRENT_BINARY_DIR}/blackbox_tests/neural_network/test_model_memory_layout.bin")
+        list(APPEND ALL_ARTIFACTS "${NN_BIN}")
+    endif()
     
     # Create master target
     if(ALL_ARTIFACTS)

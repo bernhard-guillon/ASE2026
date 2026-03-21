@@ -20,16 +20,18 @@
 
 // Helper function: Load binary file with multiple path attempts
 bool loadBinaryFile(const char* filename, std::vector<uint8_t>& buffer) {
-    // Try different path options
-    const char* paths[] = {
-        filename,
-        ("blackbox_tests/neural_network/" + std::string(filename)).c_str(),
-        ("../../" + std::string(filename)).c_str(),
-        nullptr
-    };
+    // Try different path options (order matters: build dir first, then source tree)
+    std::vector<std::string> paths;
+    paths.push_back(filename);  // Current directory
+    paths.push_back("blackbox_tests/neural_network/" + std::string(filename));  // From source root
+    paths.push_back("../../blackbox_tests/neural_network/" + std::string(filename));  // From build dir
+    paths.push_back("../../../blackbox_tests/neural_network/" + std::string(filename));  // Alt from build
+    paths.push_back("weight-export/" + std::string(filename));  // From source root
+    paths.push_back("../../weight-export/" + std::string(filename));  // From build
+    paths.push_back("../../../weight-export/" + std::string(filename));  // Alt from build
     
-    for (int i = 0; paths[i] != nullptr; ++i) {
-        std::ifstream file(paths[i], std::ios::binary);
+    for (const auto& path : paths) {
+        std::ifstream file(path, std::ios::binary);
         if (file.is_open()) {
             file.seekg(0, std::ios::end);
             size_t file_size = file.tellg();

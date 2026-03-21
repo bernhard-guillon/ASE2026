@@ -133,6 +133,9 @@ if(RISCV_TOOLCHAIN_FOUND)
     # Discover and register all C tests
     add_blackbox_c_tests()
     
+    # Build neural network RISC-V test program
+    add_neural_network_test()
+    
     # Create target to build all blackbox test artifacts
     add_blackbox_all_target()
 endif()
