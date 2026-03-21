@@ -61,3 +61,55 @@ gtest_discover_tests(test_cpu)
 gtest_discover_tests(test_instruction)
 gtest_discover_tests(test_execution)
 gtest_discover_tests(test_emulator)
+
+# ============================================================================
+# Blackbox Testing
+# ============================================================================
+
+# Find RISC-V toolchain
+find_program(RISCV_GCC riscv64-elf-gcc)
+find_program(RISCV_AS riscv64-elf-as)
+find_program(RISCV_LD riscv64-elf-ld)
+find_program(RISCV_OBJCOPY riscv64-elf-objcopy)
+
+if(RISCV_GCC AND RISCV_AS AND RISCV_LD AND RISCV_OBJCOPY)
+    set(RISCV_TOOLCHAIN_FOUND TRUE)
+    message(STATUS "RISC-V toolchain found")
+    message(STATUS "  GCC: ${RISCV_GCC}")
+    message(STATUS "  AS:  ${RISCV_AS}")
+    message(STATUS "  LD:  ${RISCV_LD}")
+    message(STATUS "  OBJCOPY: ${RISCV_OBJCOPY}")
+else()
+    set(RISCV_TOOLCHAIN_FOUND FALSE)
+    message(WARNING "RISC-V toolchain not found - blackbox tests disabled")
+    if(NOT RISCV_GCC)
+        message(WARNING "  Missing: riscv64-elf-gcc")
+    endif()
+    if(NOT RISCV_AS)
+        message(WARNING "  Missing: riscv64-elf-as")
+    endif()
+    if(NOT RISCV_LD)
+        message(WARNING "  Missing: riscv64-elf-ld")
+    endif()
+    if(NOT RISCV_OBJCOPY)
+        message(WARNING "  Missing: riscv64-elf-objcopy")
+    endif()
+endif()
+
+if(RISCV_TOOLCHAIN_FOUND)
+    # Add custom target for blackbox tests
+    add_custom_target(blackbox_tests
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/run_blackbox_tests.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS emulator_runner
+        COMMENT "Running blackbox tests..."
+        VERBATIM
+    )
+    
+    # Add to ctest
+    add_test(
+        NAME blackbox_tests
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/run_blackbox_tests.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
