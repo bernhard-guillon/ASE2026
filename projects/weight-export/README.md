@@ -220,12 +220,107 @@ fclose(f);
 - Sufficient for these small models
 - Can be extended to int8/fp16 for optimization
 
+## Emulator Memory Map
+
+When models are loaded into the RISC-V emulator at startup:
+
+```
+0x00000000 - 0x00003FFF: Program Code (16 KB)
+0x00004000 - 0x00007FFF: Stack (16 KB)
+0x00008000 - 0x0000FFFF: Heap (32 KB)
+0x00010000 - 0x000F56FF: Character Generator Weights (936 KB)
+               ├─ 0x00010000: Header (32 bytes)
+               │  └─ Magic: 0x4E52414E, Version: 1, Type: 0
+               ├─ 0x00010020: Layer Table (96 bytes)
+               │  └─ 3 layers × 32 bytes each
+               ├─ 0x00010080: Weight Data (932,864 bytes)
+               │  └─ Layer 0-2 weights, sequential
+               └─ 0x000F3C80: Bias Data (3,648 bytes)
+                  └─ Layer 0-2 biases, sequential
+
+0x000F4ABC - 0x0012B6FB: Character Recognizer Weights (224 KB)
+               ├─ 0x000F4ABC: Header (32 bytes)
+               │  └─ Magic: 0x4E52414E, Version: 1, Type: 1
+               ├─ 0x000F4ADC: Layer Table (64 bytes)
+               │  └─ 2 layers × 32 bytes each
+               ├─ 0x000F4B1C: Weight Data (223,744 bytes)
+               │  └─ Layer 0-1 weights, sequential
+               └─ 0x0012B51C: Bias Data (660 bytes)
+                  └─ Layer 0-1 biases, sequential
+
+0x00200000 - 0x003FFFFF: I/O and Framebuffer (2 MB)
+               ├─ Framebuffer syscall operations
+               └─ Character glyph output
+
+0x04000000 - 0xFFFFFFFF: Available for mmap (3 GB+)
+               └─ Dynamic allocation via mmap2 syscall
+```
+
+### Memory Access Patterns for NEURAL_FC
+
+**Layer Metadata Access:**
+```c
+// Base addresses
+#define GENERATOR_BASE    0x10000
+#define RECOGNIZER_BASE   0xF4ABC
+
+// Calculate layer entry offset
+uint32_t layer_base = (model_type == GENERATOR) ? GENERATOR_BASE : RECOGNIZER_BASE;
+uint32_t layer_offset = layer_base + 32 + (layer_id * 32);
+
+// Read layer parameters
+uint32_t input_size  = memory.read32(layer_offset + 0);
+uint32_t output_size = memory.read32(layer_offset + 4);
+uint32_t activation  = memory.read32(layer_offset + 8);
+uint32_t weight_off  = memory.read32(layer_offset + 12);
+uint32_t bias_off    = memory.read32(layer_offset + 16);
+```
+
+**Weight Access:**
+```c
+// Weight data starts after layer table
+uint32_t weights_start = layer_base + 32 + (num_layers * 32);
+uint32_t weight_ptr = weights_start + weight_off;
+
+// Read weight at position [i][j]
+float weight = memory.readFloat(weight_ptr + (i * output_size + j) * 4);
+```
+
+**Bias Access:**
+```c
+// Biases follow weights
+uint32_t biases_start = weights_start + (total_weights * 4);
+uint32_t bias_ptr = biases_start + bias_off;
+
+// Read bias at position [j]
+float bias = memory.readFloat(bias_ptr + j * 4);
+```
+
+### Memory Efficiency
+
+| Component | Size | % of Emulator |
+|-----------|------|---------------|
+| Generator model | 936 KB | 0.36% |
+| Recognizer model | 224 KB | 0.09% |
+| **Total models** | **1.1 MB** | **0.43%** |
+| Available (256 MB) | **254.9 MB** | **99.57%** |
+
 ## Next Steps
 
 1. **Phase 2:** Implement NEURAL_FC instruction in CPU
-2. **Phase 3:** Create C loader, load weights into emulator
-3. **Phase 4:** Test inference against Python reference
-4. **Phase 5:** Integrate with framebuffer for visualization
+   - Add opcode decoder for 0x77
+   - Implement matrix-vector product
+   - Add ReLU and Sigmoid activation functions
+   
+2. **Phase 3:** Test inference against Python reference
+   - Load models at emulator startup
+   - Execute sample NEURAL_FC instructions
+   - Compare outputs with trained model
+   
+3. **Phase 4:** Integrate with framebuffer for visualization
+   - Add framebuffer syscall (opcode 999)
+   - Render generated glyphs to output
+   - Create demonstration program
 
 ## Files
 
