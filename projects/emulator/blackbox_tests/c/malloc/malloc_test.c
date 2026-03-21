@@ -1,19 +1,10 @@
-// Test program that uses static allocation
+// Test program that uses malloc from shared malloc.c
 int write(int fd, const void *buf, unsigned long count);
 int exit(int status);
 
-// Simple static memory buffer
-static char heap[1024];
-static int heap_pos = 0;
-
-void* malloc(unsigned long size) {
-    if (heap_pos + size > 1024) {
-        return 0;
-    }
-    void* ptr = &heap[heap_pos];
-    heap_pos += size;
-    return ptr;
-}
+// Declare malloc and free from malloc.c
+extern void* malloc(unsigned long size);
+extern int free(void *ptr);
 
 int main() {
     const char *msg1 = "Testing malloc: ";

@@ -97,19 +97,15 @@ else()
 endif()
 
 if(RISCV_TOOLCHAIN_FOUND)
-    # Add custom target for blackbox tests
-    add_custom_target(blackbox_tests
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/run_blackbox_tests.py
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS emulator_runner
-        COMMENT "Running blackbox tests..."
-        VERBATIM
-    )
+    # Include blackbox testing functions
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/BlackboxTests.cmake)
     
-    # Add to ctest
-    add_test(
-        NAME blackbox_tests
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/run_blackbox_tests.py
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
+    # Discover and register all assembly tests
+    add_blackbox_asm_tests()
+    
+    # Discover and register all C tests
+    add_blackbox_c_tests()
+    
+    # Create target to build all blackbox test artifacts
+    add_blackbox_all_target()
 endif()

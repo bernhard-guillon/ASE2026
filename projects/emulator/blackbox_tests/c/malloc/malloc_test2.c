@@ -1,8 +1,8 @@
 // Test program using malloc for dynamic allocation
 int write(int fd, const void *buf, unsigned long count);
 int exit(int status);
-void* malloc(unsigned long size);
-int free(void *ptr);
+extern void* malloc(unsigned long size);
+extern int free(void *ptr);
 
 int main() {
     const char *msg1 = "Allocating 64 bytes: ";
