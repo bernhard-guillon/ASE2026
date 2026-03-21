@@ -343,3 +343,278 @@ TEST_F(ExecutionTest, MultipleInstructions) {
     EXPECT_EQ(cpu.getReg(3), 20);
     EXPECT_EQ(cpu.getPC(), 8);
 }
+
+// Load/Store operations
+
+TEST_F(ExecutionTest, LW_LoadWord) {
+    memory.write32(100, 0x12345678);
+    cpu.setReg(1, 100);
+    
+    // LW x2, 0(x1)
+    Instruction instr = InstructionDecoder::decode(0b000000000000'00001'010'00010'0000011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(2), 0x12345678);
+    EXPECT_EQ(cpu.getPC(), 4);
+}
+
+TEST_F(ExecutionTest, LW_WithOffset) {
+    memory.write32(108, 0xDEADBEEF);
+    cpu.setReg(1, 100);
+    
+    // LW x2, 8(x1)
+    Instruction instr = InstructionDecoder::decode(0b000000001000'00001'010'00010'0000011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(2), 0xDEADBEEF);
+}
+
+TEST_F(ExecutionTest, LB_SignExtend) {
+    memory.write8(100, 0xFF);  // -1 as signed byte
+    cpu.setReg(1, 100);
+    
+    // LB x2, 0(x1)
+    Instruction instr = InstructionDecoder::decode(0b000000000000'00001'000'00010'0000011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(2), 0xFFFFFFFF);  // Sign-extended to -1
+}
+
+TEST_F(ExecutionTest, LBU_ZeroExtend) {
+    memory.write8(100, 0xFF);
+    cpu.setReg(1, 100);
+    
+    // LBU x2, 0(x1)
+    Instruction instr = InstructionDecoder::decode(0b000000000000'00001'100'00010'0000011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(2), 0xFF);  // Zero-extended
+}
+
+TEST_F(ExecutionTest, LH_SignExtend) {
+    memory.write8(100, 0xFF);
+    memory.write8(101, 0xFF);  // 0xFFFF = -1 as signed halfword
+    cpu.setReg(1, 100);
+    
+    // LH x2, 0(x1)
+    Instruction instr = InstructionDecoder::decode(0b000000000000'00001'001'00010'0000011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(2), 0xFFFFFFFF);  // Sign-extended
+}
+
+TEST_F(ExecutionTest, LHU_ZeroExtend) {
+    memory.write8(100, 0xFF);
+    memory.write8(101, 0xFF);
+    cpu.setReg(1, 100);
+    
+    // LHU x2, 0(x1)
+    Instruction instr = InstructionDecoder::decode(0b000000000000'00001'101'00010'0000011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(2), 0xFFFF);  // Zero-extended
+}
+
+TEST_F(ExecutionTest, SW_StoreWord) {
+    cpu.setReg(1, 100);
+    cpu.setReg(2, 0x12345678);
+    
+    // SW x2, 0(x1)
+    Instruction instr = InstructionDecoder::decode(0b0000000'00010'00001'010'00000'0100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(memory.read32(100), 0x12345678);
+    EXPECT_EQ(cpu.getPC(), 4);
+}
+
+TEST_F(ExecutionTest, SW_WithOffset) {
+    cpu.setReg(1, 100);
+    cpu.setReg(2, 0xDEADBEEF);
+    
+    // SW x2, 12(x1)  imm[11:5]=0, imm[4:0]=12
+    Instruction instr = InstructionDecoder::decode(0b0000000'00010'00001'010'01100'0100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(memory.read32(112), 0xDEADBEEF);
+}
+
+TEST_F(ExecutionTest, SB_StoreByte) {
+    cpu.setReg(1, 100);
+    cpu.setReg(2, 0x12345678);
+    
+    // SB x2, 0(x1) - should store only 0x78
+    Instruction instr = InstructionDecoder::decode(0b0000000'00010'00001'000'00000'0100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(memory.read8(100), 0x78);
+}
+
+TEST_F(ExecutionTest, SH_StoreHalfword) {
+    cpu.setReg(1, 100);
+    cpu.setReg(2, 0x12345678);
+    
+    // SH x2, 0(x1) - should store 0x5678
+    Instruction instr = InstructionDecoder::decode(0b0000000'00010'00001'001'00000'0100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(memory.read8(100), 0x78);
+    EXPECT_EQ(memory.read8(101), 0x56);
+}
+
+// Branch operations
+
+TEST_F(ExecutionTest, BEQ_Taken) {
+    cpu.setReg(1, 42);
+    cpu.setReg(2, 42);
+    cpu.setPC(100);
+    
+    // BEQ x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'000'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 108);  // 100 + 8
+}
+
+TEST_F(ExecutionTest, BEQ_NotTaken) {
+    cpu.setReg(1, 42);
+    cpu.setReg(2, 43);
+    cpu.setPC(100);
+    
+    // BEQ x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'000'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 104);  // 100 + 4 (not taken)
+}
+
+TEST_F(ExecutionTest, BNE_Taken) {
+    cpu.setReg(1, 42);
+    cpu.setReg(2, 43);
+    cpu.setPC(100);
+    
+    // BNE x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'001'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 108);
+}
+
+TEST_F(ExecutionTest, BNE_NotTaken) {
+    cpu.setReg(1, 42);
+    cpu.setReg(2, 42);
+    cpu.setPC(100);
+    
+    // BNE x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'001'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 104);
+}
+
+TEST_F(ExecutionTest, BLT_Taken_Negative) {
+    cpu.setReg(1, static_cast<uint32_t>(-5));
+    cpu.setReg(2, 10);
+    cpu.setPC(100);
+    
+    // BLT x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'100'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 108);  // -5 < 10
+}
+
+TEST_F(ExecutionTest, BLT_NotTaken) {
+    cpu.setReg(1, 20);
+    cpu.setReg(2, 10);
+    cpu.setPC(100);
+    
+    // BLT x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'100'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 104);  // 20 >= 10
+}
+
+TEST_F(ExecutionTest, BGE_Taken) {
+    cpu.setReg(1, 20);
+    cpu.setReg(2, 10);
+    cpu.setPC(100);
+    
+    // BGE x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'101'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 108);
+}
+
+TEST_F(ExecutionTest, BGE_NotTaken) {
+    cpu.setReg(1, 5);
+    cpu.setReg(2, 10);
+    cpu.setPC(100);
+    
+    // BGE x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'101'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 104);
+}
+
+TEST_F(ExecutionTest, BLTU_Taken) {
+    cpu.setReg(1, 5);
+    cpu.setReg(2, 10);
+    cpu.setPC(100);
+    
+    // BLTU x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'110'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 108);
+}
+
+TEST_F(ExecutionTest, BLTU_NotTaken_UnsignedComparison) {
+    cpu.setReg(1, 0xFFFFFFFF);  // Large unsigned value
+    cpu.setReg(2, 10);
+    cpu.setPC(100);
+    
+    // BLTU x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'110'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 104);  // 0xFFFFFFFF >= 10 (unsigned)
+}
+
+TEST_F(ExecutionTest, BGEU_Taken) {
+    cpu.setReg(1, 10);
+    cpu.setReg(2, 5);
+    cpu.setPC(100);
+    
+    // BGEU x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'111'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 108);
+}
+
+TEST_F(ExecutionTest, BGEU_NotTaken) {
+    cpu.setReg(1, 5);
+    cpu.setReg(2, 10);
+    cpu.setPC(100);
+    
+    // BGEU x1, x2, 8
+    Instruction instr = InstructionDecoder::decode(0b0'000000'00010'00001'111'0100'0'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 104);
+}
+
+TEST_F(ExecutionTest, Branch_BackwardOffset) {
+    cpu.setReg(1, 10);
+    cpu.setReg(2, 10);
+    cpu.setPC(100);
+    
+    // BEQ x1, x2, -4 (backward branch)
+    Instruction instr = InstructionDecoder::decode(0b1'111111'00010'00001'000'1110'1'1100011);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 96);  // 100 + (-4)
+}

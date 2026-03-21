@@ -49,6 +49,20 @@ void CPU::execute(const Instruction& instr, Memory& memory) {
             incrementPC();
             break;
             
+        case Opcode::LOAD:
+            executeLoad(instr, memory);
+            incrementPC();
+            break;
+            
+        case Opcode::STORE:
+            executeStore(instr, memory);
+            incrementPC();
+            break;
+            
+        case Opcode::BRANCH:
+            executeBranch(instr);
+            break;
+            
         default:
             throw std::runtime_error("Unsupported opcode in execute");
     }
@@ -153,4 +167,101 @@ void CPU::executeALUImmediate(const Instruction& instr) {
 uint32_t CPU::arithmeticRightShift(uint32_t value, uint32_t shift) const {
     int32_t signed_val = static_cast<int32_t>(value);
     return static_cast<uint32_t>(signed_val >> shift);
+}
+
+void CPU::executeLoad(const Instruction& instr, Memory& memory) {
+    uint32_t rs1_val = getReg(instr.rs1);
+    uint32_t address = rs1_val + static_cast<uint32_t>(instr.imm);
+    uint32_t value = 0;
+    
+    switch (instr.funct3) {
+        case 0b000: // LB (load byte, sign-extended)
+            {
+                uint8_t byte = memory.read8(address);
+                value = static_cast<uint32_t>(static_cast<int8_t>(byte));
+            }
+            break;
+            
+        case 0b001: // LH (load halfword, sign-extended)
+            {
+                uint16_t halfword = memory.read8(address) | 
+                                   (static_cast<uint16_t>(memory.read8(address + 1)) << 8);
+                value = static_cast<uint32_t>(static_cast<int16_t>(halfword));
+            }
+            break;
+            
+        case 0b010: // LW (load word)
+            value = memory.read32(address);
+            break;
+            
+        case 0b100: // LBU (load byte, unsigned)
+            value = static_cast<uint32_t>(memory.read8(address));
+            break;
+            
+        case 0b101: // LHU (load halfword, unsigned)
+            value = memory.read8(address) | 
+                   (static_cast<uint32_t>(memory.read8(address + 1)) << 8);
+            break;
+    }
+    
+    setReg(instr.rd, value);
+}
+
+void CPU::executeStore(const Instruction& instr, Memory& memory) {
+    uint32_t rs1_val = getReg(instr.rs1);
+    uint32_t rs2_val = getReg(instr.rs2);
+    uint32_t address = rs1_val + static_cast<uint32_t>(instr.imm);
+    
+    switch (instr.funct3) {
+        case 0b000: // SB (store byte)
+            memory.write8(address, static_cast<uint8_t>(rs2_val & 0xFF));
+            break;
+            
+        case 0b001: // SH (store halfword)
+            memory.write8(address, static_cast<uint8_t>(rs2_val & 0xFF));
+            memory.write8(address + 1, static_cast<uint8_t>((rs2_val >> 8) & 0xFF));
+            break;
+            
+        case 0b010: // SW (store word)
+            memory.write32(address, rs2_val);
+            break;
+    }
+}
+
+void CPU::executeBranch(const Instruction& instr) {
+    uint32_t rs1_val = getReg(instr.rs1);
+    uint32_t rs2_val = getReg(instr.rs2);
+    bool take_branch = false;
+    
+    switch (instr.funct3) {
+        case 0b000: // BEQ (branch if equal)
+            take_branch = (rs1_val == rs2_val);
+            break;
+            
+        case 0b001: // BNE (branch if not equal)
+            take_branch = (rs1_val != rs2_val);
+            break;
+            
+        case 0b100: // BLT (branch if less than, signed)
+            take_branch = (static_cast<int32_t>(rs1_val) < static_cast<int32_t>(rs2_val));
+            break;
+            
+        case 0b101: // BGE (branch if greater or equal, signed)
+            take_branch = (static_cast<int32_t>(rs1_val) >= static_cast<int32_t>(rs2_val));
+            break;
+            
+        case 0b110: // BLTU (branch if less than, unsigned)
+            take_branch = (rs1_val < rs2_val);
+            break;
+            
+        case 0b111: // BGEU (branch if greater or equal, unsigned)
+            take_branch = (rs1_val >= rs2_val);
+            break;
+    }
+    
+    if (take_branch) {
+        setPC(pc_ + static_cast<uint32_t>(instr.imm));
+    } else {
+        incrementPC();
+    }
 }

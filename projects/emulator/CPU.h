@@ -38,6 +38,13 @@ private:
     void executeALU(const Instruction& instr);
     void executeALUImmediate(const Instruction& instr);
     
+    // Memory operations
+    void executeLoad(const Instruction& instr, Memory& memory);
+    void executeStore(const Instruction& instr, Memory& memory);
+    
+    // Branch operations
+    void executeBranch(const Instruction& instr);
+    
     // Helper for arithmetic right shift
     uint32_t arithmeticRightShift(uint32_t value, uint32_t shift) const;
 };
