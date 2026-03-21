@@ -467,3 +467,33 @@ void Emulator::reset() {
     file_positions_.clear();
     next_fd_ = 3;
 }
+
+// FramebufferRenderer implementation
+void FramebufferRenderer::render(const Memory& memory) {
+    // Clear screen and move cursor to home
+    clear_screen();
+    
+    // Read 400 bytes from framebuffer (0x20000)
+    // Convert each pixel to character and print
+    for (uint32_t row = 0; row < FRAMEBUFFER_HEIGHT; ++row) {
+        for (uint32_t col = 0; col < FRAMEBUFFER_WIDTH; ++col) {
+            uint32_t offset = row * FRAMEBUFFER_WIDTH + col;
+            uint8_t pixel = memory.read8(FRAMEBUFFER_ADDR + offset);
+            std::cout << pixel_to_char(pixel);
+        }
+        std::cout << '\n';
+    }
+    std::cout.flush();
+}
+
+void FramebufferRenderer::clear_screen() const {
+    // ANSI escape sequence to clear screen and move to home
+    std::cout << "\033[2J\033[H";
+    std::cout.flush();
+}
+
+void FramebufferRenderer::move_cursor_home() const {
+    // ANSI escape sequence to move cursor to home (0, 0)
+    std::cout << "\033[H";
+    std::cout.flush();
+}

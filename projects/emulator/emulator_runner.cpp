@@ -46,6 +46,7 @@ struct TerminalMode {
 // Process keyboard input in GUI mode
 void process_gui_input(Emulator& emulator) {
     TerminalMode terminal;
+    FramebufferRenderer renderer;
     signal(SIGINT, signal_handler);
     
     g_emulator = &emulator;
@@ -53,7 +54,13 @@ void process_gui_input(Emulator& emulator) {
     
     std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
     std::cout << "Starting with character code 0..." << std::endl;
+    std::cout << std::endl;
     
+    // Initial render with blank framebuffer
+    renderer.render(emulator.getMemory());
+    std::cout << "\nPress keys to change character:" << std::endl;
+    
+    bool first_key = true;
     while (!g_should_exit) {
         // Try to read a key without blocking
         unsigned char ch = 0;
@@ -63,11 +70,15 @@ void process_gui_input(Emulator& emulator) {
             // Store ASCII code in register a0 (x10)
             emulator.getCPU().setReg(10, key_code);
             
-            if (key_code >= 32 && key_code < 127) {
-                std::cout << "Key pressed: '" << ch << "' (ASCII " << key_code << ")" << std::endl;
-            } else {
-                std::cout << "Key pressed: (ASCII " << key_code << ")" << std::endl;
+            if (!first_key) {
+                // Print key info (will be overwritten when framebuffer renders)
+                if (key_code >= 32 && key_code < 127) {
+                    std::cout << "Key: '" << ch << "' (ASCII " << key_code << ")" << std::endl;
+                } else {
+                    std::cout << "Key: (ASCII " << key_code << ")" << std::endl;
+                }
             }
+            first_key = false;
         }
         
         // Execute a few instructions per iteration
@@ -84,6 +95,9 @@ void process_gui_input(Emulator& emulator) {
                 break;
             }
         }
+        
+        // Render framebuffer to terminal
+        renderer.render(emulator.getMemory());
         
         // Small sleep to prevent busy-waiting
         usleep(10000);  // 10ms

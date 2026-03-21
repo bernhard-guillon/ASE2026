@@ -26,6 +26,35 @@ constexpr uint32_t FRAMEBUFFER_SIZE = 400;      // 20x20 pixels in bytes
 constexpr uint32_t FRAMEBUFFER_WIDTH = 20;
 constexpr uint32_t FRAMEBUFFER_HEIGHT = 20;
 
+/* Framebuffer Renderer for TTY output
+ * Renders 20x20 pixel framebuffer to terminal using block characters
+ * Pixel threshold: > 127 = '█' (full block), <= 127 = ' ' (space)
+ */
+class FramebufferRenderer {
+public:
+    FramebufferRenderer() {}
+    
+    /* Render framebuffer from memory to terminal
+     * Reads 400 bytes from framebuffer address and converts each pixel
+     * to a terminal character for display
+     */
+    void render(const Memory& memory);
+    
+private:
+    /* Convert pixel value to terminal character
+     * threshold: pixel > 127 = block, else = space
+     */
+    char pixel_to_char(uint8_t pixel) const {
+        return (pixel > 127) ? '█' : ' ';
+    }
+    
+    /* Clear screen and move cursor to home position */
+    void clear_screen() const;
+    
+    /* Move cursor to position (0, 0) */
+    void move_cursor_home() const;
+};
+
 class Emulator {
 public:
     Emulator(size_t memory_size = 1024 * 1024 * 1024);  // 1GB default for mmap support
