@@ -48,6 +48,35 @@ int munmap(void *addr, size_t len);
 - **Returns**: 0 on success, -1 on error
 - **Used by**: Memory deallocation, free implementation
 
+### 56 - openat(dirfd, pathname, flags, mode)
+```c
+int openat(int dirfd, const char *pathname, int flags, mode_t mode);
+```
+- **Status**: ✅ Fully implemented (Phase 3)
+- **Behavior**: Opens or creates a file
+- **Features**: Supports O_RDONLY, O_WRONLY, O_RDWR, O_CREAT, O_APPEND
+- **Returns**: File descriptor (≥3) or -1 on error
+- **Used by**: File I/O operations, reading/writing files
+
+### 63 - read(fd, buf, count)
+```c
+ssize_t read(int fd, void *buf, size_t count);
+```
+- **Status**: ✅ Fully implemented (Phase 3)
+- **Behavior**: Reads bytes from open file descriptor
+- **Features**: Writes data into emulator memory, handles EOF
+- **Returns**: Bytes read or -1 on error
+- **Used by**: Reading file contents
+
+### 57 - close(fd)
+```c
+int close(int fd);
+```
+- **Status**: ✅ Fully implemented (Phase 3)
+- **Behavior**: Closes file descriptor and frees resources
+- **Returns**: 0 on success, -1 on error
+- **Used by**: Closing files and releasing descriptors
+
 ## Required for musl libc Support
 
 ### Core Syscalls Needed for Initialization
@@ -59,14 +88,14 @@ int munmap(void *addr, size_t len);
 | 174 | rt_sigaction | Signal handling | High |
 | 180 | pread64 | Positioned read | Medium |
 
-### File I/O (IMPORTANT for libc)
-| # | Syscall | Purpose | Priority |
-|---|---------|---------|----------|
-| 56 | openat | Open file | High |
-| 57 | close | Close file descriptor | High |
-| 63 | read | Read from file | High |
+### File I/O (✅ PHASE 3 COMPLETE)
+| # | Syscall | Purpose | Status |
+|---|---------|---------|--------|
+| 56 | openat | Open file | ✅ Implemented |
+| 57 | close | Close file descriptor | ✅ Implemented |
+| 63 | read | Read from file | ✅ Implemented |
 | 64 | write | Write to file | ✅ Implemented |
-| 82 | lseek | Seek in file | Medium |
+| 82 | lseek | Seek in file | Planned |
 
 ### String/Math (Runtime Support)
 These are NOT syscalls but helper functions needed:
@@ -92,14 +121,17 @@ These are NOT syscalls but helper functions needed:
 ✅ Heap break tracking (brk syscall)
 ✅ Dynamic malloc/free (mmap2 + munmap syscalls)
 ✅ Multiple concurrent allocations
+✅ File I/O (open, read, close syscalls)
+✅ Reading existing files
+✅ Creating new files
 
 ### What Doesn't Work  
-❌ File I/O (would need open/read/close)
 ❌ Signal handling (would need rt_sigaction)
 ❌ Process creation (would need fork/clone)
 ❌ Shared libraries (would need mmap + ELF loader)
 ❌ Floating point (would need M extension + FP support)
 ❌ Division operations (would need __divsi3 from libgcc)
+❌ Seeking in files (would need lseek syscall)
 
 ## Integration Roadmap
 
@@ -117,11 +149,17 @@ These are NOT syscalls but helper functions needed:
 - ✅ Dynamic arrays and data structures
 - ✅ Increased memory to 1GB for large allocations
 
-### Phase 3: File I/O (NEXT)
-1. Implement openat(56) syscall
-2. Implement read(63) syscall
-3. Implement close(57) syscall
-4. Test with fopen/fread/fclose
+### Phase 3: File I/O (✅ DONE)
+- ✅ openat(56) syscall for opening/creating files
+- ✅ read(63) syscall for reading from files
+- ✅ close(57) syscall for closing file descriptors
+- ✅ Test with file creation and reading
+- ✅ Support for O_RDONLY, O_WRONLY, O_RDWR, O_CREAT, O_APPEND
+
+### Phase 4: Advanced I/O (NEXT)
+1. Implement lseek(19) syscall for seeking in files
+2. Add write(64) support for file descriptors (currently only stdout/stderr)
+3. Test random access and file seeking
 
 ### Phase 4: libc Integration (AFTER PHASE 3)
 1. Add division helpers (__divsi3, etc.) via libgcc
