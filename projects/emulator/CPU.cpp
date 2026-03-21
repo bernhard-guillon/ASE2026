@@ -63,6 +63,24 @@ void CPU::execute(const Instruction& instr, Memory& memory) {
             executeBranch(instr);
             break;
             
+        case Opcode::JAL:
+            executeJAL(instr);
+            break;
+            
+        case Opcode::JALR:
+            executeJALR(instr);
+            break;
+            
+        case Opcode::LUI:
+            executeLUI(instr);
+            incrementPC();
+            break;
+            
+        case Opcode::AUIPC:
+            executeAUIPC(instr);
+            incrementPC();
+            break;
+            
         default:
             throw std::runtime_error("Unsupported opcode in execute");
     }
@@ -264,4 +282,35 @@ void CPU::executeBranch(const Instruction& instr) {
     } else {
         incrementPC();
     }
+}
+
+void CPU::executeJAL(const Instruction& instr) {
+    // Save return address (PC + 4) in rd
+    setReg(instr.rd, pc_ + 4);
+    
+    // Jump to PC + offset
+    setPC(pc_ + static_cast<uint32_t>(instr.imm));
+}
+
+void CPU::executeJALR(const Instruction& instr) {
+    uint32_t rs1_val = getReg(instr.rs1);
+    
+    // Calculate target: (rs1 + offset) & ~1 (clear lowest bit)
+    uint32_t target = (rs1_val + static_cast<uint32_t>(instr.imm)) & ~1U;
+    
+    // Save return address (PC + 4) in rd
+    setReg(instr.rd, pc_ + 4);
+    
+    // Jump to target
+    setPC(target);
+}
+
+void CPU::executeLUI(const Instruction& instr) {
+    // Load upper immediate into rd (lower 12 bits are zero)
+    setReg(instr.rd, static_cast<uint32_t>(instr.imm));
+}
+
+void CPU::executeAUIPC(const Instruction& instr) {
+    // Add upper immediate to PC
+    setReg(instr.rd, pc_ + static_cast<uint32_t>(instr.imm));
 }

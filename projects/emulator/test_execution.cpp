@@ -618,3 +618,172 @@ TEST_F(ExecutionTest, Branch_BackwardOffset) {
     
     EXPECT_EQ(cpu.getPC(), 96);  // 100 + (-4)
 }
+
+// Jump operations
+
+TEST_F(ExecutionTest, JAL_Forward) {
+    cpu.setPC(100);
+    
+    // JAL x1, 8
+    Instruction instr = InstructionDecoder::decode(0b0'0000000100'0'00000000'00001'1101111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(1), 104);  // Return address: PC + 4
+    EXPECT_EQ(cpu.getPC(), 108);    // Jump target: PC + 8
+}
+
+TEST_F(ExecutionTest, JAL_Backward) {
+    cpu.setPC(100);
+    
+    // JAL x1, -4
+    Instruction instr = InstructionDecoder::decode(0b1'1111111110'1'11111111'00001'1101111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(1), 104);  // Return address
+    EXPECT_EQ(cpu.getPC(), 96);     // Jump target: 100 + (-4)
+}
+
+TEST_F(ExecutionTest, JAL_ToX0) {
+    cpu.setPC(100);
+    
+    // JAL x0, 8 (unconditional jump without saving return address)
+    Instruction instr = InstructionDecoder::decode(0b0'0000000100'0'00000000'00000'1101111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(0), 0);    // x0 always zero
+    EXPECT_EQ(cpu.getPC(), 108);
+}
+
+TEST_F(ExecutionTest, JALR_Basic) {
+    cpu.setReg(5, 200);
+    cpu.setPC(100);
+    
+    // JALR x1, 4(x5)
+    Instruction instr = InstructionDecoder::decode(0b000000000100'00101'000'00001'1100111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(1), 104);  // Return address: PC + 4
+    EXPECT_EQ(cpu.getPC(), 204);    // Jump target: 200 + 4
+}
+
+TEST_F(ExecutionTest, JALR_ZeroOffset) {
+    cpu.setReg(10, 300);
+    cpu.setPC(100);
+    
+    // JALR x2, 0(x10)
+    Instruction instr = InstructionDecoder::decode(0b000000000000'01010'000'00010'1100111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(2), 104);
+    EXPECT_EQ(cpu.getPC(), 300);
+}
+
+TEST_F(ExecutionTest, JALR_ClearLSB) {
+    cpu.setReg(5, 201);  // Odd address
+    cpu.setPC(100);
+    
+    // JALR x1, 0(x5) - should clear LSB
+    Instruction instr = InstructionDecoder::decode(0b000000000000'00101'000'00001'1100111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getPC(), 200);  // 201 & ~1 = 200
+}
+
+TEST_F(ExecutionTest, JALR_SameRegister) {
+    cpu.setReg(5, 200);
+    cpu.setPC(100);
+    
+    // JALR x5, 4(x5) - use same register for source and dest
+    Instruction instr = InstructionDecoder::decode(0b000000000100'00101'000'00101'1100111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(5), 104);  // Return address written after reading rs1
+    EXPECT_EQ(cpu.getPC(), 204);
+}
+
+// Upper immediate operations
+
+TEST_F(ExecutionTest, LUI) {
+    cpu.setPC(100);
+    
+    // LUI x5, 0x12345 (upper 20 bits)
+    Instruction instr = InstructionDecoder::decode(0x12345'000 | 0b00101'0110111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(5), 0x12345000);
+    EXPECT_EQ(cpu.getPC(), 104);
+}
+
+TEST_F(ExecutionTest, LUI_MaxValue) {
+    // LUI x10, 0xFFFFF
+    Instruction instr = InstructionDecoder::decode(0xFFFFF'000 | 0b01010'0110111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(10), 0xFFFFF000);
+}
+
+TEST_F(ExecutionTest, LUI_Zero) {
+    cpu.setReg(3, 0x12345678);
+    
+    // LUI x3, 0
+    Instruction instr = InstructionDecoder::decode(0x00000'000 | 0b00011'0110111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(3), 0);
+}
+
+TEST_F(ExecutionTest, AUIPC) {
+    cpu.setPC(100);
+    
+    // AUIPC x5, 0x1000
+    Instruction instr = InstructionDecoder::decode(0x01000'000 | 0b00101'0010111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(5), 100 + 0x01000000);
+    EXPECT_EQ(cpu.getPC(), 104);
+}
+
+TEST_F(ExecutionTest, AUIPC_NegativeOffset) {
+    cpu.setPC(0x10000);
+    
+    // AUIPC x10, 0x80000 (sign bit set)
+    Instruction instr = InstructionDecoder::decode(0x80000'000 | 0b01010'0010111);
+    cpu.execute(instr, memory);
+    
+    EXPECT_EQ(cpu.getReg(10), 0x10000 + 0x80000000);
+}
+
+// Combined instruction sequences
+
+TEST_F(ExecutionTest, LoadUpperAndAddImmediate) {
+    cpu.setPC(0);
+    
+    // LUI x5, 0x12345
+    Instruction instr1 = InstructionDecoder::decode(0x12345'000 | 0b00101'0110111);
+    cpu.execute(instr1, memory);
+    EXPECT_EQ(cpu.getReg(5), 0x12345000);
+    
+    // ADDI x5, x5, 0x678
+    Instruction instr2 = InstructionDecoder::decode(0b011001111000'00101'000'00101'0010011);
+    cpu.execute(instr2, memory);
+    EXPECT_EQ(cpu.getReg(5), 0x12345678);
+}
+
+TEST_F(ExecutionTest, FunctionCallReturn) {
+    cpu.setPC(100);
+    cpu.setReg(10, 500);
+    
+    // JAL x1, 20 (call function at PC + 20)
+    Instruction instr1 = InstructionDecoder::decode(0b0'0000001010'0'00000000'00001'1101111);
+    cpu.execute(instr1, memory);
+    EXPECT_EQ(cpu.getReg(1), 104);  // Return address
+    EXPECT_EQ(cpu.getPC(), 120);
+    
+    // Simulate some work...
+    cpu.setReg(2, 42);
+    
+    // JALR x0, 0(x1) (return using saved return address)
+    Instruction instr2 = InstructionDecoder::decode(0b000000000000'00001'000'00000'1100111);
+    cpu.execute(instr2, memory);
+    EXPECT_EQ(cpu.getPC(), 104);  // Back to return address
+}
