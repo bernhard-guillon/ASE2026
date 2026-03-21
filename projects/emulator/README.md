@@ -150,8 +150,33 @@ emulator/
 ├── run_hello.sh              # Example: Build & run script
 ├── linker.ld                 # Linker script for test binaries
 ├── CMakeLists.txt            # Build configuration
-└── chatlog.md                # Design discussion history
-```
+├── chatlog.md                # Design discussion history
+│
+├── BOOTLOADER SYSTEM (Phases 1-6)
+├── ──────────────────────────
+├── model_compiler.py         # Phase 1-2: JSON → Binary + Assembly (642 lines)
+├── compile_model_bootloader.py # Phase 4: Full pipeline orchestration (420 lines)
+├── bootloader.ld             # Phase 3: Memory layout linker script (65 lines)
+├── cmake/
+│   └── BootloaderBuild.cmake # Phase 5: CMake integration module (210 lines)
+├── test_model_compiler.py    # Phase 1 unit tests
+├── test_model_compiler_blackbox.py # Phase 1 blackbox tests
+├── test_bootloader_phase2.py    # Phase 2 unit tests
+├── test_bootloader_phase2_blackbox.py # Phase 2 blackbox tests
+├── test_bootloader_phase3.py    # Phase 3 unit tests
+├── test_bootloader_phase3_blackbox.py # Phase 3 blackbox tests
+├── test_bootloader_phase3_integration.py # Phase 3 integration tests
+├── test_bootloader_phase4_integration.py # Phase 4 integration tests
+├── test_bootloader_phase5.py # Phase 5 unit tests
+├── test_bootloader_phase6_integration.py # Phase 6 comprehensive tests (500+ lines)
+│
+├── DOCUMENTATION
+├── ──────────────
+├── BOOTLOADER_IMPLEMENTATION.md # Complete implementation guide (13KB)
+├── BOOTLOADER_QUICK_START.md   # Quick reference and getting started (7KB)
+├── PHASE5_CMAKE_GUIDE.md       # CMake usage guide (3.6KB)
+├── PHASE6_TESTING_GUIDE.md     # Testing documentation (5.9KB)
+└── BOOTLOADER_PLAN.md          # 7-phase architecture plan
 
 ## Blackbox Testing
 
@@ -172,6 +197,82 @@ Each test has three files:
 - **Control Flow**: All 6 branch types, jumps (JAL, JALR), function calls
 - **Memory**: Load/store with sign extension, different widths (byte, halfword, word)
 - **Syscalls**: write() and exit() integration
+
+## Bootloader System (Phases 1-6)
+
+The bootloader system enables embedding pre-trained neural network models as ROM-like firmware in the RISC-V emulator.
+
+### Quick Start
+
+**Compile a model to bootloader:**
+```bash
+python3 compile_model_bootloader.py model.json -o bootloader.elf
+```
+
+**Or use CMake:**
+```cmake
+include(cmake/BootloaderBuild.cmake)
+bootloader_build_system_init()
+add_model_bootloader(my_model "model.json")
+```
+
+### Six-Phase Architecture
+
+| Phase | Component | Output | Tests |
+|-------|-----------|--------|-------|
+| 1-2 | Model Compiler | Binary + Assembly | 23 |
+| 3 | Linker Script | Memory layout | 59 |
+| 4 | Pipeline | Orchestration | 13 |
+| 5 | CMake | Build automation | 13 |
+| 6 | Testing | Validation | 13 |
+
+**Total: 243 tests (233 C++ emulator + 74 Python bootloader), 100% passing ✅**
+
+### Bootloader Features
+
+- **JSON Input**: Neural network specifications (layers, weights, biases)
+- **Optimized Binary Format**: 28-byte header + layer table + data sections
+- **RISC-V Code Generation**: Assembly with embedded data via `.incbin` directives
+- **Linker Integration**: Memory regions (0x0-0x10000 code, 0x10000-0xFFFFF data)
+- **Automated Pipeline**: Single command orchestrates compile → assemble → link → extract
+- **CMake Integration**: `add_model_bootloader()` function for seamless build integration
+- **Memory Verification**: Bootloader validates loaded data before execution
+- **Comprehensive Testing**: End-to-end validation of ELF format, binary content, model loading
+
+### Memory Layout
+
+```
+0x00000 - 0x10000   Bootloader Code (64 KB)
+0x10000 - 0xF3C7F   Generator Model
+0xF4ABC - 0xFFFFF   Recognizer Model
+```
+
+### Documentation
+
+- **[BOOTLOADER_IMPLEMENTATION.md](BOOTLOADER_IMPLEMENTATION.md)** - Complete guide (13 KB)
+  - Architecture, components, memory layout, file formats, usage examples
+- **[BOOTLOADER_QUICK_START.md](BOOTLOADER_QUICK_START.md)** - Quick reference (7 KB)
+  - One-minute overview, common commands, troubleshooting
+- **[PHASE5_CMAKE_GUIDE.md](PHASE5_CMAKE_GUIDE.md)** - CMake integration (3.6 KB)
+- **[PHASE6_TESTING_GUIDE.md](PHASE6_TESTING_GUIDE.md)** - Testing documentation (5.9 KB)
+- **[BOOTLOADER_PLAN.md](BOOTLOADER_PLAN.md)** - 7-phase architecture plan
+
+### Example: Compile and Load Bootloader
+
+```cpp
+#include "Emulator.h"
+
+// Compile model to ELF
+// $ python3 compile_model_bootloader.py model.json -o bootloader.elf
+
+// Load and run
+Emulator emulator;
+std::vector<uint32_t> bootloader = load_elf("bootloader.elf");
+emulator.loadProgram(bootloader, 0x0);
+emulator.run(10000);
+
+std::cout << "Exit code: " << emulator.getExitCode() << std::endl;
+```
 
 ## Architecture Decisions
 
