@@ -85,6 +85,10 @@ gtest_discover_tests(test_file_io_syscalls)
 gtest_discover_tests(test_memory_syscalls)
 gtest_discover_tests(test_instruction_edges)
 
+# Register integration tests
+add_test(NAME test_model_loading COMMAND test_model_loading)
+add_test(NAME test_memory_layout COMMAND run_memory_layout_test)
+
 # ============================================================================
 # Blackbox Testing
 # ============================================================================

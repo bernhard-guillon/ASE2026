@@ -1,5 +1,4 @@
 # Test - Verify neural network model weights at correct memory locations
-# Pure RV32I using only 12-bit immediates
 
 .globl _start
 
@@ -38,21 +37,21 @@ skip_test3:
     lui a0, 0x10
     addi a0, a0, 128
     lw a1, 0(a0)
-    bne a1, zero, skip_test4
+    beq a1, zero, skip_test4
     addi s0, s0, 1
 skip_test4:
 
     # Test 5 - First bias at 0xF3C80
     lui a0, 0xf4
-    addi a0, a0, -128
+    addi a0, a0, -896
     lw a1, 0(a0)
-    bne a1, zero, skip_test5
+    beq a1, zero, skip_test5
     addi s0, s0, 1
 skip_test5:
 
     # Test 6 - Recognizer magic at 0xF4ABC
     lui a0, 0xf5
-    addi a0, a0, -0x544
+    addi a0, a0, -1348
     lw a1, 0(a0)
     lui a2, 0x4e524
     ori a2, a2, 0x14e
@@ -62,7 +61,7 @@ skip_test6:
 
     # Test 7 - Recognizer version at 0xF4AC0
     lui a0, 0xf5
-    addi a0, a0, -0x540
+    addi a0, a0, -1344
     lw a1, 0(a0)
     ori a2, zero, 1
     bne a1, a2, done

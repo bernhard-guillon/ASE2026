@@ -43,23 +43,31 @@ struct LoadedModel {
     uint32_t num_biases;
 };
 
-// Helper function: Load binary model file into a buffer
+// Helper function: Load binary model file into a buffer (with multiple path attempts)
 bool loadBinaryFile(const char* filename, std::vector<uint8_t>& buffer) {
-    std::ifstream file(filename, std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "ERROR: Could not open file: " << filename << std::endl;
-        return false;
+    // Build list of potential paths
+    std::vector<std::string> paths;
+    paths.push_back(filename);  // Original path
+    paths.push_back("../weight-export/" + std::string(filename));
+    paths.push_back("../../weight-export/" + std::string(filename));
+    paths.push_back("../../../weight-export/" + std::string(filename));
+    
+    for (const auto& path : paths) {
+        std::ifstream file(path, std::ios::binary);
+        if (file.is_open()) {
+            file.seekg(0, std::ios::end);
+            size_t file_size = file.tellg();
+            file.seekg(0, std::ios::beg);
+            
+            buffer.resize(file_size);
+            file.read(reinterpret_cast<char*>(buffer.data()), file_size);
+            file.close();
+            return true;
+        }
     }
     
-    file.seekg(0, std::ios::end);
-    size_t file_size = file.tellg();
-    file.seekg(0, std::ios::beg);
-    
-    buffer.resize(file_size);
-    file.read(reinterpret_cast<char*>(buffer.data()), file_size);
-    file.close();
-    
-    return true;
+    std::cerr << "ERROR: Could not open file: " << filename << std::endl;
+    return false;
 }
 
 // Helper function: Load model from binary buffer into emulator memory
