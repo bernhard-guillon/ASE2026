@@ -2,6 +2,8 @@ build/
 *.o
 *.exe
 *.out
+*.bin
+*.elf
 .vscode/
 .idea/
 cmake-build-*/
