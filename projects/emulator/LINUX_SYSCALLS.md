@@ -24,10 +24,29 @@ void exit(int status);
 ```c
 void *brk(void *addr);
 ```
-- **Status**: ✅ Basic implementation
+- **Status**: ✅ Fully implemented
 - **Behavior**: Set/query heap break address
 - **Returns**: New break on success, old break on failure
 - **Used by**: malloc/free implementations, heap management
+
+### 192 - mmap2(addr, len, prot, flags, fd, offset)
+```c
+void *mmap2(void *addr, size_t len, int prot, int flags, int fd, long pgoffset);
+```
+- **Status**: ✅ Fully implemented (Phase 2)
+- **Behavior**: Maps memory pages (MAP_ANONYMOUS for zero-initialized allocations)
+- **Features**: Supports MAP_ANONYMOUS and MAP_FIXED flags
+- **Returns**: Mapped address or -1 on error
+- **Used by**: Dynamic memory allocation, malloc implementation
+
+### 215 - munmap(addr, len)
+```c
+int munmap(void *addr, size_t len);
+```
+- **Status**: ✅ Fully implemented (Phase 2)
+- **Behavior**: Unmaps previously mapped memory regions
+- **Returns**: 0 on success, -1 on error
+- **Used by**: Memory deallocation, free implementation
 
 ## Required for musl libc Support
 
@@ -39,13 +58,6 @@ void *brk(void *addr);
 | 169 | gettimeofday | Get time | Medium |
 | 174 | rt_sigaction | Signal handling | High |
 | 180 | pread64 | Positioned read | Medium |
-
-### Memory Management (CRITICAL)
-| # | Syscall | Purpose | Notes |
-|---|---------|---------|-------|
-| 192 | mmap2 | Allocate memory | RV32 variant - ESSENTIAL for libc |
-| 215 | munmap | Free memory | ESSENTIAL for libc |
-| 226 | madvise | Memory advice | Optional optimization |
 
 ### File I/O (IMPORTANT for libc)
 | # | Syscall | Purpose | Priority |
@@ -77,10 +89,11 @@ These are NOT syscalls but helper functions needed:
 ✅ Local variables and arrays
 ✅ Function calls (with explicit syscall wrappers)
 ✅ Basic arithmetic and loops
-✅ Heap break tracking
+✅ Heap break tracking (brk syscall)
+✅ Dynamic malloc/free (mmap2 + munmap syscalls)
+✅ Multiple concurrent allocations
 
 ### What Doesn't Work  
-❌ Dynamic malloc (would need mmap2)
 ❌ File I/O (would need open/read/close)
 ❌ Signal handling (would need rt_sigaction)
 ❌ Process creation (would need fork/clone)
@@ -96,13 +109,15 @@ These are NOT syscalls but helper functions needed:
 - ✅ brk() syscall
 - ✅ C program compilation with RV32I
 
-### Phase 2: Memory Management (NEXT)
-1. Implement mmap2(192) syscall
-2. Implement munmap(215) syscall
-3. Test with malloc implementations
-4. Support dynamic heap allocation
+### Phase 2: Memory Management (✅ DONE)
+- ✅ mmap2(192) syscall for anonymous memory mapping
+- ✅ munmap(215) syscall for memory deallocation
+- ✅ malloc/free C implementation using mmap2
+- ✅ Multiple allocation support
+- ✅ Dynamic arrays and data structures
+- ✅ Increased memory to 1GB for large allocations
 
-### Phase 3: File I/O (AFTER PHASE 2)
+### Phase 3: File I/O (NEXT)
 1. Implement openat(56) syscall
 2. Implement read(63) syscall
 3. Implement close(57) syscall
