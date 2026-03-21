@@ -3,7 +3,7 @@
 
 class MemorySyscallTest : public ::testing::Test {
 protected:
-    Emulator emulator{65536};  // 64KB memory for mmap tests
+    Emulator emulator{262144};  // 256KB memory to allow mmap2 allocations (mmap_base_ at 0x10000)
     uint32_t initial_brk = 0;
     
     void SetUp() override {
