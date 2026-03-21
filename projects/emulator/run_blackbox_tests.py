@@ -57,15 +57,16 @@ class BlackboxTestRunner:
         self.build_dir = emulator_dir / "build_tests"
         
     def discover_tests(self) -> List[TestCase]:
-        """Discover all test cases in blackbox_tests/"""
+        """Discover all test cases in blackbox_tests/asm/"""
         tests = []
         
-        if not self.tests_dir.exists():
-            print(f"{Colors.RED}Error: blackbox_tests/ directory not found{Colors.RESET}")
+        asm_tests_dir = self.tests_dir / "asm"
+        if not asm_tests_dir.exists():
+            print(f"{Colors.RED}Error: blackbox_tests/asm/ directory not found{Colors.RESET}")
             return tests
         
-        # Search for test.s files
-        for test_s in self.tests_dir.rglob("test.s"):
+        # Search for test.s files in asm directory
+        for test_s in asm_tests_dir.rglob("test.s"):
             test_dir = test_s.parent
             config_file = test_dir / "config.txt"
             expected_file = test_dir / "expected.txt"
@@ -77,8 +78,8 @@ class BlackboxTestRunner:
             # Parse config
             config = self._parse_config(config_file)
             
-            # Get test name (relative path from blackbox_tests)
-            test_name = str(test_dir.relative_to(self.tests_dir))
+            # Get test name (relative path from blackbox_tests/asm)
+            test_name = str(test_dir.relative_to(asm_tests_dir))
             
             tests.append(TestCase(
                 name=test_name,
