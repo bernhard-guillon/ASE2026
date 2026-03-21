@@ -1,0 +1,143 @@
+# RISC-V Linux Syscall Integration
+
+## Implemented Syscalls
+
+### 64 - write(fd, buf, count)
+```c
+ssize_t write(int fd, const void *buf, size_t count);
+```
+- **Status**: ✅ Fully implemented
+- **Behavior**: Outputs to stdout (fd=1) or stderr (fd=2)
+- **Returns**: Number of bytes written
+- **Used by**: All test programs, standard output
+
+### 93 - exit(status) 
+```c
+void exit(int status);
+```
+- **Status**: ✅ Fully implemented  
+- **Behavior**: Halts emulator, captures exit code
+- **Returns**: Never (terminates execution)
+- **Used by**: Program termination, exit codes
+
+### 214 - brk(addr)
+```c
+void *brk(void *addr);
+```
+- **Status**: ✅ Basic implementation
+- **Behavior**: Set/query heap break address
+- **Returns**: New break on success, old break on failure
+- **Used by**: malloc/free implementations, heap management
+
+## Required for musl libc Support
+
+### Core Syscalls Needed for Initialization
+| # | Syscall | Purpose | Priority |
+|---|---------|---------|----------|
+| 39 | getpid | Get process ID | High |
+| 100 | clock_gettime | Time queries | Medium |
+| 169 | gettimeofday | Get time | Medium |
+| 174 | rt_sigaction | Signal handling | High |
+| 180 | pread64 | Positioned read | Medium |
+
+### Memory Management (CRITICAL)
+| # | Syscall | Purpose | Notes |
+|---|---------|---------|-------|
+| 192 | mmap2 | Allocate memory | RV32 variant - ESSENTIAL for libc |
+| 215 | munmap | Free memory | ESSENTIAL for libc |
+| 226 | madvise | Memory advice | Optional optimization |
+
+### File I/O (IMPORTANT for libc)
+| # | Syscall | Purpose | Priority |
+|---|---------|---------|----------|
+| 56 | openat | Open file | High |
+| 57 | close | Close file descriptor | High |
+| 63 | read | Read from file | High |
+| 64 | write | Write to file | ✅ Implemented |
+| 82 | lseek | Seek in file | Medium |
+
+### String/Math (Runtime Support)
+These are NOT syscalls but helper functions needed:
+- `__divsi3` - Signed 32-bit division (needed by GCC)
+- `__modsi3` - Signed 32-bit modulo
+- `__udivsi3` - Unsigned 32-bit division  
+- `__umodsi3` - Unsigned 32-bit modulo
+- `memcpy` - Memory copy
+- `memset` - Memory set
+- `strlen` - String length
+
+**Current Status**: Not implemented, need libgcc or custom implementations
+
+## Current Limitations
+
+### What Works
+✅ Write to stdout/stderr
+✅ Exit with code
+✅ Stack initialization
+✅ Local variables and arrays
+✅ Function calls (with explicit syscall wrappers)
+✅ Basic arithmetic and loops
+✅ Heap break tracking
+
+### What Doesn't Work  
+❌ Dynamic malloc (would need mmap2)
+❌ File I/O (would need open/read/close)
+❌ Signal handling (would need rt_sigaction)
+❌ Process creation (would need fork/clone)
+❌ Shared libraries (would need mmap + ELF loader)
+❌ Floating point (would need M extension + FP support)
+❌ Division operations (would need __divsi3 from libgcc)
+
+## Integration Roadmap
+
+### Phase 1: Foundation (✅ DONE)
+- ✅ Basic write(1, ...) and exit()
+- ✅ Stack pointer initialization  
+- ✅ brk() syscall
+- ✅ C program compilation with RV32I
+
+### Phase 2: Memory Management (NEXT)
+1. Implement mmap2(192) syscall
+2. Implement munmap(215) syscall
+3. Test with malloc implementations
+4. Support dynamic heap allocation
+
+### Phase 3: File I/O (AFTER PHASE 2)
+1. Implement openat(56) syscall
+2. Implement read(63) syscall
+3. Implement close(57) syscall
+4. Test with fopen/fread/fclose
+
+### Phase 4: libc Integration (AFTER PHASE 3)
+1. Add division helpers (__divsi3, etc.) via libgcc
+2. Link against musl libc
+3. Test with real C programs using stdio
+
+### Phase 5: Advanced Features (FUTURE)
+1. Signal handling (rt_sigaction)
+2. Process management (getpid, fork)
+3. ELF file format support
+4. Shared library loading
+
+## Testing Examples
+
+The C programs in this directory demonstrate syscall usage:
+
+1. **hello_c2.bin** - Uses: write(1), exit(0)
+2. **test.bin** - Uses: write(1), exit(0), arithmetic
+3. **fib.bin** - Uses: write(1), exit(0), arrays, loops
+4. **malloc_test.bin** - Uses: brk (implicit via static allocation)
+
+To add new tests, compile C programs with:
+```bash
+riscv64-elf-gcc -march=rv32i -mabi=ilp32 -nostdlib \
+    -o program.elf crt0.s program.c syscalls.s -T linker.ld
+riscv64-elf-objcopy -O binary program.elf program.bin
+./build/emulator_runner program.bin
+```
+
+## Syscall Reference
+
+Full Linux RISC-V ABI syscall numbers:
+https://github.com/torvalds/linux/blob/master/arch/riscv/include/asm/unistd.h
+
