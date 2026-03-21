@@ -82,8 +82,8 @@ void process_gui_input(Emulator& emulator) {
             first_key = false;
         }
         
-        // Execute a few instructions per iteration
-        for (int i = 0; i < 100 && !g_should_exit; ++i) {
+        // Execute instructions per iteration (enough for framebuffer updates)
+        for (int i = 0; i < 10000 && !g_should_exit; ++i) {
             try {
                 emulator.step();
                 if (emulator.isHalted()) {
