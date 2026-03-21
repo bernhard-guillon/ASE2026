@@ -5,9 +5,7 @@
 #ifndef CHARACTER_FONT_H
 #define CHARACTER_FONT_H
 
-#include <stdint.h>
-
-static const uint8_t char_images[255][400] = {
+static const unsigned char char_images[255][400] = {
     { /* Character   0 */
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,

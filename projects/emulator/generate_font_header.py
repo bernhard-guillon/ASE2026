@@ -36,10 +36,9 @@ def generate_font_header(dataset_path, output_path):
         f.write('/* Pixel threshold: > 0.5 = 255 (on), <= 0.5 = 0 (off) */\n\n')
         f.write('#ifndef CHARACTER_FONT_H\n')
         f.write('#define CHARACTER_FONT_H\n\n')
-        f.write('#include <stdint.h>\n\n')
         
-        # Static array declaration
-        f.write('static const uint8_t char_images[255][400] = {\n')
+        # Static array declaration (using unsigned char instead of uint8_t for bare-metal compatibility)
+        f.write('static const unsigned char char_images[255][400] = {\n')
         
         for char_idx in range(255):
             pixels = char_images[char_idx]
@@ -77,3 +76,4 @@ if __name__ == '__main__':
     
     generate_font_header(dataset_path, output_path)
     print(f"✓ Font header generated successfully")
+
