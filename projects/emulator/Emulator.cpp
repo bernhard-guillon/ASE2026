@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 Emulator::Emulator(size_t memory_size) 
-    : cpu_(), memory_(memory_size), halted_(false), exit_code_(0), heap_break_(0x1000) {
+    : cpu_(), memory_(memory_size), halted_(false), exit_code_(0), heap_break_(0x1000), mmap_base_(0x10000) {
 }
 
 void Emulator::loadProgram(const std::vector<uint32_t>& program, uint32_t start_address) {
@@ -114,6 +114,100 @@ void Emulator::handleSystemCall() {
             break;
         }
         
+        case 192: { // mmap2(addr, len, prot, flags, fd, offset)
+            // On RV32, mmap2 is the standard mmap variant
+            uint32_t addr = cpu_.getReg(10);    // a0 - desired address (0 = let kernel choose)
+            uint32_t len = cpu_.getReg(11);     // a1 - length
+            uint32_t prot = cpu_.getReg(12);    // a2 - protection flags (unused)
+            uint32_t flags = cpu_.getReg(13);   // a3 - flags (MAP_ANONYMOUS=0x20, MAP_FIXED=0x10)
+            uint32_t fd = cpu_.getReg(14);      // a4 - file descriptor
+            uint32_t offset = cpu_.getReg(15);  // a5 - offset (unused for MAP_ANONYMOUS)
+            
+            // Simple mmap implementation: only support MAP_ANONYMOUS
+            const uint32_t MAP_ANONYMOUS = 0x20;
+            const uint32_t MAP_FIXED = 0x10;
+            
+            if ((flags & MAP_ANONYMOUS) == 0) {
+                // File-backed mmap not supported
+                cpu_.setReg(10, static_cast<uint32_t>(-1));
+                cpu_.incrementPC();
+                break;
+            }
+            
+            // Page-align length (4096-byte pages)
+            uint32_t aligned_len = (len + 0xFFF) & ~0xFFF;
+            
+            uint32_t result_addr;
+            
+            if (flags & MAP_FIXED) {
+                // Caller specifies address
+                if (addr + aligned_len > memory_.size()) {
+                    // Out of bounds
+                    cpu_.setReg(10, static_cast<uint32_t>(-1));
+                    cpu_.incrementPC();
+                    break;
+                }
+                result_addr = addr;
+            } else {
+                // Kernel chooses address (use our mmap_base)
+                if (mmap_base_ + aligned_len > memory_.size()) {
+                    // Out of memory
+                    cpu_.setReg(10, static_cast<uint32_t>(-1));
+                    cpu_.incrementPC();
+                    break;
+                }
+                result_addr = mmap_base_;
+                mmap_base_ += aligned_len;
+            }
+            
+            // Track this allocation
+            mmap_regions_[result_addr] = aligned_len;
+            
+            // Zero-initialize the region (typical mmap behavior)
+            for (uint32_t i = 0; i < aligned_len; ++i) {
+                memory_.write8(result_addr + i, 0);
+            }
+            
+            // Return allocated address
+            cpu_.setReg(10, result_addr);
+            cpu_.incrementPC();
+            break;
+        }
+        
+        case 215: { // munmap(addr, len)
+            uint32_t addr = cpu_.getReg(10);    // a0 - address
+            uint32_t len = cpu_.getReg(11);     // a1 - length
+            
+            // Find if this address is in our tracked regions
+            auto it = mmap_regions_.find(addr);
+            if (it == mmap_regions_.end()) {
+                // Address not found or invalid
+                cpu_.setReg(10, static_cast<uint32_t>(-1));
+                cpu_.incrementPC();
+                break;
+            }
+            
+            // Check if length matches (we track by exact address/size)
+            uint32_t aligned_len = (len + 0xFFF) & ~0xFFF;
+            if (it->second != aligned_len && it->second != len) {
+                // Length mismatch - still allow if within bounds
+                // This is a simplification; real munmap is more flexible
+                if (addr + len > memory_.size()) {
+                    cpu_.setReg(10, static_cast<uint32_t>(-1));
+                    cpu_.incrementPC();
+                    break;
+                }
+            }
+            
+            // Remove from tracking (in real kernel, we'd mark pages as unmapped)
+            mmap_regions_.erase(it);
+            
+            // Return success
+            cpu_.setReg(10, 0);
+            cpu_.incrementPC();
+            break;
+        }
+        
         default:
             throw std::runtime_error("Unsupported syscall: " + std::to_string(syscall_num));
     }
@@ -125,4 +219,6 @@ void Emulator::reset() {
     halted_ = false;
     exit_code_ = 0;
     heap_break_ = 0x1000;
+    mmap_regions_.clear();
+    mmap_base_ = 0x10000;
 }

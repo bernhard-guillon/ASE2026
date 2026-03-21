@@ -40,16 +40,16 @@ int main(int argc, char** argv) {
         std::cout << "Loaded " << size << " bytes from " << binary_file << std::endl;
     }
     
-    // Create emulator
-    Emulator emulator(65536);
+    // Create emulator with 1GB memory (for mmap and dynamic allocation)
+    Emulator emulator(1024 * 1024 * 1024);
     
     // Load binary into memory at address 0
     for (size_t i = 0; i < buffer.size(); ++i) {
         emulator.getMemory().write8(i, buffer[i]);
     }
     
-    // Initialize stack pointer to top of memory
-    emulator.getCPU().setReg(2, 65536);
+    // Initialize stack pointer to 512MB (high in address space for stack growth)
+    emulator.getCPU().setReg(2, 512 * 1024 * 1024);
     
     if (verbose) {
         std::cout << "Program loaded at address 0" << std::endl;

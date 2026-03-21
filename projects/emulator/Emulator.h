@@ -4,13 +4,14 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <map>
 #include "CPU.h"
 #include "Memory.h"
 #include "Instruction.h"
 
 class Emulator {
 public:
-    Emulator(size_t memory_size = 65536);
+    Emulator(size_t memory_size = 1024 * 1024 * 1024);  // 1GB default for mmap support
     
     // Load program into memory starting at address
     void loadProgram(const std::vector<uint32_t>& program, uint32_t start_address = 0);
@@ -43,6 +44,10 @@ private:
     bool halted_;
     int exit_code_;
     uint32_t heap_break_;  // Current heap break for brk syscall
+    
+    // mmap tracking: address -> size
+    std::map<uint32_t, uint32_t> mmap_regions_;
+    uint32_t mmap_base_;  // Next available mmap address
     
     void handleSystemCall();
 };
