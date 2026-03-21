@@ -259,6 +259,9 @@ if(RISCV_TOOLCHAIN_FOUND)
     # Build neural network RISC-V test program
     add_neural_network_test()
     
+    # Build ELF loader test programs for Python blackbox tests
+    add_elf_loader_test_programs()
+    
     # Create target to build all blackbox test artifacts
     add_blackbox_all_target()
 endif()
