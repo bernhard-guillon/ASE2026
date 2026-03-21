@@ -178,9 +178,16 @@ if(PYTHON_EXECUTABLE)
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
         
-        message(STATUS "Phase 3 Python tests registered (RISC-V toolchain available)")
+        # Phase 4: Full Pipeline Integration Tests (requires RISC-V toolchain)
+        add_test(
+            NAME python/phase4/pipeline_integration
+            COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase4_integration.py -v
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        
+        message(STATUS "Phase 3-4 Python tests registered (RISC-V toolchain available)")
     else()
-        message(WARNING "RISC-V toolchain not found - Phase 3 Python tests skipped (require riscv64-elf-as, riscv64-elf-ld)")
+        message(WARNING "RISC-V toolchain not found - Phase 3-4 Python tests skipped (require riscv64-elf-as, riscv64-elf-ld, riscv64-elf-objcopy)")
     endif()
     
 else()
