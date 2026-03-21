@@ -34,48 +34,62 @@ add_library(instruction Instruction.cpp)
 add_library(emulator Emulator.cpp)
 target_link_libraries(emulator cpu memory instruction)
 
+# Unit test include directory (tests moved to utest/ subdirectory)
+set(UNIT_TEST_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Memory tests
-add_executable(test_memory test_memory.cpp)
+add_executable(test_memory utest/test_memory.cpp)
+target_include_directories(test_memory PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_memory memory gtest_main)
 
 # CPU tests
-add_executable(test_cpu test_cpu.cpp)
+add_executable(test_cpu utest/test_cpu.cpp)
+target_include_directories(test_cpu PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_cpu cpu gtest_main)
 
 # Instruction decoder tests
-add_executable(test_instruction test_instruction.cpp)
+add_executable(test_instruction utest/test_instruction.cpp)
+target_include_directories(test_instruction PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_instruction instruction gtest_main)
 
 # Execution tests
-add_executable(test_execution test_execution.cpp)
+add_executable(test_execution utest/test_execution.cpp)
+target_include_directories(test_execution PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_execution cpu memory instruction gtest_main)
 
 # Emulator integration tests
-add_executable(test_emulator test_emulator.cpp)
+add_executable(test_emulator utest/test_emulator.cpp)
+target_include_directories(test_emulator PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_emulator emulator cpu memory instruction gtest_main)
 
 # File I/O syscall tests
-add_executable(test_file_io_syscalls test_file_io_syscalls.cpp)
+add_executable(test_file_io_syscalls utest/test_file_io_syscalls.cpp)
+target_include_directories(test_file_io_syscalls PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_file_io_syscalls emulator cpu memory instruction gtest_main)
 
 # Memory syscall tests
-add_executable(test_memory_syscalls test_memory_syscalls.cpp)
+add_executable(test_memory_syscalls utest/test_memory_syscalls.cpp)
+target_include_directories(test_memory_syscalls PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_memory_syscalls emulator cpu memory instruction gtest_main)
 
 # Instruction edge case tests
-add_executable(test_instruction_edges test_instruction_edges.cpp)
+add_executable(test_instruction_edges utest/test_instruction_edges.cpp)
+target_include_directories(test_instruction_edges PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_instruction_edges cpu memory instruction gtest_main)
 
 # Framebuffer tests
-add_executable(test_framebuffer test_framebuffer.cpp)
+add_executable(test_framebuffer utest/test_framebuffer.cpp)
+target_include_directories(test_framebuffer PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_framebuffer emulator cpu memory instruction gtest_main)
 
 # ELF Loader tests
-add_executable(test_elf_loader test_elf_loader.cpp)
+add_executable(test_elf_loader utest/test_elf_loader.cpp)
+target_include_directories(test_elf_loader PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_elf_loader emulator cpu memory instruction gtest_main)
 
 # Model loading tests
-add_executable(test_model_loading test_model_loading.cpp)
+add_executable(test_model_loading utest/test_model_loading.cpp)
+target_include_directories(test_model_loading PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_model_loading emulator cpu memory instruction)
 
 # RISC-V memory layout test runner
@@ -149,52 +163,52 @@ if(PYTHON_EXECUTABLE)
     # Phase 1: Model Compiler Tests (no toolchain needed)
     add_test(
         NAME python/phase1/model_compiler_unit
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_model_compiler.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_model_compiler.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
     add_test(
         NAME python/phase1/model_compiler_blackbox
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_model_compiler_blackbox.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_model_compiler_blackbox.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
     # Phase 2: Bootloader Code Generation Tests (no toolchain needed)
     add_test(
         NAME python/phase2/bootloader_unit
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase2.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_bootloader_phase2.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
     add_test(
         NAME python/phase2/bootloader_blackbox
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase2_blackbox.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_bootloader_phase2_blackbox.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
     # Phase 3: Linker Script Configuration Tests (requires RISC-V toolchain)
     add_test(
         NAME python/phase3/linker_script_unit
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_bootloader_phase3.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
     add_test(
         NAME python/phase3/linker_script_blackbox
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3_blackbox.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_bootloader_phase3_blackbox.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
     add_test(
         NAME python/phase3/linker_script_integration
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase3_integration.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_bootloader_phase3_integration.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
     # Phase 4: Full Pipeline Integration Tests (requires RISC-V toolchain)
     add_test(
         NAME python/phase4/pipeline_integration
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase4_integration.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_bootloader_phase4_integration.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
@@ -203,14 +217,14 @@ if(PYTHON_EXECUTABLE)
     # Phase 5: CMake Build System Tests (no toolchain needed)
     add_test(
         NAME python/phase5/cmake_build_system
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase5.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_bootloader_phase5.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
     # Phase 6: Comprehensive Integration Tests (requires RISC-V toolchain)
     add_test(
         NAME python/phase6/comprehensive_integration
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase6_integration.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_bootloader_phase6_integration.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
@@ -219,20 +233,20 @@ if(PYTHON_EXECUTABLE)
     # Static Character Generation Tests
     add_test(
         NAME python/static_char_gen/integration
-        COMMAND ${PYTHON_EXECUTABLE} test_static_char_gen_integration.py
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_static_char_gen_integration.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
     add_test(
         NAME python/static_char_gen/basic
-        COMMAND ${PYTHON_EXECUTABLE} test_static_char_gen_basic.py
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_static_char_gen_basic.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     
     # ELF Loader Tests
     add_test(
         NAME python/elf_loader/blackbox
-        COMMAND ${PYTHON_EXECUTABLE} test_elf_loader_blackbox.py
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_elf_loader_blackbox.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     

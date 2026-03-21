@@ -290,7 +290,7 @@ class TestModelCompilerBlackBox(unittest.TestCase):
         # Run as command-line tool
         result = subprocess.run(
             ['python3', 'model_compiler.py', json_path, '-o', asm_path, '-v'],
-            cwd=os.path.dirname(__file__) or '.',
+            cwd=os.path.dirname(__file__) + '/..' or '.',
             capture_output=True,
             timeout=10
         )

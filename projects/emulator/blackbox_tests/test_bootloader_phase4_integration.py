@@ -440,7 +440,7 @@ class TestPhase4CLI:
     
     def test_cli_help(self):
         """Test that --help works."""
-        script = Path(__file__).parent / "compile_model_bootloader.py"
+        script = Path(__file__).parent.parent / "compile_model_bootloader.py"
         result = subprocess.run(
             ['python3', str(script), '--help'],
             capture_output=True,
@@ -458,7 +458,7 @@ class TestPhase4CLI:
             work_dir = Path(tmpdir)
             json_path, _ = Phase4IntegrationTestSetup.create_test_model_json(work_dir)
             
-            script = Path(__file__).parent / "compile_model_bootloader.py"
+            script = Path(__file__).parent.parent / "compile_model_bootloader.py"
             result = subprocess.run(
                 ['python3', str(script), str(json_path)],
                 capture_output=True,
