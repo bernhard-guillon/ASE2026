@@ -7,6 +7,9 @@
 .globl mmap
 .globl munmap
 .globl brk
+.globl open
+.globl read
+.globl close
 
 # write(int fd, const void *buf, unsigned long count) -> long
 # fd: a0
@@ -52,6 +55,35 @@ munmap:
 # Returns: a0 (new break or old break on error)
 brk:
     li a7, 214             # syscall number for brk
+    ecall
+    ret
+
+# openat(int dirfd, const char *pathname, int flags, mode_t mode) -> int
+# dirfd: a0
+# pathname: a1
+# flags: a2
+# mode: a3
+# Returns: a0 (file descriptor or -1 on error)
+open:
+    li a7, 56              # syscall number for openat
+    ecall
+    ret
+
+# read(int fd, void *buf, size_t count) -> ssize_t
+# fd: a0
+# buf: a1
+# count: a2
+# Returns: a0 (bytes read or -1 on error)
+read:
+    li a7, 63              # syscall number for read
+    ecall
+    ret
+
+# close(int fd) -> int
+# fd: a0
+# Returns: a0 (0 on success, -1 on error)
+close:
+    li a7, 57              # syscall number for close
     ecall
     ret
 

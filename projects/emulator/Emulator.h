@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <fstream>
 #include "CPU.h"
 #include "Memory.h"
 #include "Instruction.h"
@@ -48,6 +49,10 @@ private:
     // mmap tracking: address -> size
     std::map<uint32_t, uint32_t> mmap_regions_;
     uint32_t mmap_base_;  // Next available mmap address
+    
+    // File descriptor tracking: fd -> FILE*
+    std::map<int, std::fstream*> open_files_;
+    int next_fd_;  // Next file descriptor to assign (starts at 3 after stdin/stdout/stderr)
     
     void handleSystemCall();
 };

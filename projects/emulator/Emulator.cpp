@@ -3,7 +3,8 @@
 #include <stdexcept>
 
 Emulator::Emulator(size_t memory_size) 
-    : cpu_(), memory_(memory_size), halted_(false), exit_code_(0), heap_break_(0x1000), mmap_base_(0x10000) {
+    : cpu_(), memory_(memory_size), halted_(false), exit_code_(0), heap_break_(0x1000), 
+      mmap_base_(0x10000), next_fd_(3) {  // FDs 0,1,2 are stdin, stdout, stderr
 }
 
 void Emulator::loadProgram(const std::vector<uint32_t>& program, uint32_t start_address) {
@@ -208,6 +209,134 @@ void Emulator::handleSystemCall() {
             break;
         }
         
+        case 56: { // openat(dirfd, pathname, flags, mode)
+            // Simplified: ignore dirfd (assume CWD), ignore mode
+            uint32_t dirfd = cpu_.getReg(10);   // a0 (usually -100 for CWD)
+            uint32_t pathname = cpu_.getReg(11); // a1 - path string
+            uint32_t flags = cpu_.getReg(12);    // a2 - open flags
+            uint32_t mode = cpu_.getReg(13);     // a3 - file mode (permission bits)
+            
+            // Read filename from memory
+            std::string filename;
+            for (uint32_t i = 0; i < 256; ++i) {  // Max 256 char filename
+                char c = static_cast<char>(memory_.read8(pathname + i));
+                if (c == '\0') break;
+                filename += c;
+            }
+            
+            // Map flags: O_RDONLY=0, O_WRONLY=1, O_RDWR=2, O_CREAT=0x40, O_APPEND=0x400
+            const uint32_t O_RDONLY = 0;
+            const uint32_t O_WRONLY = 1;
+            const uint32_t O_RDWR = 2;
+            const uint32_t O_CREAT = 0x40;
+            const uint32_t O_APPEND = 0x400;
+            
+            int open_mode_bits = (flags & 3);  // Extract read/write mode
+            
+            std::ios::openmode mode_flags = std::ios::binary;
+            if (open_mode_bits == O_RDONLY) {
+                mode_flags |= std::ios::in;
+            } else if (open_mode_bits == O_WRONLY) {
+                mode_flags |= std::ios::out;
+            } else if (open_mode_bits == O_RDWR) {
+                mode_flags |= (std::ios::in | std::ios::out);
+            }
+            
+            if (flags & O_CREAT) {
+                mode_flags |= std::ios::trunc;
+            }
+            if (flags & O_APPEND) {
+                mode_flags |= std::ios::app;
+            }
+            
+            // Try to open file
+            std::fstream *file = new std::fstream(filename, mode_flags);
+            if (!file->is_open()) {
+                delete file;
+                cpu_.setReg(10, static_cast<uint32_t>(-1));  // errno would be set in real kernel
+                cpu_.incrementPC();
+                break;
+            }
+            
+            // Assign file descriptor
+            int fd = next_fd_++;
+            open_files_[fd] = file;
+            
+            // Return file descriptor
+            cpu_.setReg(10, fd);
+            cpu_.incrementPC();
+            break;
+        }
+        
+        case 63: { // read(fd, buf, count)
+            int fd = cpu_.getReg(10);            // a0 - file descriptor
+            uint32_t buf = cpu_.getReg(11);      // a1 - buffer address
+            uint32_t count = cpu_.getReg(12);    // a2 - bytes to read
+            
+            if (fd == 0) {
+                // stdin not supported
+                cpu_.setReg(10, 0);
+                cpu_.incrementPC();
+                break;
+            }
+            
+            // Find open file
+            auto it = open_files_.find(fd);
+            if (it == open_files_.end()) {
+                // Invalid fd
+                cpu_.setReg(10, static_cast<uint32_t>(-1));
+                cpu_.incrementPC();
+                break;
+            }
+            
+            std::fstream *file = it->second;
+            
+            // Read into emulator memory
+            uint32_t bytes_read = 0;
+            for (uint32_t i = 0; i < count; ++i) {
+                int c = file->get();
+                if (c == EOF) break;
+                
+                memory_.write8(buf + i, static_cast<uint8_t>(c));
+                bytes_read++;
+            }
+            
+            // Return bytes read
+            cpu_.setReg(10, bytes_read);
+            cpu_.incrementPC();
+            break;
+        }
+        
+        case 57: { // close(fd)
+            int fd = cpu_.getReg(10);  // a0 - file descriptor
+            
+            if (fd < 3) {
+                // Can't close stdin/stdout/stderr
+                cpu_.setReg(10, 0);  // Still return success
+                cpu_.incrementPC();
+                break;
+            }
+            
+            // Find open file
+            auto it = open_files_.find(fd);
+            if (it == open_files_.end()) {
+                // Invalid fd
+                cpu_.setReg(10, static_cast<uint32_t>(-1));
+                cpu_.incrementPC();
+                break;
+            }
+            
+            // Close and free
+            it->second->close();
+            delete it->second;
+            open_files_.erase(it);
+            
+            // Return success
+            cpu_.setReg(10, 0);
+            cpu_.incrementPC();
+            break;
+        }
+        
         default:
             throw std::runtime_error("Unsupported syscall: " + std::to_string(syscall_num));
     }
@@ -221,4 +350,12 @@ void Emulator::reset() {
     heap_break_ = 0x1000;
     mmap_regions_.clear();
     mmap_base_ = 0x10000;
+    
+    // Close all open files
+    for (auto& pair : open_files_) {
+        pair.second->close();
+        delete pair.second;
+    }
+    open_files_.clear();
+    next_fd_ = 3;
 }

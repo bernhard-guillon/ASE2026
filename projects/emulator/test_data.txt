@@ -1,0 +1,2 @@
+Hello from file!
+This is line 2
