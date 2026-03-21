@@ -31,6 +31,9 @@ public:
     // Get exit code (set by exit syscall)
     int getExitCode() const { return exit_code_; }
     
+    // Get current heap break
+    uint32_t getHeapBreak() const { return heap_break_; }
+    
     // Reset emulator state
     void reset();
     
@@ -39,6 +42,7 @@ private:
     Memory memory_;
     bool halted_;
     int exit_code_;
+    uint32_t heap_break_;  // Current heap break for brk syscall
     
     void handleSystemCall();
 };

@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 Emulator::Emulator(size_t memory_size) 
-    : cpu_(), memory_(memory_size), halted_(false), exit_code_(0) {
+    : cpu_(), memory_(memory_size), halted_(false), exit_code_(0), heap_break_(0x1000) {
 }
 
 void Emulator::loadProgram(const std::vector<uint32_t>& program, uint32_t start_address) {
@@ -93,6 +93,27 @@ void Emulator::handleSystemCall() {
             break;
         }
         
+        case 214: { // brk(addr)
+            // This simple implementation just tracks the break
+            // In a real kernel, this would manage the heap
+            uint32_t new_break = cpu_.getReg(10);  // a0 has requested break address
+            
+            // If new_break is 0, just return current break
+            if (new_break == 0) {
+                cpu_.setReg(10, heap_break_);
+            } else if (new_break <= memory_.size()) {
+                // Allow setting break if within memory bounds
+                heap_break_ = new_break;
+                cpu_.setReg(10, heap_break_);
+            } else {
+                // Return old break if requested address is out of bounds
+                cpu_.setReg(10, heap_break_);
+            }
+            
+            cpu_.incrementPC();
+            break;
+        }
+        
         default:
             throw std::runtime_error("Unsupported syscall: " + std::to_string(syscall_num));
     }
@@ -103,4 +124,5 @@ void Emulator::reset() {
     memory_.reset();
     halted_ = false;
     exit_code_ = 0;
+    heap_break_ = 0x1000;
 }
