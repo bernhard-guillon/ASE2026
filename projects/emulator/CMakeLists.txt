@@ -16,6 +16,10 @@ FetchContent_MakeAvailable(googletest)
 # Enable testing
 enable_testing()
 
+# Phase 5: Include bootloader build system (Phase 4 wrapper automation)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/BootloaderBuild.cmake)
+bootloader_build_system_init()
+
 # Memory module
 add_library(memory Memory.cpp)
 
@@ -189,6 +193,13 @@ if(PYTHON_EXECUTABLE)
     else()
         message(WARNING "RISC-V toolchain not found - Phase 3-4 Python tests skipped (require riscv64-elf-as, riscv64-elf-ld, riscv64-elf-objcopy)")
     endif()
+    
+    # Phase 5: CMake Build System Tests (no toolchain needed)
+    add_test(
+        NAME python/phase5/cmake_build_system
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest test_bootloader_phase5.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
     
 else()
     message(WARNING "Python3 not found - Python tests will be skipped")
