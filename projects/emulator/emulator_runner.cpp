@@ -48,6 +48,9 @@ int main(int argc, char** argv) {
         emulator.getMemory().write8(i, buffer[i]);
     }
     
+    // Initialize stack pointer to top of memory
+    emulator.getCPU().setReg(2, 65536);
+    
     if (verbose) {
         std::cout << "Program loaded at address 0" << std::endl;
         std::cout << "Starting execution..." << std::endl;
