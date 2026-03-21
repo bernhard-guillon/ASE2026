@@ -284,6 +284,68 @@ function(add_neural_network_test)
     
 endfunction()
 
+function(add_elf_loader_test_programs)
+    # Build ELF loader test programs for the Python blackbox test suite.
+    # Source files live in blackbox_tests/elf_loader/ and are assembled to
+    # ${CMAKE_CURRENT_BINARY_DIR}/elf_loader_tests/ as ELF files.
+
+    if(NOT RISCV_TOOLCHAIN_FOUND)
+        message(WARNING "RISC-V toolchain not found - ELF loader test programs disabled")
+        return()
+    endif()
+
+    set(ELF_LOADER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/blackbox_tests/elf_loader")
+    set(ELF_LOADER_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/elf_loader_tests")
+    set(LINKER_SCRIPT "${ELF_LOADER_SRC_DIR}/elf_loader_tests.ld")
+
+    file(MAKE_DIRECTORY "${ELF_LOADER_BUILD_DIR}")
+
+    set(ELF_LOADER_TEST_PROGRAMS
+        test_nop_loop
+        test_rodata_read
+        test_const_pattern
+        test_array_index
+        test_read_offset
+        test_write_immediately
+        test_const_fb
+    )
+
+    set(ELF_LOADER_ELFS "")
+
+    foreach(TEST_NAME ${ELF_LOADER_TEST_PROGRAMS})
+        set(TEST_S "${ELF_LOADER_SRC_DIR}/${TEST_NAME}.s")
+        set(TEST_O "${ELF_LOADER_BUILD_DIR}/${TEST_NAME}.o")
+        set(TEST_ELF "${ELF_LOADER_BUILD_DIR}/${TEST_NAME}.elf")
+
+        add_custom_command(
+            OUTPUT ${TEST_O}
+            COMMAND ${RISCV_AS} -march=rv32i -mabi=ilp32 -o ${TEST_O} ${TEST_S}
+            DEPENDS ${TEST_S}
+            COMMENT "Assembling elf_loader/${TEST_NAME}"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${TEST_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${LINKER_SCRIPT} -o ${TEST_ELF} ${TEST_O}
+            DEPENDS ${TEST_O} ${LINKER_SCRIPT}
+            COMMENT "Linking elf_loader/${TEST_NAME}"
+            VERBATIM
+        )
+
+        list(APPEND ELF_LOADER_ELFS "${TEST_ELF}")
+    endforeach()
+
+    add_custom_target(
+        elf_loader_tests ALL
+        DEPENDS ${ELF_LOADER_ELFS}
+        COMMENT "Building ELF loader test programs..."
+    )
+
+    message(STATUS "ELF loader test programs configured in ${ELF_LOADER_BUILD_DIR}")
+
+endfunction()
+
 function(add_blackbox_all_target)
     # Create target to build all blackbox test artifacts
     

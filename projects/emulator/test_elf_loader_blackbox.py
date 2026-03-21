@@ -15,6 +15,7 @@ class ElfLoaderBlackboxTests:
         self.emulator_dir = Path(__file__).parent
         self.build_dir = self.emulator_dir / 'build'
         self.emulator_runner = self.build_dir / 'emulator_runner'
+        self.elf_test_dir = self.build_dir / 'elf_loader_tests'
         self.test_results = []
         self.tests_passed = 0
         self.tests_failed = 0
@@ -47,7 +48,7 @@ class ElfLoaderBlackboxTests:
     # Test 1: Simple NOP program loads and runs
     def test_nop_program_loads(self):
         """Test 1: NOP program loads without error"""
-        elf = self.emulator_dir / 'test_nop_loop.elf'
+        elf = self.elf_test_dir / 'test_nop_loop.elf'
         if not elf.exists():
             return False
         
@@ -63,7 +64,7 @@ class ElfLoaderBlackboxTests:
     # Test 2: Program with .rodata loads and runs
     def test_rodata_program_loads(self):
         """Test 2: Program with .rodata section loads"""
-        elf = self.emulator_dir / 'test_rodata_read.elf'
+        elf = self.elf_test_dir / 'test_rodata_read.elf'
         if not elf.exists():
             return False
         
@@ -78,7 +79,7 @@ class ElfLoaderBlackboxTests:
     # Test 3: Constant pattern program produces output
     def test_const_pattern_displays(self):
         """Test 3: Constant pattern loads and runs"""
-        elf = self.emulator_dir / 'test_const_pattern.elf'
+        elf = self.elf_test_dir / 'test_const_pattern.elf'
         if not elf.exists():
             return False
         
@@ -94,7 +95,7 @@ class ElfLoaderBlackboxTests:
     # Test 4: Test array indexing program
     def test_array_indexing(self):
         """Test 4: Array indexing loads and runs"""
-        elf = self.emulator_dir / 'test_array_index.elf'
+        elf = self.elf_test_dir / 'test_array_index.elf'
         if not elf.exists():
             return False
         
@@ -109,7 +110,7 @@ class ElfLoaderBlackboxTests:
     # Test 5: Read offset program works
     def test_read_offset_program(self):
         """Test 5: Reading from offset in .rodata works"""
-        elf = self.emulator_dir / 'test_read_offset.elf'
+        elf = self.elf_test_dir / 'test_read_offset.elf'
         if not elf.exists():
             return False
         
@@ -152,7 +153,7 @@ class ElfLoaderBlackboxTests:
     # Test 8: GUI mode with proper ELF works
     def test_gui_with_elf(self):
         """Test 8: GUI mode doesn't crash with proper ELF loading"""
-        elf = self.emulator_dir / 'test_write_immediately.elf'
+        elf = self.elf_test_dir / 'test_write_immediately.elf'
         if not elf.exists():
             return False
         
@@ -176,7 +177,7 @@ class ElfLoaderBlackboxTests:
     # Test 9: Entry point is set correctly
     def test_entry_point_execution(self):
         """Test 9: Entry point from ELF is executed"""
-        elf = self.emulator_dir / 'test_const_fb.elf'
+        elf = self.elf_test_dir / 'test_const_fb.elf'
         if not elf.exists():
             return False
         
@@ -192,7 +193,7 @@ class ElfLoaderBlackboxTests:
     # Test 10: Multiple segments load correctly
     def test_multiple_segments(self):
         """Test 10: Programs with multiple segments load"""
-        elf = self.emulator_dir / 'test_rodata_read.elf'
+        elf = self.elf_test_dir / 'test_rodata_read.elf'
         if not elf.exists():
             return False
         
@@ -209,7 +210,7 @@ class ElfLoaderBlackboxTests:
     # Test 11: Large binary with character font loads
     def test_large_binary_with_font(self):
         """Test 11: Large binary with character_font.h loads"""
-        elf = self.emulator_dir / 'test_array_index.elf'
+        elf = self.elf_test_dir / 'test_array_index.elf'
         if not elf.exists():
             return False
         
@@ -224,7 +225,7 @@ class ElfLoaderBlackboxTests:
     # Test 12: Program halt works after execution
     def test_program_termination(self):
         """Test 12: Programs terminate cleanly"""
-        elf = self.emulator_dir / 'test_nop_loop.elf'
+        elf = self.elf_test_dir / 'test_nop_loop.elf'
         if not elf.exists():
             return False
         
@@ -240,7 +241,7 @@ class ElfLoaderBlackboxTests:
     # Test 13: Memory is allocated correctly for segments
     def test_memory_allocation(self):
         """Test 13: Segment data is placed at correct addresses"""
-        elf = self.emulator_dir / 'test_rodata_read.elf'
+        elf = self.elf_test_dir / 'test_rodata_read.elf'
         if not elf.exists():
             return False
         
@@ -256,7 +257,7 @@ class ElfLoaderBlackboxTests:
     # Test 14: Stack and heap don't interfere with loaded segments
     def test_stack_heap_isolation(self):
         """Test 14: Stack initialization doesn't corrupt segments"""
-        elf = self.emulator_dir / 'test_const_pattern.elf'
+        elf = self.elf_test_dir / 'test_const_pattern.elf'
         if not elf.exists():
             return False
         
@@ -278,7 +279,7 @@ class ElfLoaderBlackboxTests:
         ]
         
         for elf_name in simple_elfs:
-            elf = self.emulator_dir / elf_name
+            elf = self.elf_test_dir / elf_name
             if not elf.exists():
                 continue
             
