@@ -5,12 +5,15 @@
 
 // Helper function to load ELF file
 std::vector<uint8_t> loadFile(const std::string& filename) {
-    // Try current directory first, then project root
+    // Try current directory first, then known build subdirectories, then project root
     std::vector<std::string> paths = {
         filename,
+        "elf_loader_tests/" + filename,
+#ifdef ELF_LOADER_BUILD_DIR
+        std::string(ELF_LOADER_BUILD_DIR) + "/" + filename,
+#endif
         "../" + filename,
         "../../" + filename,
-        "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/" + filename
     };
     
     for (const auto& path : paths) {

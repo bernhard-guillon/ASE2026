@@ -30,7 +30,7 @@ class CharGenTestSuite:
         # Paths
         self.char_gen_dir = self.emulator_dir.parent / 'character-generation'
         self.emulator_runner = self.emulator_dir / 'build' / 'emulator_runner'
-        self.program = self.emulator_dir / 'static_char_gen.elf'
+        self.program = self.emulator_dir / 'build' / 'static_char_gen.elf'
         
     def test(self, name, fn):
         """Run a test and track results"""

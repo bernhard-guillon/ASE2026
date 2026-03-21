@@ -17,7 +17,7 @@ def run_char_gen_test(char_code, emulator_dir):
     """Run static_char_gen.elf with a character code and capture framebuffer"""
     
     emulator_path = emulator_dir / 'build' / 'emulator_runner'
-    program_path = emulator_dir / 'static_char_gen.elf'
+    program_path = emulator_dir / 'build' / 'static_char_gen.elf'
     
     if not emulator_path.exists():
         print(f"Error: {emulator_path} not found")
