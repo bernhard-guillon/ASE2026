@@ -21,6 +21,7 @@ add_library(memory Memory.cpp)
 
 # CPU module
 add_library(cpu CPU.cpp)
+target_link_libraries(cpu memory instruction)
 
 # Instruction decoder module
 add_library(instruction Instruction.cpp)
@@ -37,8 +38,13 @@ target_link_libraries(test_cpu cpu gtest_main)
 add_executable(test_instruction test_instruction.cpp)
 target_link_libraries(test_instruction instruction gtest_main)
 
+# Execution tests
+add_executable(test_execution test_execution.cpp)
+target_link_libraries(test_execution cpu memory instruction gtest_main)
+
 # Register tests with CTest
 include(GoogleTest)
 gtest_discover_tests(test_memory)
 gtest_discover_tests(test_cpu)
 gtest_discover_tests(test_instruction)
+gtest_discover_tests(test_execution)

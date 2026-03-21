@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <array>
 #include <stdexcept>
+#include "Instruction.h"
+#include "Memory.h"
 
 class CPU {
 public:
@@ -21,6 +23,9 @@ public:
     // Reset CPU state
     void reset();
     
+    // Execute single instruction
+    void execute(const Instruction& instr, Memory& memory);
+    
     static constexpr uint8_t NUM_REGISTERS = 32;
     
 private:
@@ -28,6 +33,13 @@ private:
     uint32_t pc_;
     
     void validateRegister(uint8_t reg) const;
+    
+    // ALU operations
+    void executeALU(const Instruction& instr);
+    void executeALUImmediate(const Instruction& instr);
+    
+    // Helper for arithmetic right shift
+    uint32_t arithmeticRightShift(uint32_t value, uint32_t shift) const;
 };
 
 #endif // CPU_H
