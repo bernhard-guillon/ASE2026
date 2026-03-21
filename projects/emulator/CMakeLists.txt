@@ -66,6 +66,10 @@ target_link_libraries(test_memory_syscalls emulator cpu memory instruction gtest
 add_executable(test_instruction_edges test_instruction_edges.cpp)
 target_link_libraries(test_instruction_edges cpu memory instruction gtest_main)
 
+# Framebuffer tests
+add_executable(test_framebuffer test_framebuffer.cpp)
+target_link_libraries(test_framebuffer emulator cpu memory instruction gtest_main)
+
 # Model loading tests
 add_executable(test_model_loading test_model_loading.cpp)
 target_link_libraries(test_model_loading emulator cpu memory instruction)
@@ -88,6 +92,7 @@ gtest_discover_tests(test_emulator)
 gtest_discover_tests(test_file_io_syscalls)
 gtest_discover_tests(test_memory_syscalls)
 gtest_discover_tests(test_instruction_edges)
+gtest_discover_tests(test_framebuffer)
 
 # Register integration tests
 add_test(NAME test_model_loading COMMAND test_model_loading)

@@ -10,6 +10,22 @@
 #include "Memory.h"
 #include "Instruction.h"
 
+/* Memory Layout
+ * ============
+ * 0x00000000 - Program code (loaded from ELF/binary)
+ * 0x20000    - Framebuffer (20x20 pixels = 400 bytes, uint8 [0-255] grayscale)
+ * 0x2001FF   - End of framebuffer
+ * 0x80000000 - Heap start (for brk syscall)
+ * Dynamic    - mmap regions (starts at 0x10000 for user malloc)
+ * High addr  - Stack (512MB default from emulator_runner)
+ */
+
+// Framebuffer constants
+constexpr uint32_t FRAMEBUFFER_ADDR = 0x20000;  // Start address of framebuffer
+constexpr uint32_t FRAMEBUFFER_SIZE = 400;      // 20x20 pixels in bytes
+constexpr uint32_t FRAMEBUFFER_WIDTH = 20;
+constexpr uint32_t FRAMEBUFFER_HEIGHT = 20;
+
 class Emulator {
 public:
     Emulator(size_t memory_size = 1024 * 1024 * 1024);  // 1GB default for mmap support
