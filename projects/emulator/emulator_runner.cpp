@@ -109,13 +109,14 @@ void process_gui_input(Emulator& emulator) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--verbose]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--cycles <count>] [--verbose]" << std::endl;
         return 1;
     }
     
     bool verbose = false;
     bool gui_mode = false;
     uint32_t char_code = 0;
+    uint32_t max_cycles = 1000000;  // Default 1M cycles
     const char* binary_file = argv[1];
     
     // Parse command-line arguments
@@ -137,6 +138,17 @@ int main(int argc, char** argv) {
                 ++i;  // Skip next argument since we consumed it
             } else {
                 std::cerr << "Error: --char requires an argument" << std::endl;
+                return 1;
+            }
+        } else if (std::strcmp(argv[i], "--cycles") == 0) {
+            if (i + 1 < argc) {
+                max_cycles = std::atoi(argv[i + 1]);
+                if (verbose) {
+                    std::cout << "Max cycles set to: " << max_cycles << std::endl;
+                }
+                ++i;  // Skip next argument
+            } else {
+                std::cerr << "Error: --cycles requires a number" << std::endl;
                 return 1;
             }
         }
@@ -247,7 +259,7 @@ int main(int argc, char** argv) {
             process_gui_input(emulator);
         } else {
             // Standard single-execution mode
-            emulator.run(1000000);  // Max 1M instructions (for recursive functions)
+            emulator.run(max_cycles);  // Use configurable cycle limit
             
             if (verbose) {
                 std::cout << "----------------------------------------" << std::endl;
