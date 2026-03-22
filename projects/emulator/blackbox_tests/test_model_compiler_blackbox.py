@@ -6,7 +6,7 @@ Tests verify:
 1. Generated assembly can be assembled with RISC-V assembler
 2. Object files have correct sections
 3. Data section contains embedded binary
-4. Assembly output is valid RV32I
+4. Assembly output is valid RV32IF
 """
 
 import unittest
@@ -117,7 +117,7 @@ class TestModelCompilerBlackBox(unittest.TestCase):
         # Try to assemble the generated .s file
         obj_path = str(Path(asm_path).with_suffix('.o'))
         result = subprocess.run(
-            ['riscv64-elf-as', '-march=rv32i', asm_path, '-o', obj_path],
+            ['riscv64-elf-as', '-march=rv32if', '-mabi=ilp32f', asm_path, '-o', obj_path],
             capture_output=True,
             timeout=10
         )
@@ -138,7 +138,7 @@ class TestModelCompilerBlackBox(unittest.TestCase):
         
         obj_path = str(Path(asm_path).with_suffix('.o'))
         result = subprocess.run(
-            ['riscv64-elf-as', '-march=rv32i', asm_path, '-o', obj_path],
+            ['riscv64-elf-as', '-march=rv32if', '-mabi=ilp32f', asm_path, '-o', obj_path],
             capture_output=True,
             timeout=10
         )
@@ -171,7 +171,7 @@ class TestModelCompilerBlackBox(unittest.TestCase):
         
         obj_path = str(Path(asm_path).with_suffix('.o'))
         subprocess.run(
-            ['riscv64-elf-as', '-march=rv32i', asm_path, '-o', obj_path],
+            ['riscv64-elf-as', '-march=rv32if', '-mabi=ilp32f', asm_path, '-o', obj_path],
             capture_output=True,
             timeout=10
         )
@@ -205,7 +205,7 @@ class TestModelCompilerBlackBox(unittest.TestCase):
         # Assemble and check object file size
         obj_path = str(Path(asm_path).with_suffix('.o'))
         subprocess.run(
-            ['riscv64-elf-as', '-march=rv32i', asm_path, '-o', obj_path],
+            ['riscv64-elf-as', '-march=rv32if', '-mabi=ilp32f', asm_path, '-o', obj_path],
             capture_output=True,
             timeout=10
         )
