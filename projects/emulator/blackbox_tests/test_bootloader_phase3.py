@@ -22,7 +22,7 @@ class LinkerScriptParsingTest(unittest.TestCase):
     def setUpClass(cls):
         """Load the linker script"""
         cls.script_path = os.path.join(
-            os.path.dirname(__file__), 'bootloader.ld'
+            os.path.dirname(os.path.dirname(__file__)), 'bootloader.ld'
         )
         with open(cls.script_path, 'r') as f:
             cls.script_content = f.read()
@@ -62,7 +62,7 @@ class MemoryRegionTest(unittest.TestCase):
     def setUpClass(cls):
         """Load and parse the linker script"""
         cls.script_path = os.path.join(
-            os.path.dirname(__file__), 'bootloader.ld'
+            os.path.dirname(os.path.dirname(__file__)), 'bootloader.ld'
         )
         with open(cls.script_path, 'r') as f:
             cls.script_content = f.read()
@@ -125,7 +125,7 @@ class SectionPlacementTest(unittest.TestCase):
     def setUpClass(cls):
         """Load and parse the linker script"""
         cls.script_path = os.path.join(
-            os.path.dirname(__file__), 'bootloader.ld'
+            os.path.dirname(os.path.dirname(__file__)), 'bootloader.ld'
         )
         with open(cls.script_path, 'r') as f:
             cls.script_content = f.read()
@@ -171,7 +171,7 @@ class LinkerScriptSyntaxTest(unittest.TestCase):
     def setUpClass(cls):
         """Initialize paths"""
         cls.script_path = os.path.join(
-            os.path.dirname(__file__), 'bootloader.ld'
+            os.path.dirname(os.path.dirname(__file__)), 'bootloader.ld'
         )
 
     def test_script_ld_format(self):
@@ -210,7 +210,7 @@ class LinkerScriptComplianceTest(unittest.TestCase):
     def setUpClass(cls):
         """Load the linker script"""
         cls.script_path = os.path.join(
-            os.path.dirname(__file__), 'bootloader.ld'
+            os.path.dirname(os.path.dirname(__file__)), 'bootloader.ld'
         )
         with open(cls.script_path, 'r') as f:
             cls.script_content = f.read()
@@ -265,7 +265,7 @@ class AddressCalculationTest(unittest.TestCase):
     def setUpClass(cls):
         """Load the linker script"""
         cls.script_path = os.path.join(
-            os.path.dirname(__file__), 'bootloader.ld'
+            os.path.dirname(os.path.dirname(__file__)), 'bootloader.ld'
         )
         with open(cls.script_path, 'r') as f:
             cls.script_content = f.read()

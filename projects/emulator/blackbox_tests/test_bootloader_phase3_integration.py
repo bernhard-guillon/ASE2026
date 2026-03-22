@@ -31,7 +31,7 @@ class Phase3IntegrationTestSetup(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Initialize test environment"""
-        cls.emulator_dir = os.path.dirname(__file__)
+        cls.emulator_dir = os.path.dirname(os.path.dirname(__file__))
         cls.model_compiler = os.path.join(cls.emulator_dir, 'model_compiler.py')
         cls.linker_script = os.path.join(cls.emulator_dir, 'bootloader.ld')
         cls.test_dir = tempfile.mkdtemp(prefix='phase3_integration_')

@@ -231,7 +231,7 @@ class CharGenTestSuite:
         return self.tests_failed == 0
 
 if __name__ == '__main__':
-    emulator_dir = Path(__file__).parent
+    emulator_dir = Path(__file__).parent.parent
     suite = CharGenTestSuite(emulator_dir)
     success = suite.run_all()
     sys.exit(0 if success else 1)

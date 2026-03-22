@@ -71,7 +71,7 @@ class TestBootloaderExecution(unittest.TestCase):
     
     def _has_emulator(self):
         """Check if emulator is available."""
-        emulator = os.path.join(os.path.dirname(__file__), 'build', 
+        emulator = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'build', 
                                'emulator_runner')
         return os.path.exists(emulator)
     

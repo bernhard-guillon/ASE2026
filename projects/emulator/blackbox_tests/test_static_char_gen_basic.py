@@ -52,7 +52,7 @@ def run_char_gen_test(char_code, emulator_dir):
         return False
 
 if __name__ == '__main__':
-    emulator_dir = Path('/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator')
+    emulator_dir = Path(__file__).parent.parent
     
     # Test a few characters
     test_chars = [65, 66, 90, 97, 122, 32, 48]  # A, B, Z, a, z, space, 0

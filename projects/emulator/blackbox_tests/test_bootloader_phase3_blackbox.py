@@ -21,7 +21,7 @@ class LinkerScriptIntegrationTest(unittest.TestCase):
     def setUp(self):
         """Create temporary directory for test artifacts"""
         self.test_dir = tempfile.mkdtemp(prefix='bootloader_test_')
-        self.emulator_dir = os.path.dirname(__file__)
+        self.emulator_dir = os.path.dirname(os.path.dirname(__file__))
         self.linker_script = os.path.join(self.emulator_dir, 'bootloader.ld')
         self.compiler_path = os.path.join(self.emulator_dir, 'model_compiler.py')
         
@@ -345,7 +345,7 @@ class LinkerScriptMemoryLayoutTest(unittest.TestCase):
 
     def setUp(self):
         """Load linker script"""
-        self.emulator_dir = os.path.dirname(__file__)
+        self.emulator_dir = os.path.dirname(os.path.dirname(__file__))
         self.linker_script = os.path.join(self.emulator_dir, 'bootloader.ld')
 
     def test_code_starts_at_zero(self):

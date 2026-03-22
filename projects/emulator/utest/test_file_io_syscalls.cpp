@@ -3,17 +3,22 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <cstring>
+#include <filesystem>
 #include "Emulator.h"
 
 class FileIOTest : public ::testing::Test {
 protected:
     Emulator emulator{8192};  // 8KB memory for tests
-    std::string test_dir = "/tmp";
-    std::string test_file = "/tmp/test_io_file.txt";
-    std::string test_file2 = "/tmp/test_io_file2.txt";
+    std::string test_dir;
+    std::string test_file;
+    std::string test_file2;
     
     void SetUp() override {
         emulator.reset();
+        // Use system temp directory (portable across platforms)
+        test_dir = std::filesystem::temp_directory_path().string();
+        test_file = test_dir + "/test_io_file.txt";
+        test_file2 = test_dir + "/test_io_file2.txt";
         // Clean up any test files from previous runs
         std::remove(test_file.c_str());
         std::remove(test_file2.c_str());
@@ -92,7 +97,8 @@ TEST_F(FileIOTest, OpenatExistingFileReadMode) {
 
 TEST_F(FileIOTest, OpenatNonExistentFileError) {
     // Try to open non-existent file in read mode
-    writeStringToMemory(100, "/tmp/nonexistent_file_12345.txt");
+    std::string nonexistent_file = test_dir + "/nonexistent_file_12345.txt";
+    writeStringToMemory(100, nonexistent_file);
     
     // Call openat(AT_FDCWD, path, O_RDONLY, 0)
     uint32_t fd = callSyscall(56, -100, 100, 0, 0);

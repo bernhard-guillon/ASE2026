@@ -172,11 +172,29 @@ emulator/
 │
 ├── DOCUMENTATION
 ├── ──────────────
-├── BOOTLOADER_IMPLEMENTATION.md # Complete implementation guide (13KB)
-├── BOOTLOADER_QUICK_START.md   # Quick reference and getting started (7KB)
-├── PHASE5_CMAKE_GUIDE.md       # CMake usage guide (3.6KB)
-├── PHASE6_TESTING_GUIDE.md     # Testing documentation (5.9KB)
-└── BOOTLOADER_PLAN.md          # 7-phase architecture plan
+├── docs/
+│   ├── guides/                        # Implementation guides and references
+│   │   ├── BOOTLOADER_IMPLEMENTATION.md # Complete implementation guide (13KB)
+│   │   ├── BOOTLOADER_QUICK_START.md   # Quick reference and getting started (7KB)
+│   │   ├── PHASE5_CMAKE_GUIDE.md       # CMake usage guide (3.6KB)
+│   │   ├── PHASE6_TESTING_GUIDE.md     # Testing documentation (5.9KB)
+│   │   ├── C_PROGRAM_GUIDE.md          # C program execution guide
+│   │   └── LINUX_SYSCALLS.md           # Supported syscalls reference
+│   ├── planning/                      # Design and planning documents
+│   │   ├── BOOTLOADER_PLAN.md          # 7-phase architecture plan
+│   │   ├── emulator-plan.md            # Emulator design plan
+│   │   └── chatlog.md                  # Design discussion history
+│   ├── summaries/                     # Phase reports and verification summaries
+│   │   ├── PHASE1_VERIFICATION_COMPLETE.md
+│   │   ├── PHASE2_SUMMARY.md
+│   │   ├── PHASE3_SUMMARY.md
+│   │   ├── PHASE4_SUMMARY.md
+│   │   ├── STATIC_CHAR_GEN_REPORT.md
+│   │   ├── MODEL_LOADING_REPORT.md
+│   │   ├── SESSION_SUMMARY.md
+│   │   ├── TEST_ORGANIZATION.md
+│   │   └── UNIT_TEST_GAPS.md
+│   └── summary.md                     # Overview summary
 
 ## Blackbox Testing
 
@@ -249,13 +267,23 @@ add_model_bootloader(my_model "model.json")
 
 ### Documentation
 
-- **[BOOTLOADER_IMPLEMENTATION.md](BOOTLOADER_IMPLEMENTATION.md)** - Complete guide (13 KB)
+**Guides & References:**
+- **[docs/guides/BOOTLOADER_IMPLEMENTATION.md](docs/guides/BOOTLOADER_IMPLEMENTATION.md)** - Complete implementation guide (13 KB)
   - Architecture, components, memory layout, file formats, usage examples
-- **[BOOTLOADER_QUICK_START.md](BOOTLOADER_QUICK_START.md)** - Quick reference (7 KB)
+- **[docs/guides/BOOTLOADER_QUICK_START.md](docs/guides/BOOTLOADER_QUICK_START.md)** - Quick reference (7 KB)
   - One-minute overview, common commands, troubleshooting
-- **[PHASE5_CMAKE_GUIDE.md](PHASE5_CMAKE_GUIDE.md)** - CMake integration (3.6 KB)
-- **[PHASE6_TESTING_GUIDE.md](PHASE6_TESTING_GUIDE.md)** - Testing documentation (5.9 KB)
-- **[BOOTLOADER_PLAN.md](BOOTLOADER_PLAN.md)** - 7-phase architecture plan
+- **[docs/guides/PHASE5_CMAKE_GUIDE.md](docs/guides/PHASE5_CMAKE_GUIDE.md)** - CMake integration (3.6 KB)
+- **[docs/guides/PHASE6_TESTING_GUIDE.md](docs/guides/PHASE6_TESTING_GUIDE.md)** - Testing documentation (5.9 KB)
+- **[docs/guides/C_PROGRAM_GUIDE.md](docs/guides/C_PROGRAM_GUIDE.md)** - C program execution guide
+- **[docs/guides/LINUX_SYSCALLS.md](docs/guides/LINUX_SYSCALLS.md)** - Supported syscalls reference
+
+**Design & Planning:**
+- **[docs/planning/BOOTLOADER_PLAN.md](docs/planning/BOOTLOADER_PLAN.md)** - 7-phase architecture plan
+- **[docs/planning/emulator-plan.md](docs/planning/emulator-plan.md)** - Emulator design plan
+- **[docs/planning/chatlog.md](docs/planning/chatlog.md)** - Design discussion history
+
+**Summaries & Verification:**
+- **[docs/summaries/](docs/summaries/)** - Phase verification and test reports
 
 ### Example: Compile and Load Bootloader
 

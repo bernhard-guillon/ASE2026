@@ -12,7 +12,7 @@ from pathlib import Path
 
 class ElfLoaderBlackboxTests:
     def __init__(self):
-        self.emulator_dir = Path(__file__).parent
+        self.emulator_dir = Path(__file__).parent.parent
         self.build_dir = self.emulator_dir / 'build'
         self.emulator_runner = self.build_dir / 'emulator_runner'
         self.elf_test_dir = self.build_dir / 'elf_loader_tests'
