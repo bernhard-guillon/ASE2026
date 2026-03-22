@@ -37,8 +37,8 @@ class ModelCompiler:
         "code_base": 0x00001000,
         "generator_base": 0x00010000,
         "recognizer_base": 0x00110000,
-        "buffer_base": 0x00150000,
-        "framebuffer_base": 0x00200000,
+        "buffer_base": 0x00001000,
+        "framebuffer_base": 0x00002000,
     }
     
     # Buffer offsets (relative to buffer_base)

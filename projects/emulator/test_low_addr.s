@@ -22,7 +22,7 @@
 # Model binary data (embedded via .incbin)
 # Size: 92 bytes
 model_data_start:
-    .incbin "blackbox_tests/neural_exec/test_simple_layer.bin"
+    .incbin "test_low_addr.bin"
 model_data_end:
 
 # Calculate total embedded data size
@@ -71,9 +71,9 @@ inference_loop:
 # For generator: one-hot encoding of character
 map_input_generator:
     # a0 = character code (0-254)
-    # Output: input buffer at 0x00150000
+    # Output: input buffer at 0x00001000
 
-    lui t0, 336
+    lui t0, 1
     addi t0, t0, 0
 
     # Zero out entire input buffer (255 floats)
@@ -105,12 +105,12 @@ map_input_generator:
 # Output mapping: Network output -> Framebuffer pixels
 # For generator: convert 400 floats to grayscale pixels
 map_output_generator:
-    # Read from output buffer at 0x00153000
-    # Write to framebuffer at 0x00200000
+    # Read from output buffer at 0x00004000
+    # Write to framebuffer at 0x00002000
 
-    lui t0, 339
+    lui t0, 4
     addi t0, t0, 0
-    lui t1, 512
+    lui t1, 2
 
     li t2, 0                        # t2 = pixel index
     li t3, 2            # t3 = num pixels (400)
@@ -166,8 +166,8 @@ run_forward_pass:
 
 # Layer 0: Dense [3 → 2] + relu
 layer_0_forward:
-    # Input buffer: 0x00150000
-    # Output buffer: 0x00153000
+    # Input buffer: 0x00001000
+    # Output buffer: 0x00004000
     # Weights @ model_base + 0x3C
     # Biases @ model_base + 0x54
     
@@ -182,9 +182,9 @@ layer_0_forward:
     
     # Load base addresses
     la s0, model_data_start             # s0 = address of model binary data
-    lui s1, 336           # s1 = input buffer
+    lui s1, 1           # s1 = input buffer
     addi s1, s1, 0
-    lui s2, 339          # s2 = output buffer  
+    lui s2, 4          # s2 = output buffer  
     addi s2, s2, 0
     
     # s3 = output index (j), s4 = input index (i)
