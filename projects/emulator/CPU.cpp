@@ -418,6 +418,28 @@ void CPU::executeFPArithmetic(const Instruction& instr) {
             setFPReg(instr.rd, rs1_val * rs2_val);
             break;
         }
+        case 0b0001100: {  // FDIV.S
+            float rs1_val = getFPReg(instr.rs1);
+            float rs2_val = getFPReg(instr.rs2);
+            setFPReg(instr.rd, rs1_val / rs2_val);
+            break;
+        }
+        case 0b1010000: {  // FEQ.S / FLT.S / FLE.S (float comparisons, result in integer register)
+            float rs1_val = getFPReg(instr.rs1);
+            float rs2_val = getFPReg(instr.rs2);
+            uint32_t cmp_result = 0;
+            if (instr.funct3 == 0b010) {        // FEQ.S
+                cmp_result = (rs1_val == rs2_val) ? 1 : 0;
+            } else if (instr.funct3 == 0b001) { // FLT.S
+                cmp_result = (rs1_val < rs2_val) ? 1 : 0;
+            } else if (instr.funct3 == 0b000) { // FLE.S
+                cmp_result = (rs1_val <= rs2_val) ? 1 : 0;
+            } else {
+                throw std::runtime_error("Unsupported FP comparison funct3");
+            }
+            setReg(instr.rd, cmp_result);
+            break;
+        }
         case 0b0010100: {  // FMAX.S / FMIN.S (based on funct3)
             float rs1_val = getFPReg(instr.rs1);
             float rs2_val = getFPReg(instr.rs2);
