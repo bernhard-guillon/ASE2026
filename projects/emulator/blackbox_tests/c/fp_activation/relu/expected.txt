@@ -1,0 +1,10 @@
+C_RELU_TEST
+PASS: relu(-5.5) = 0.0
+PASS: relu(2.5) = 2.5
+PASS: relu(0.0) = 0.0
+PASS: relu(-0.001) = 0.0
+PASS: relu(0.001) = 0.001
+PASS: relu(100.0) = 100.0
+PASS: relu(-100.0) = 0.0
+PASS: chained relu
+END_C_RELU_TEST
