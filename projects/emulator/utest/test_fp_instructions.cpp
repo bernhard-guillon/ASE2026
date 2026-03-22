@@ -6,7 +6,7 @@
 
 class FPInstructionTest : public ::testing::Test {
 protected:
-    Emulator emulator;
+    Emulator emulator{64 * 1024};  // 64 KB is sufficient for FP instruction tests
     
     void SetUp() override {
         emulator.reset();
