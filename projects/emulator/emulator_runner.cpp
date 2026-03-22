@@ -218,11 +218,12 @@ int main(int argc, char** argv) {
     // Initialize stack pointer to 512MB (high in address space for stack growth)
     emulator.getCPU().setReg(2, 512 * 1024 * 1024);
     
-    // Set register x10 (a0, first function argument) with character code if provided (non-GUI mode)
-    if (!gui_mode && char_code > 0) {
+    // Set register x10 (a0, first function argument) with character code if provided
+    if (char_code > 0) {
+        // Use provided character code
         emulator.getCPU().setReg(10, char_code);
-    } else if (gui_mode && char_code == 0) {
-        // In GUI mode, initialize with space character
+    } else if (gui_mode) {
+        // In GUI mode without explicit char, initialize with space character
         emulator.getCPU().setReg(10, 32);
     }
     
