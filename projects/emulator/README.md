@@ -172,11 +172,12 @@ emulator/
 │
 ├── DOCUMENTATION
 ├── ──────────────
-├── BOOTLOADER_IMPLEMENTATION.md # Complete implementation guide (13KB)
-├── BOOTLOADER_QUICK_START.md   # Quick reference and getting started (7KB)
-├── PHASE5_CMAKE_GUIDE.md       # CMake usage guide (3.6KB)
-├── PHASE6_TESTING_GUIDE.md     # Testing documentation (5.9KB)
-└── BOOTLOADER_PLAN.md          # 7-phase architecture plan
+├── docs/
+│   ├── BOOTLOADER_IMPLEMENTATION.md # Complete implementation guide (13KB)
+│   ├── BOOTLOADER_QUICK_START.md   # Quick reference and getting started (7KB)
+│   ├── PHASE5_CMAKE_GUIDE.md       # CMake usage guide (3.6KB)
+│   ├── PHASE6_TESTING_GUIDE.md     # Testing documentation (5.9KB)
+│   └── BOOTLOADER_PLAN.md          # 7-phase architecture plan
 
 ## Blackbox Testing
 
@@ -249,13 +250,13 @@ add_model_bootloader(my_model "model.json")
 
 ### Documentation
 
-- **[BOOTLOADER_IMPLEMENTATION.md](BOOTLOADER_IMPLEMENTATION.md)** - Complete guide (13 KB)
+- **[docs/BOOTLOADER_IMPLEMENTATION.md](docs/BOOTLOADER_IMPLEMENTATION.md)** - Complete guide (13 KB)
   - Architecture, components, memory layout, file formats, usage examples
-- **[BOOTLOADER_QUICK_START.md](BOOTLOADER_QUICK_START.md)** - Quick reference (7 KB)
+- **[docs/BOOTLOADER_QUICK_START.md](docs/BOOTLOADER_QUICK_START.md)** - Quick reference (7 KB)
   - One-minute overview, common commands, troubleshooting
-- **[PHASE5_CMAKE_GUIDE.md](PHASE5_CMAKE_GUIDE.md)** - CMake integration (3.6 KB)
-- **[PHASE6_TESTING_GUIDE.md](PHASE6_TESTING_GUIDE.md)** - Testing documentation (5.9 KB)
-- **[BOOTLOADER_PLAN.md](BOOTLOADER_PLAN.md)** - 7-phase architecture plan
+- **[docs/PHASE5_CMAKE_GUIDE.md](docs/PHASE5_CMAKE_GUIDE.md)** - CMake integration (3.6 KB)
+- **[docs/PHASE6_TESTING_GUIDE.md](docs/PHASE6_TESTING_GUIDE.md)** - Testing documentation (5.9 KB)
+- **[docs/BOOTLOADER_PLAN.md](docs/BOOTLOADER_PLAN.md)** - 7-phase architecture plan
 
 ### Example: Compile and Load Bootloader
 
