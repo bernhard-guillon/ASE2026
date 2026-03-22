@@ -430,3 +430,68 @@ TEST_F(FPInstructionTest, ReLUActivationPattern) {
     executeInstr(encodeFPR(0b0010100, 6, 0b001, 4, 5));
     EXPECT_FLOAT_EQ(emulator.getCPU().getFPReg(6), 7.25f);
 }
+
+// Test FDIV.S (Floating-Point Divide)
+TEST_F(FPInstructionTest, FDIV_S_DividesFloats) {
+    emulator.getCPU().setFPReg(1, 10.0f);
+    emulator.getCPU().setFPReg(2, 2.0f);
+
+    // FDIV.S f0, f1, f2  (10.0 / 2.0 = 5.0)
+    executeInstr(encodeFPR(0b0001100, 0, 0b000, 1, 2));
+    EXPECT_FLOAT_EQ(emulator.getCPU().getFPReg(0), 5.0f);
+}
+
+TEST_F(FPInstructionTest, FDIV_S_FractionalResult) {
+    emulator.getCPU().setFPReg(1, 1.0f);
+    emulator.getCPU().setFPReg(2, 4.0f);
+
+    // FDIV.S f0, f1, f2  (1.0 / 4.0 = 0.25)
+    executeInstr(encodeFPR(0b0001100, 0, 0b000, 1, 2));
+    EXPECT_FLOAT_EQ(emulator.getCPU().getFPReg(0), 0.25f);
+}
+
+// Test FEQ.S / FLT.S / FLE.S (Floating-Point Comparisons)
+TEST_F(FPInstructionTest, FEQ_S_Equal) {
+    emulator.getCPU().setFPReg(1, 3.0f);
+    emulator.getCPU().setFPReg(2, 3.0f);
+
+    // FEQ.S x3, f1, f2  (3.0 == 3.0 -> 1)
+    executeInstr(encodeFPR(0b1010000, 3, 0b010, 1, 2));
+    EXPECT_EQ(emulator.getCPU().getReg(3), 1u);
+}
+
+TEST_F(FPInstructionTest, FEQ_S_NotEqual) {
+    emulator.getCPU().setFPReg(1, 3.0f);
+    emulator.getCPU().setFPReg(2, 4.0f);
+
+    // FEQ.S x1, f1, f2  (3.0 == 4.0 -> 0)
+    executeInstr(encodeFPR(0b1010000, 1, 0b010, 1, 2));
+    EXPECT_EQ(emulator.getCPU().getReg(1), 0u);
+}
+
+TEST_F(FPInstructionTest, FLT_S_LessThan) {
+    emulator.getCPU().setFPReg(1, 2.0f);
+    emulator.getCPU().setFPReg(2, 5.0f);
+
+    // FLT.S x1, f1, f2  (2.0 < 5.0 -> 1)
+    executeInstr(encodeFPR(0b1010000, 1, 0b001, 1, 2));
+    EXPECT_EQ(emulator.getCPU().getReg(1), 1u);
+}
+
+TEST_F(FPInstructionTest, FLT_S_NotLessThan) {
+    emulator.getCPU().setFPReg(1, 5.0f);
+    emulator.getCPU().setFPReg(2, 2.0f);
+
+    // FLT.S x1, f1, f2  (5.0 < 2.0 -> 0)
+    executeInstr(encodeFPR(0b1010000, 1, 0b001, 1, 2));
+    EXPECT_EQ(emulator.getCPU().getReg(1), 0u);
+}
+
+TEST_F(FPInstructionTest, FLE_S_LessOrEqual) {
+    emulator.getCPU().setFPReg(1, 3.0f);
+    emulator.getCPU().setFPReg(2, 3.0f);
+
+    // FLE.S x1, f1, f2  (3.0 <= 3.0 -> 1)
+    executeInstr(encodeFPR(0b1010000, 1, 0b000, 1, 2));
+    EXPECT_EQ(emulator.getCPU().getReg(1), 1u);
+}
