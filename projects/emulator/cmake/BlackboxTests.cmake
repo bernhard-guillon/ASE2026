@@ -108,16 +108,17 @@ function(add_blackbox_asm_tests)
         # Add ctest test
         add_test(
             NAME "${FULL_TEST_NAME}"
-            COMMAND bash -c "${CMAKE_CURRENT_SOURCE_DIR}/build/emulator_runner ${TEST_BIN} > /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt 2>&1; cat /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt"
+            COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/emulator_runner ${TEST_BIN} > /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt 2>&1; cat /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt"
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
         
-        # Set test properties
+        # Make test depend on emulator_runner being built
         set_tests_properties(
             "${FULL_TEST_NAME}"
             PROPERTIES
             TIMEOUT ${TIMEOUT_MS}
             PASS_REGULAR_EXPRESSION ".*"  # Any output is fine, actual validation in Python script
+            DEPENDS emulator_runner
         )
         
     endforeach()
@@ -221,15 +222,16 @@ function(add_blackbox_c_tests)
         # Add ctest test (C tests are informational - no expected output validation)
         add_test(
             NAME "${FULL_TEST_NAME}"
-            COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build/emulator_runner ${TEST_BIN}
+            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/emulator_runner ${TEST_BIN}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
         
-        # Set timeout (longer for complex programs)
+        # Make test depend on emulator_runner being built
         set_tests_properties(
             "${FULL_TEST_NAME}"
             PROPERTIES
             TIMEOUT 10
+            DEPENDS emulator_runner
         )
         
     endforeach()
