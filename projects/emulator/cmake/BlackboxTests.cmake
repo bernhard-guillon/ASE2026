@@ -52,10 +52,27 @@ function(add_blackbox_asm_tests)
         # Create full test name
         set(FULL_TEST_NAME "asm/${TEST_CATEGORY}/${TEST_NAME}")
         
-        # Add custom command to assemble
+        # Parse config.txt for exit code, timeout, and march
+        set(EXPECTED_EXIT_CODE 0)
+        set(TIMEOUT_MS 1000)
+        set(MARCH "rv32i")  # Default march
+        if(EXISTS ${CONFIG_FILE})
+            file(STRINGS ${CONFIG_FILE} CONFIG_LINES)
+            foreach(LINE ${CONFIG_LINES})
+                if(LINE MATCHES "^exit_code=(.*)$")
+                    set(EXPECTED_EXIT_CODE "${CMAKE_MATCH_1}")
+                elseif(LINE MATCHES "^timeout_ms=(.*)$")
+                    set(TIMEOUT_MS "${CMAKE_MATCH_1}")
+                elseif(LINE MATCHES "^march=(.*)$")
+                    set(MARCH "${CMAKE_MATCH_1}")
+                endif()
+            endforeach()
+        endif()
+        
+        # Add custom command to assemble with configured march
         add_custom_command(
             OUTPUT ${TEST_O}
-            COMMAND ${RISCV_AS} -march=rv32i -mabi=ilp32 -o ${TEST_O} ${TEST_S}
+            COMMAND ${RISCV_AS} -march=${MARCH} -mabi=ilp32 -o ${TEST_O} ${TEST_S}
             DEPENDS ${TEST_S}
             COMMENT "Assembling asm/${TEST_CATEGORY}/${TEST_NAME}"
             VERBATIM
@@ -85,36 +102,23 @@ function(add_blackbox_asm_tests)
             DEPENDS ${TEST_BIN}
         )
         
-        # Parse config.txt for exit code and timeout
-        set(EXPECTED_EXIT_CODE 0)
-        set(TIMEOUT_MS 1000)
-        if(EXISTS ${CONFIG_FILE})
-            file(STRINGS ${CONFIG_FILE} CONFIG_LINES)
-            foreach(LINE ${CONFIG_LINES})
-                if(LINE MATCHES "^exit_code=(.*)$")
-                    set(EXPECTED_EXIT_CODE "${CMAKE_MATCH_1}")
-                elseif(LINE MATCHES "^timeout_ms=(.*)$")
-                    set(TIMEOUT_MS "${CMAKE_MATCH_1}")
-                endif()
-            endforeach()
-        endif()
-        
         # Read expected output
         file(READ ${EXPECTED_FILE} EXPECTED_OUTPUT)
         
         # Add ctest test
         add_test(
             NAME "${FULL_TEST_NAME}"
-            COMMAND bash -c "${CMAKE_CURRENT_SOURCE_DIR}/build/emulator_runner ${TEST_BIN} > /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt 2>&1; cat /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt"
+            COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/emulator_runner ${TEST_BIN} > /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt 2>&1; cat /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt"
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
         
-        # Set test properties
+        # Make test depend on emulator_runner being built
         set_tests_properties(
             "${FULL_TEST_NAME}"
             PROPERTIES
             TIMEOUT ${TIMEOUT_MS}
             PASS_REGULAR_EXPRESSION ".*"  # Any output is fine, actual validation in Python script
+            DEPENDS emulator_runner
         )
         
     endforeach()
@@ -177,10 +181,22 @@ function(add_blackbox_c_tests)
         # Create full test name
         set(FULL_TEST_NAME "c/${TEST_CATEGORY}/${TEST_FILE}")
         
-        # Add custom command to compile and link
+        # Check for config.txt to get march (default rv32i)
+        set(MARCH "rv32i")
+        set(CONFIG_FILE "${TEST_DIR}/config.txt")
+        if(EXISTS ${CONFIG_FILE})
+            file(STRINGS ${CONFIG_FILE} CONFIG_LINES)
+            foreach(LINE ${CONFIG_LINES})
+                if(LINE MATCHES "^march=(.*)$")
+                    set(MARCH "${CMAKE_MATCH_1}")
+                endif()
+            endforeach()
+        endif()
+        
+        # Add custom command to compile and link with configured march
         add_custom_command(
             OUTPUT ${TEST_ELF}
-            COMMAND ${RISCV_GCC} -march=rv32i -mabi=ilp32 -nostdlib -static
+            COMMAND ${RISCV_GCC} -march=${MARCH} -mabi=ilp32 -nostdlib -static
                 -T ${LINKER_SCRIPT} -o ${TEST_ELF}
                 ${CRT0} ${SYSCALLS} ${TEST_C} ${MALLOC_C}
             DEPENDS ${TEST_C} ${CRT0} ${SYSCALLS} ${LINKER_SCRIPT} ${MALLOC_C}
@@ -206,15 +222,16 @@ function(add_blackbox_c_tests)
         # Add ctest test (C tests are informational - no expected output validation)
         add_test(
             NAME "${FULL_TEST_NAME}"
-            COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build/emulator_runner ${TEST_BIN}
+            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/emulator_runner ${TEST_BIN}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
         
-        # Set timeout (longer for complex programs)
+        # Make test depend on emulator_runner being built
         set_tests_properties(
             "${FULL_TEST_NAME}"
             PROPERTIES
             TIMEOUT 10
+            DEPENDS emulator_runner
         )
         
     endforeach()

@@ -14,13 +14,16 @@ enum class InstructionFormat {
     UNKNOWN
 };
 
-// Opcodes for RV32I
+// Opcodes for RV32I and F extension
 enum class Opcode : uint8_t {
     LOAD      = 0b0000011,
+    LOAD_FP   = 0b0000111,  // F extension: FLW
     OP_IMM    = 0b0010011,
     AUIPC     = 0b0010111,
     STORE     = 0b0100011,
+    STORE_FP  = 0b0100111,  // F extension: FSW
     OP        = 0b0110011,
+    OP_FP     = 0b1010011,  // F extension: FADD.S, FMUL.S, etc.
     LUI       = 0b0110111,
     BRANCH    = 0b1100011,
     JALR      = 0b1100111,

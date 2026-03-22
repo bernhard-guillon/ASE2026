@@ -1,12 +1,19 @@
 #include "CPU.h"
+#include <cstring>  // for memcpy
 
-CPU::CPU() : registers_{}, pc_(0) {
+CPU::CPU() : registers_{}, fp_registers_{}, pc_(0) {
     reset();
 }
 
 void CPU::validateRegister(uint8_t reg) const {
     if (reg >= NUM_REGISTERS) {
         throw std::out_of_range("Register index out of range");
+    }
+}
+
+void CPU::validateFPRegister(uint8_t reg) const {
+    if (reg >= NUM_FP_REGISTERS) {
+        throw std::out_of_range("FP register index out of range");
     }
 }
 
@@ -32,8 +39,31 @@ void CPU::setReg(uint8_t reg, uint32_t value) {
     registers_[reg] = value;
 }
 
+float CPU::getFPReg(uint8_t reg) const {
+    validateFPRegister(reg);
+    return fp_registers_[reg];
+}
+
+void CPU::setFPReg(uint8_t reg, float value) {
+    validateFPRegister(reg);
+    fp_registers_[reg] = value;
+}
+
+uint32_t CPU::getFPRegBits(uint8_t reg) const {
+    validateFPRegister(reg);
+    uint32_t bits;
+    std::memcpy(&bits, &fp_registers_[reg], sizeof(uint32_t));
+    return bits;
+}
+
+void CPU::setFPRegBits(uint8_t reg, uint32_t bits) {
+    validateFPRegister(reg);
+    std::memcpy(&fp_registers_[reg], &bits, sizeof(uint32_t));
+}
+
 void CPU::reset() {
     registers_.fill(0);
+    fp_registers_.fill(0.0f);
     pc_ = 0;
 }
 
@@ -56,6 +86,21 @@ void CPU::execute(const Instruction& instr, Memory& memory) {
             
         case Opcode::STORE:
             executeStore(instr, memory);
+            incrementPC();
+            break;
+            
+        case Opcode::LOAD_FP:
+            executeFPLoad(instr, memory);
+            incrementPC();
+            break;
+            
+        case Opcode::STORE_FP:
+            executeFPStore(instr, memory);
+            incrementPC();
+            break;
+            
+        case Opcode::OP_FP:
+            executeFPArithmetic(instr);
             incrementPC();
             break;
             
@@ -314,3 +359,151 @@ void CPU::executeAUIPC(const Instruction& instr) {
     // Add upper immediate to PC
     setReg(instr.rd, pc_ + static_cast<uint32_t>(instr.imm));
 }
+
+// F Extension: Floating-Point Load
+void CPU::executeFPLoad(const Instruction& instr, Memory& memory) {
+    // FLW: Load 32-bit float from memory
+    // Only supports funct3 = 0b010 (FLW)
+    if (instr.funct3 != 0b010) {
+        throw std::runtime_error("Unsupported FP load funct3");
+    }
+    
+    uint32_t rs1_val = getReg(instr.rs1);
+    uint32_t address = rs1_val + static_cast<uint32_t>(instr.imm);
+    
+    // Load 32-bit value from memory
+    uint32_t value = memory.read32(address);
+    
+    // Store as FP register bits
+    setFPRegBits(instr.rd, value);
+}
+
+// F Extension: Floating-Point Store
+void CPU::executeFPStore(const Instruction& instr, Memory& memory) {
+    // FSW: Store 32-bit float to memory
+    // Only supports funct3 = 0b010 (FSW)
+    if (instr.funct3 != 0b010) {
+        throw std::runtime_error("Unsupported FP store funct3");
+    }
+    
+    uint32_t rs1_val = getReg(instr.rs1);
+    uint32_t address = rs1_val + static_cast<uint32_t>(instr.imm);
+    
+    // Get FP register as bits
+    uint32_t value = getFPRegBits(instr.rs2);
+    
+    // Store to memory
+    memory.write32(address, value);
+}
+
+// F Extension: Floating-Point Arithmetic
+void CPU::executeFPArithmetic(const Instruction& instr) {
+    // Dispatch based on funct7
+    switch (instr.funct7) {
+        case 0b0000000: {  // FADD.S
+            float rs1_val = getFPReg(instr.rs1);
+            float rs2_val = getFPReg(instr.rs2);
+            setFPReg(instr.rd, rs1_val + rs2_val);
+            break;
+        }
+        case 0b0000100: {  // FSUB.S
+            float rs1_val = getFPReg(instr.rs1);
+            float rs2_val = getFPReg(instr.rs2);
+            setFPReg(instr.rd, rs1_val - rs2_val);
+            break;
+        }
+        case 0b0001000: {  // FMUL.S
+            float rs1_val = getFPReg(instr.rs1);
+            float rs2_val = getFPReg(instr.rs2);
+            setFPReg(instr.rd, rs1_val * rs2_val);
+            break;
+        }
+        case 0b0001100: {  // FDIV.S
+            float rs1_val = getFPReg(instr.rs1);
+            float rs2_val = getFPReg(instr.rs2);
+            setFPReg(instr.rd, rs1_val / rs2_val);
+            break;
+        }
+        case 0b1010000: {  // FEQ.S / FLT.S / FLE.S (float comparisons, result in integer register)
+            float rs1_val = getFPReg(instr.rs1);
+            float rs2_val = getFPReg(instr.rs2);
+            uint32_t cmp_result = 0;
+            if (instr.funct3 == 0b010) {        // FEQ.S
+                cmp_result = (rs1_val == rs2_val) ? 1 : 0;
+            } else if (instr.funct3 == 0b001) { // FLT.S
+                cmp_result = (rs1_val < rs2_val) ? 1 : 0;
+            } else if (instr.funct3 == 0b000) { // FLE.S
+                cmp_result = (rs1_val <= rs2_val) ? 1 : 0;
+            } else {
+                throw std::runtime_error("Unsupported FP comparison funct3");
+            }
+            setReg(instr.rd, cmp_result);
+            break;
+        }
+        case 0b0010100: {  // FMAX.S / FMIN.S (based on funct3)
+            float rs1_val = getFPReg(instr.rs1);
+            float rs2_val = getFPReg(instr.rs2);
+            if (instr.funct3 == 0b001) {  // FMAX.S
+                setFPReg(instr.rd, (rs1_val > rs2_val) ? rs1_val : rs2_val);
+            } else if (instr.funct3 == 0b000) {  // FMIN.S
+                setFPReg(instr.rd, (rs1_val < rs2_val) ? rs1_val : rs2_val);
+            } else {
+                throw std::runtime_error("Unsupported FMIN/FMAX funct3");
+            }
+            break;
+        }
+        case 0b1101000: {  // FCVT.S.W / FCVT.S.WU (int to float conversion)
+            if (instr.rs2 == 0b00000) {  // FCVT.S.W (signed int to float)
+                int32_t int_val = static_cast<int32_t>(getReg(instr.rs1));
+                setFPReg(instr.rd, static_cast<float>(int_val));
+            } else if (instr.rs2 == 0b00001) {  // FCVT.S.WU (unsigned int to float)
+                uint32_t uint_val = getReg(instr.rs1);
+                setFPReg(instr.rd, static_cast<float>(uint_val));
+            } else {
+                throw std::runtime_error("Unsupported FCVT.S.W rs2");
+            }
+            break;
+        }
+        case 0b1110000: {  // FMV.W.X / FMV.X.W (rs2 distinguishes)
+            if (instr.rs2 == 0b00000) {
+                if (instr.funct3 == 0b000) {  // FMV.W.X (int to FP)
+                    // Move bits from integer register to FP register
+                    uint32_t bits = getReg(instr.rs1);
+                    setFPRegBits(instr.rd, bits);
+                } else {
+                    throw std::runtime_error("Unsupported FMV.W.X funct3");
+                }
+            } else {
+                throw std::runtime_error("Unsupported funct7=0b1110000 operation");
+            }
+            break;
+        }
+        case 0b1100000: {  // FCVT.W.S / FCVT.WU.S (float to int conversion)
+            if (instr.rs2 == 0b00000) {  // FCVT.W.S (float to signed int)
+                float fp_val = getFPReg(instr.rs1);
+                setReg(instr.rd, static_cast<uint32_t>(static_cast<int32_t>(fp_val)));
+            } else if (instr.rs2 == 0b00001) {  // FCVT.WU.S (float to unsigned int)
+                float fp_val = getFPReg(instr.rs1);
+                setReg(instr.rd, static_cast<uint32_t>(fp_val));
+            } else {
+                throw std::runtime_error("Unsupported FCVT.W.S rs2");
+            }
+            break;
+        }
+        case 0b1111000: {  // FMV.X.W / FCLASS.S
+            if (instr.funct3 == 0b000 && instr.rs2 == 0b00000) {  // FMV.X.W
+                // Move bits from FP register to integer register
+                uint32_t bits = getFPRegBits(instr.rs1);
+                setReg(instr.rd, bits);
+            } else if (instr.funct3 == 0b001 && instr.rs2 == 0b00000) {  // FCLASS.S
+                throw std::runtime_error("FCLASS.S not yet implemented");
+            } else {
+                throw std::runtime_error("Unsupported funct7=0b1111000 operation");
+            }
+            break;
+        }
+        default:
+            throw std::runtime_error("Unsupported FP arithmetic funct7");
+    }
+}
+
