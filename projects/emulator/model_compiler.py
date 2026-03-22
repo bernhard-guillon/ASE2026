@@ -1052,8 +1052,8 @@ run_forward_pass:
 .globl _start
 
 _start:
-    # Initialize stack pointer
-    lui sp, 0x80000              # sp = 0x80000000 (high memory)
+    # Initialize stack pointer to safe location (within 1MB, below code/data)
+    li sp, 0xF000              # sp = 0x0F000 (61440 bytes)
     
     # Main inference loop (infinite)
 inference_loop:
