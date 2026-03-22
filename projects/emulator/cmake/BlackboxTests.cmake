@@ -181,26 +181,37 @@ function(add_blackbox_c_tests)
         # Create full test name
         set(FULL_TEST_NAME "c/${TEST_CATEGORY}/${TEST_FILE}")
         
-        # Check for config.txt to get march (default rv32i)
+        # Check for config.txt to get march and mabi (defaults: rv32i, ilp32)
         set(MARCH "rv32i")
+        set(MABI "ilp32")
         set(CONFIG_FILE "${TEST_DIR}/config.txt")
         if(EXISTS ${CONFIG_FILE})
             file(STRINGS ${CONFIG_FILE} CONFIG_LINES)
             foreach(LINE ${CONFIG_LINES})
                 if(LINE MATCHES "^march=(.*)$")
                     set(MARCH "${CMAKE_MATCH_1}")
+                elseif(LINE MATCHES "^mabi=(.*)$")
+                    set(MABI "${CMAKE_MATCH_1}")
                 endif()
             endforeach()
         endif()
         
-        # Add custom command to compile and link with configured march
+        # Detect if F extension is present in MARCH to enable hard-float ABI
+        # If march contains 'f' and mabi wasn't explicitly set, use ilp32f (hard-float)
+        if(NOT (CONFIG_FILE MATCHES "mabi=") AND MARCH MATCHES ".*f.*")
+            if(MABI STREQUAL "ilp32")
+                set(MABI "ilp32f")
+            endif()
+        endif()
+        
+        # Add custom command to compile and link with configured march and mabi
         add_custom_command(
             OUTPUT ${TEST_ELF}
-            COMMAND ${RISCV_GCC} -march=${MARCH} -mabi=ilp32 -nostdlib -static
+            COMMAND ${RISCV_GCC} -march=${MARCH} -mabi=${MABI} -nostdlib -static
                 -T ${LINKER_SCRIPT} -o ${TEST_ELF}
                 ${CRT0} ${SYSCALLS} ${TEST_C} ${MALLOC_C}
             DEPENDS ${TEST_C} ${CRT0} ${SYSCALLS} ${LINKER_SCRIPT} ${MALLOC_C}
-            COMMENT "Compiling c/${TEST_CATEGORY}/${TEST_FILE}"
+            COMMENT "Compiling c/${TEST_CATEGORY}/${TEST_FILE} (march=${MARCH}, mabi=${MABI})"
             VERBATIM
         )
         
