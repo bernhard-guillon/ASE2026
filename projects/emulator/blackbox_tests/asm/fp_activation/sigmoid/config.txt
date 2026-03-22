@@ -1,0 +1,2 @@
+# ReLU activation function test configuration
+march=rv32imf
