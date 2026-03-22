@@ -1,0 +1,10 @@
+C_SIGMOID_TEST
+PASS: sigmoid(-3.0) = 0.0
+PASS: sigmoid(-2.0) = 0.0
+PASS: sigmoid(-1.0) = 0.125
+PASS: sigmoid(0.0) = 0.5
+PASS: sigmoid(1.0) = 0.875
+PASS: sigmoid(2.0) = 1.0
+PASS: sigmoid(3.0) = 1.0
+PASS: symmetry property
+END_C_SIGMOID_TEST

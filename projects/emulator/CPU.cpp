@@ -490,6 +490,26 @@ void CPU::executeFPArithmetic(const Instruction& instr) {
             }
             break;
         }
+        case 0b0010000: {  // FSGNJ.S / FSGNJN.S / FSGNJX.S (sign injection)
+            uint32_t rs1_bits = getFPRegBits(instr.rs1);
+            uint32_t rs2_bits = getFPRegBits(instr.rs2);
+            uint32_t result_bits;
+            
+            if (instr.funct3 == 0b000) {  // FSGNJ.S
+                // Copy sign bit from rs2 to rs1 magnitude
+                result_bits = (rs2_bits & 0x80000000) | (rs1_bits & 0x7FFFFFFF);
+            } else if (instr.funct3 == 0b001) {  // FSGNJN.S
+                // Copy negated sign bit from rs2 to rs1 magnitude
+                result_bits = ((rs2_bits ^ 0x80000000) & 0x80000000) | (rs1_bits & 0x7FFFFFFF);
+            } else if (instr.funct3 == 0b010) {  // FSGNJX.S
+                // XOR sign bits from rs1 and rs2
+                result_bits = ((rs1_bits ^ rs2_bits) & 0x80000000) | (rs1_bits & 0x7FFFFFFF);
+            } else {
+                throw std::runtime_error("Unsupported FSGNJ funct3");
+            }
+            setFPRegBits(instr.rd, result_bits);
+            break;
+        }
         case 0b1111000: {  // FMV.X.W / FCLASS.S
             if (instr.funct3 == 0b000 && instr.rs2 == 0b00000) {  // FMV.X.W
                 // Move bits from FP register to integer register
