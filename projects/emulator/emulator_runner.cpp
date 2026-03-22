@@ -109,12 +109,13 @@ void process_gui_input(Emulator& emulator) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--cycles <count>] [--verbose]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--cycles <count>] [--render-framebuffer] [--verbose]" << std::endl;
         return 1;
     }
     
     bool verbose = false;
     bool gui_mode = false;
+    bool render_fb = false;
     uint32_t char_code = 0;
     uint32_t max_cycles = 1000000;  // Default 1M cycles
     const char* binary_file = argv[1];
@@ -125,6 +126,8 @@ int main(int argc, char** argv) {
             gui_mode = true;
         } else if (std::strcmp(argv[i], "--verbose") == 0 || std::strcmp(argv[i], "-v") == 0) {
             verbose = true;
+        } else if (std::strcmp(argv[i], "--render-framebuffer") == 0) {
+            render_fb = true;
         } else if (std::strcmp(argv[i], "--char") == 0) {
             if (i + 1 < argc) {
                 // Extract ASCII code from character argument
@@ -270,6 +273,12 @@ int main(int argc, char** argv) {
                 }
                 std::cout << "Final PC: 0x" << std::hex << emulator.getCPU().getPC() << std::endl;
             }
+        }
+        
+        // Render framebuffer if requested
+        if (render_fb) {
+            FramebufferRenderer renderer;
+            renderer.render(emulator.getMemory());
         }
         
         // Return the program's exit code

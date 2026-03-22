@@ -6,13 +6,11 @@ Tests that the static character generator produces output that matches
 the expected patterns from character_font.h for all printable ASCII
 characters (32-126).
 
-Uses --cycles flag to run for a fixed instruction count, allowing
-framebuffer capture without GUI mode.
+Uses --cycles and --render-framebuffer flags to run and capture output.
 """
 
 import subprocess
 import re
-import struct
 from pathlib import Path
 
 class StaticCharGenValidator:
@@ -52,39 +50,76 @@ class StaticCharGenValidator:
         
         return font_data
     
-    def extract_framebuffer_from_memory_dump(self, memory_hex):
-        """Extract framebuffer (400 bytes from 0x20000) from memory dump.
-        
-        This would parse output from a memory dump feature.
-        For now, we'll implement via a simpler approach.
-        """
-        # TODO: Implement when memory dump feature is added
-        return None
-    
     def run_emulator_capture(self, char_code, cycles=50000, timeout=5):
-        """Run emulator with fixed cycles and capture framebuffer via memory dump.
+        """Run emulator and capture framebuffer output.
         
-        Returns: 400 pixel values from framebuffer at 0x20000
+        Returns: 400 pixel values from framebuffer
         """
         try:
             result = subprocess.run(
-                [str(self.emulator_bin), str(self.static_elf), 
+                [str(self.emulator_bin), str(self.static_elf),
                  '--char', chr(char_code),
                  '--cycles', str(cycles),
-                 '--verbose'],
+                 '--render-framebuffer'],
                 capture_output=True, text=True, timeout=timeout
             )
             
-            # For now, just check execution succeeded
-            # TODO: Add --dump-memory flag to capture framebuffer
-            success = result.returncode == 0 and \
-                      "error" not in result.stderr.lower() and \
-                      "unsupported" not in result.stderr.lower()
+            # Remove ANSI escape codes
+            output = result.stdout
+            output = output.replace('\033[2J', '')  # Clear screen
+            output = output.replace('\033[H', '')   # Move cursor home
             
-            return success, result.stdout + result.stderr
+            # Parse the terminal output to extract the 20x20 grid
+            lines = output.split('\n')
+            grid_lines = []
+            
+            for line in lines:
+                # Skip empty lines
+                if not line:
+                    continue
+                # Each grid line should be exactly 20 characters of # or space
+                if len(line) == 20 and all(c in ' #' for c in line):
+                    grid_lines.append(line)
+                # Collect until we have 20 valid lines
+                if len(grid_lines) == 20:
+                    break
+            
+            if len(grid_lines) != 20:
+                print(f"DEBUG: Got {len(grid_lines)} grid lines, expected 20")
+                return None
+            
+            # Convert to pixel array (# = 255, space = 0)
+            pixels = []
+            for row in grid_lines:
+                for char in row:
+                    pixels.append(255 if char == '#' else 0)
+            
+            return pixels
         
         except Exception as e:
-            return False, str(e)
+            print(f"DEBUG: Exception in run_emulator_capture: {e}")
+            return None
+    
+    def compare_pixels(self, expected, actual):
+        """Compare two pixel arrays.
+        
+        Returns: (matches_count, total, differences, match_percent)
+        """
+        if not actual or len(actual) != 400 or len(expected) != 400:
+            return (0, 400, 400, 0.0)
+        
+        matches = 0
+        differences = 0
+        for i in range(400):
+            exp_on = expected[i] > 127
+            act_on = actual[i] > 127
+            if exp_on == act_on:
+                matches += 1
+            else:
+                differences += 1
+        
+        match_percent = (matches / 400) * 100.0
+        return (matches, 400, differences, match_percent)
     
     def grid_to_visual(self, pixels):
         """Convert pixel array to visual grid."""
@@ -103,34 +138,60 @@ class StaticCharGenValidator:
         if char_code not in self.font_data:
             self.char_results[char_code] = {
                 'passed': False,
-                'reason': 'Character not in font'
+                'reason': 'Character not in font',
+                'matches': 0,
+                'total': 400,
+                'differences': 400,
+                'match_percent': 0.0
             }
             self.tests_failed += 1
             return False
         
         expected_pixels = self.font_data[char_code]
-        success, output = self.run_emulator_capture(char_code)
+        actual_pixels = self.run_emulator_capture(char_code)
         
-        # Store result
+        if actual_pixels is None:
+            self.char_results[char_code] = {
+                'passed': False,
+                'reason': 'Failed to capture framebuffer',
+                'expected': self.grid_to_visual(expected_pixels),
+                'actual': None,
+                'matches': 0,
+                'total': 400,
+                'differences': 400,
+                'match_percent': 0.0
+            }
+            self.tests_failed += 1
+            return False
+        
+        matches, total, diffs, percent = self.compare_pixels(expected_pixels, actual_pixels)
+        
+        # Consider match if at least 95% of pixels match
+        passed = percent >= 95.0
+        
         self.char_results[char_code] = {
-            'passed': success,
-            'reason': 'OK' if success else 'Execution failed',
-            'expected_grid': self.grid_to_visual(expected_pixels),
-            'output': output
+            'passed': passed,
+            'reason': 'OK' if passed else f'{diffs} pixel(s) differ',
+            'expected': self.grid_to_visual(expected_pixels),
+            'actual': self.grid_to_visual(actual_pixels),
+            'matches': matches,
+            'total': total,
+            'differences': diffs,
+            'match_percent': percent
         }
         
-        if success:
+        if passed:
             self.tests_passed += 1
         else:
             self.tests_failed += 1
         
-        return success
+        return passed
     
     def run_all_tests(self):
         """Test all printable ASCII characters (32-126)."""
         print("\n" + "="*70)
         print("STATIC CHARACTER GENERATOR VALIDATION TEST")
-        print("Testing with --cycles flag to capture framebuffer")
+        print("Comparing framebuffer output with font patterns")
         print("="*70 + "\n")
         
         # Check prerequisites
@@ -148,7 +209,7 @@ class StaticCharGenValidator:
         print()
         
         # Test all printable ASCII characters
-        print("Testing characters (50000 cycles each)...\n")
+        print("Testing characters (50000 cycles, rendering framebuffer)...\n")
         
         ascii_start = 32   # space
         ascii_end = 127    # DEL (exclusive)
@@ -157,29 +218,65 @@ class StaticCharGenValidator:
             char_display = chr(char_code) if 32 <= char_code < 127 else f"[{char_code}]"
             
             if self.test_character(char_code):
-                print(f"  ✓ '{char_display}' (ASCII {char_code:3d})")
+                result = self.char_results[char_code]
+                print(f"  ✓ '{char_display}' (ASCII {char_code:3d}): {result['matches']}/{result['total']} pixels ({result['match_percent']:.0f}%)")
             else:
                 result = self.char_results[char_code]
-                print(f"  ✗ '{char_display}' (ASCII {char_code:3d}): {result['reason']}")
+                matches = result.get('matches', 0)
+                total = result.get('total', 400)
+                print(f"  ✗ '{char_display}' (ASCII {char_code:3d}): {matches}/{total} pixels - {result['reason']}")
         
         print()
         print("="*70)
         print(f"RESULTS: {self.tests_passed} passed, {self.tests_failed} failed out of {self.tests_passed + self.tests_failed}")
         print("="*70 + "\n")
         
-        # Show sample character
-        print("Font Reference - Character 65 ('A'):")
-        print("-" * 50)
-        if 65 in self.char_results:
-            for row in self.char_results[65]['expected_grid']:
-                print(row)
-        
-        print("\n" + "="*70)
-        print("NOTE: Full pixel comparison requires --dump-memory feature")
-        print("      Currently validates: execution success, a0 register read")
-        print("="*70 + "\n")
+        # Show detailed result for first failing test (if any)
+        if self.tests_failed > 0:
+            for char_code in range(32, 127):
+                if char_code in self.char_results and not self.char_results[char_code]['passed']:
+                    self.show_detailed_result(char_code)
+                    break
+        else:
+            # Show sample passing character
+            if 65 in self.char_results:
+                self.show_detailed_result(65)
         
         return self.tests_failed == 0
+    
+    def show_detailed_result(self, char_code):
+        """Show detailed comparison for a character."""
+        if char_code not in self.char_results:
+            return
+        
+        result = self.char_results[char_code]
+        char_display = chr(char_code) if 32 <= char_code < 127 else f"[{char_code}]"
+        
+        print(f"Detailed Result for '{char_display}' (ASCII {char_code}):")
+        print("-" * 70)
+        
+        expected_grid = result['expected']
+        actual_grid = result['actual']
+        
+        if actual_grid:
+            print("EXPECTED (from font)           ACTUAL (from emulator)")
+            print("-" * 35 + "  " + "-" * 35)
+            for i in range(20):
+                exp_line = expected_grid[i] if i < len(expected_grid) else ""
+                act_line = actual_grid[i] if i < len(actual_grid) else ""
+                match = "✓" if exp_line == act_line else "✗"
+                print(f"{exp_line}  {match}  {act_line}")
+        else:
+            print("EXPECTED (from font):")
+            print("-" * 35)
+            for row in expected_grid:
+                print(row)
+        
+        print()
+        print(f"Match: {result['matches']}/{result['total']} pixels ({result['match_percent']:.1f}%)")
+        print(f"Differences: {result['differences']}")
+        print(f"Status: {'PASS' if result['passed'] else 'FAIL'}")
+        print()
 
 if __name__ == '__main__':
     validator = StaticCharGenValidator()
