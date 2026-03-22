@@ -18,6 +18,17 @@ static void write_str(const char *s) {
     write(1, s, len);
 }
 
+/* Bitwise float comparison for exact values */
+static int float_equal_bitwise(float a, float b) {
+    union {
+        float f;
+        unsigned int bits;
+    } ua, ub;
+    ua.f = a;
+    ub.f = b;
+    return ua.bits == ub.bits;
+}
+
 /* ReLU using inline assembly */
 static float relu_asm(float x) {
     float result;
@@ -63,7 +74,7 @@ int main(void) {
     
     /* Test 1: ReLU(-5.5) should be 0.0 */
     float relu_neg = relu_asm(-5.5f);
-    if (relu_neg == 0.0f) {
+    if (float_equal_bitwise(relu_neg, 0.0f)) {
         write_str("PASS: ReLU(-5.5)\n");
     } else {
         write_str("FAIL: ReLU(-5.5)\n");
@@ -71,7 +82,7 @@ int main(void) {
     
     /* Test 2: ReLU(2.5) should be 2.5 */
     float relu_pos = relu_asm(2.5f);
-    if (relu_pos == 2.5f) {
+    if (float_equal_bitwise(relu_pos, 2.5f)) {
         write_str("PASS: ReLU(2.5)\n");
     } else {
         write_str("FAIL: ReLU(2.5)\n");
@@ -79,7 +90,7 @@ int main(void) {
     
     /* Test 3: ReLU(0.0) should be 0.0 */
     float relu_zero = relu_asm(0.0f);
-    if (relu_zero == 0.0f) {
+    if (float_equal_bitwise(relu_zero, 0.0f)) {
         write_str("PASS: ReLU(0.0)\n");
     } else {
         write_str("FAIL: ReLU(0.0)\n");
@@ -94,7 +105,7 @@ int main(void) {
     float b = 2.5f;
     float sum = a + b;
     
-    if (sum == 4.0f) {
+    if (float_equal_bitwise(sum, 4.0f)) {
         write_str("PASS: FP addition works\n");
     } else {
         write_str("FAIL: FP addition\n");
