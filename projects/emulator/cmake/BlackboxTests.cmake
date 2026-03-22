@@ -52,10 +52,27 @@ function(add_blackbox_asm_tests)
         # Create full test name
         set(FULL_TEST_NAME "asm/${TEST_CATEGORY}/${TEST_NAME}")
         
-        # Add custom command to assemble
+        # Parse config.txt for exit code, timeout, and march
+        set(EXPECTED_EXIT_CODE 0)
+        set(TIMEOUT_MS 1000)
+        set(MARCH "rv32i")  # Default march
+        if(EXISTS ${CONFIG_FILE})
+            file(STRINGS ${CONFIG_FILE} CONFIG_LINES)
+            foreach(LINE ${CONFIG_LINES})
+                if(LINE MATCHES "^exit_code=(.*)$")
+                    set(EXPECTED_EXIT_CODE "${CMAKE_MATCH_1}")
+                elseif(LINE MATCHES "^timeout_ms=(.*)$")
+                    set(TIMEOUT_MS "${CMAKE_MATCH_1}")
+                elseif(LINE MATCHES "^march=(.*)$")
+                    set(MARCH "${CMAKE_MATCH_1}")
+                endif()
+            endforeach()
+        endif()
+        
+        # Add custom command to assemble with configured march
         add_custom_command(
             OUTPUT ${TEST_O}
-            COMMAND ${RISCV_AS} -march=rv32i -mabi=ilp32 -o ${TEST_O} ${TEST_S}
+            COMMAND ${RISCV_AS} -march=${MARCH} -mabi=ilp32 -o ${TEST_O} ${TEST_S}
             DEPENDS ${TEST_S}
             COMMENT "Assembling asm/${TEST_CATEGORY}/${TEST_NAME}"
             VERBATIM
@@ -84,20 +101,6 @@ function(add_blackbox_asm_tests)
             blackbox_asm_${TEST_CATEGORY}_${TEST_NAME}
             DEPENDS ${TEST_BIN}
         )
-        
-        # Parse config.txt for exit code and timeout
-        set(EXPECTED_EXIT_CODE 0)
-        set(TIMEOUT_MS 1000)
-        if(EXISTS ${CONFIG_FILE})
-            file(STRINGS ${CONFIG_FILE} CONFIG_LINES)
-            foreach(LINE ${CONFIG_LINES})
-                if(LINE MATCHES "^exit_code=(.*)$")
-                    set(EXPECTED_EXIT_CODE "${CMAKE_MATCH_1}")
-                elseif(LINE MATCHES "^timeout_ms=(.*)$")
-                    set(TIMEOUT_MS "${CMAKE_MATCH_1}")
-                endif()
-            endforeach()
-        endif()
         
         # Read expected output
         file(READ ${EXPECTED_FILE} EXPECTED_OUTPUT)
@@ -177,10 +180,22 @@ function(add_blackbox_c_tests)
         # Create full test name
         set(FULL_TEST_NAME "c/${TEST_CATEGORY}/${TEST_FILE}")
         
-        # Add custom command to compile and link
+        # Check for config.txt to get march (default rv32i)
+        set(MARCH "rv32i")
+        set(CONFIG_FILE "${TEST_DIR}/config.txt")
+        if(EXISTS ${CONFIG_FILE})
+            file(STRINGS ${CONFIG_FILE} CONFIG_LINES)
+            foreach(LINE ${CONFIG_LINES})
+                if(LINE MATCHES "^march=(.*)$")
+                    set(MARCH "${CMAKE_MATCH_1}")
+                endif()
+            endforeach()
+        endif()
+        
+        # Add custom command to compile and link with configured march
         add_custom_command(
             OUTPUT ${TEST_ELF}
-            COMMAND ${RISCV_GCC} -march=rv32i -mabi=ilp32 -nostdlib -static
+            COMMAND ${RISCV_GCC} -march=${MARCH} -mabi=ilp32 -nostdlib -static
                 -T ${LINKER_SCRIPT} -o ${TEST_ELF}
                 ${CRT0} ${SYSCALLS} ${TEST_C} ${MALLOC_C}
             DEPENDS ${TEST_C} ${CRT0} ${SYSCALLS} ${LINKER_SCRIPT} ${MALLOC_C}

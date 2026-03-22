@@ -1,0 +1,2 @@
+# FP extension test configuration
+march=rv32imf

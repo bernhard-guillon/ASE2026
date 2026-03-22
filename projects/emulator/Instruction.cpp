@@ -45,10 +45,13 @@ Opcode InstructionDecoder::extractOpcode(uint32_t instruction) {
     
     switch (opcode) {
         case 0b0000011: return Opcode::LOAD;
+        case 0b0000111: return Opcode::LOAD_FP;
         case 0b0010011: return Opcode::OP_IMM;
         case 0b0010111: return Opcode::AUIPC;
         case 0b0100011: return Opcode::STORE;
+        case 0b0100111: return Opcode::STORE_FP;
         case 0b0110011: return Opcode::OP;
+        case 0b1010011: return Opcode::OP_FP;
         case 0b0110111: return Opcode::LUI;
         case 0b1100011: return Opcode::BRANCH;
         case 0b1100111: return Opcode::JALR;
@@ -61,13 +64,16 @@ Opcode InstructionDecoder::extractOpcode(uint32_t instruction) {
 InstructionFormat InstructionDecoder::determineFormat(Opcode opcode) {
     switch (opcode) {
         case Opcode::OP:
+        case Opcode::OP_FP:
             return InstructionFormat::R_TYPE;
         case Opcode::OP_IMM:
         case Opcode::LOAD:
+        case Opcode::LOAD_FP:
         case Opcode::JALR:
         case Opcode::SYSTEM:
             return InstructionFormat::I_TYPE;
         case Opcode::STORE:
+        case Opcode::STORE_FP:
             return InstructionFormat::S_TYPE;
         case Opcode::BRANCH:
             return InstructionFormat::B_TYPE;
