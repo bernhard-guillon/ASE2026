@@ -171,7 +171,7 @@ class RendererTests:
         return self.tests_failed == 0
 
 if __name__ == '__main__':
-    emulator_dir = Path('/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator')
+    emulator_dir = Path(__file__).parent.parent
     suite = RendererTests(emulator_dir)
     success = suite.run_all()
     sys.exit(0 if success else 1)
