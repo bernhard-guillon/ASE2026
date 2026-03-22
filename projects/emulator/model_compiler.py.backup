@@ -179,16 +179,22 @@ class ModelCompiler:
         return self.binary_data
     
     def generate_assembly(self, json_path: str, output_asm: str, temp_bin: str = None, 
-                         with_bootloader: bool = True, with_execution: bool = True) -> str:
+                         with_bootloader: bool = True) -> str:
         """
-        Generate complete RISC-V assembly file with model data and execution code.
+        Generate RISC-V assembly with embedded binary data.
+        
+        The assembly file includes:
+        1. .data section with .incbin directive pointing to binary data
+        2. Section headers and alignment directives
+        3. Bootloader code for memory initialization (Phase 2) or skeleton (Phase 1)
         
         Args:
-            json_path: Path to JSON intermediate format
-            output_asm: Path to output .s file
-            temp_bin: Path to temporary binary file (default: output_asm.bin)
-            with_bootloader: Include bootloader code (legacy, kept for compatibility)
-            with_execution: Include neural network execution code (Sprint 2)
+            json_path: Path to JSON intermediate file
+            output_asm: Path to output .s assembly file
+            temp_bin: Optional path to temporary .bin file for .incbin directive
+                     If None, uses output_asm with .bin extension
+            with_bootloader: If True, generate full bootloader code (Phase 2).
+                           If False, generate skeleton only (Phase 1).
         
         Returns:
             Path to generated assembly file
@@ -196,73 +202,32 @@ class ModelCompiler:
         if self.verbose:
             print(f"[ModelCompiler] Generating assembly: {output_asm}")
         
-        # Load JSON
+        # Load and compile JSON
         self.load_json_intermediate(json_path)
+        self.generate_binary_format()
         
-        # Generate binary format
-        binary = self.generate_binary_format()
-        
-        # Write binary to temp file
+        # Determine binary file path
         if temp_bin is None:
+            # Use same path as output_asm but with .bin extension
             temp_bin = str(Path(output_asm).with_suffix('.bin'))
         
+        # Write binary data
         with open(temp_bin, 'wb') as f:
-            f.write(binary)
+            f.write(self.binary_data)
         
         if self.verbose:
-            print(f"  Binary size: {len(binary)} bytes")
             print(f"  Binary written to: {temp_bin}")
         
-        # Get model info
+        # Generate assembly
         model_type = self.metadata.get("model_type", "unknown")
         num_layers = len(self.layers)
-        input_size = self.layers[0]["input_size"] if self.layers else 0
-        output_size = self.layers[-1]["output_size"] if self.layers else 0
+        binary_size = len(self.binary_data)
         
-        # Determine model base address
-        model_base = (self.MEMORY_LAYOUT["generator_base"] 
-                     if model_type == "generator" 
-                     else self.MEMORY_LAYOUT["recognizer_base"])
+        asm_content = self._generate_asm_header(model_type, num_layers, binary_size)
+        asm_content += self._generate_data_section(temp_bin, binary_size)
+        asm_content += self._generate_text_section(include_bootloader=with_bootloader)
         
-        # Build complete assembly file
-        asm_parts = []
-        
-        # Header comment
-        asm_parts.append(self._generate_asm_header(model_type, num_layers, len(binary)))
-        
-        # Data section with embedded binary
-        asm_parts.append(self._generate_data_section(temp_bin, len(binary)))
-        
-        # Text section with execution code
-        if with_execution:
-            # Generate all execution components
-            asm_parts.append("\n# ====== EXECUTION CODE ======\n")
-            
-            # Main execution loop
-            asm_parts.append(self._generate_execution_loop(model_type))
-            
-            # I/O mapping functions
-            asm_parts.append(self._generate_input_mapping(model_type, input_size))
-            asm_parts.append(self._generate_output_mapping(model_type, output_size))
-            
-            # Forward pass coordinator
-            asm_parts.append(self._generate_model_forward_pass())
-            
-            # Individual layer functions
-            for i, layer in enumerate(self.layers):
-                is_last = (i == len(self.layers) - 1)
-                layer_code = self._generate_dense_layer_forward(i, layer, model_base, is_last)
-                asm_parts.append(layer_code)
-            
-            # Helper functions
-            asm_parts.append(self._generate_sigmoid_piecewise())
-            
-        else:
-            # Legacy mode: just bootloader or skeleton
-            asm_parts.append(self._generate_text_section(with_bootloader))
-        
-        # Write complete assembly file
-        asm_content = '\n'.join(asm_parts)
+        # Write assembly file
         with open(output_asm, 'w') as f:
             f.write(asm_content)
         
@@ -270,7 +235,7 @@ class ModelCompiler:
             print(f"  Assembly written to: {output_asm}")
         
         return output_asm
-
+    
     def _generate_asm_header(self, model_type: str, num_layers: int, binary_size: int) -> str:
         """Generate assembly file header with metadata comments."""
         return f"""# RISC-V Bootloader: Model Compiler Output
@@ -618,443 +583,7 @@ _start:
     ecall
 
 """
-    def _generate_sigmoid_piecewise(self) -> str:
-        """Generate piecewise linear sigmoid approximation function."""
-        return """
-# Sigmoid piecewise linear approximation
-# Input: fa0 (x value)
-# Output: fa0 (sigmoid(x))
-sigmoid_piecewise:
-    # Save registers
-    addi sp, sp, -16
-    sw ra, 12(sp)
-    fsw fa1, 8(sp)
-    fsw fa2, 4(sp)
     
-    # Load constants
-    lui t0, 0xC0000          # -2.0 in float
-    fmv.w.x fa1, t0
-    lui t0, 0x40000          # 2.0 in float
-    fmv.w.x fa2, t0
-    
-    # if x <= -2.0: return 0.0
-    fle.s t0, fa0, fa1
-    beq t0, zero, .Lsig_check_mid_neg
-    fmv.w.x fa0, zero        # return 0.0
-    j .Lsig_done
-    
-.Lsig_check_mid_neg:
-    # if x <= 0.0: return 0.25 + 0.125*x
-    fmv.w.x fa1, zero
-    fle.s t0, fa0, fa1
-    beq t0, zero, .Lsig_check_mid_pos
-    
-    lui t0, 0x3E000          # 0.125 in float
-    fmv.w.x fa1, t0
-    fmul.s fa1, fa0, fa1     # 0.125 * x
-    lui t0, 0x3E800          # 0.25 in float
-    fmv.w.x fa2, t0
-    fadd.s fa0, fa2, fa1     # 0.25 + 0.125*x
-    j .Lsig_done
-    
-.Lsig_check_mid_pos:
-    # if x <= 2.0: return 0.75 + 0.125*x
-    lui t0, 0x40000          # 2.0 in float
-    fmv.w.x fa2, t0
-    fle.s t0, fa0, fa2
-    beq t0, zero, .Lsig_saturate
-    
-    lui t0, 0x3E000          # 0.125 in float
-    fmv.w.x fa1, t0
-    fmul.s fa1, fa0, fa1     # 0.125 * x
-    lui t0, 0x3F400          # 0.75 in float
-    fmv.w.x fa2, t0
-    fadd.s fa0, fa2, fa1     # 0.75 + 0.125*x
-    j .Lsig_done
-    
-.Lsig_saturate:
-    # x > 2.0: return 1.0
-    lui t0, 0x3F800          # 1.0 in float
-    fmv.w.x fa0, t0
-    
-.Lsig_done:
-    # Restore registers
-    lw ra, 12(sp)
-    flw fa1, 8(sp)
-    flw fa2, 4(sp)
-    addi sp, sp, 16
-    ret
-
-"""
-    
-    def _generate_dense_layer_forward(self, layer_idx: int, layer_info: Dict, 
-                                      model_base: int, is_last_layer: bool = False) -> str:
-        """
-        Generate RISC-V assembly code for Dense layer forward pass.
-        
-        Args:
-            layer_idx: Layer index (0-based)
-            layer_info: Layer metadata dict
-            model_base: Base address where model is loaded
-            is_last_layer: True if this is the final layer
-            
-        Returns:
-            RISC-V assembly code for this layer's forward pass
-        """
-        input_size = layer_info["input_size"]
-        output_size = layer_info["output_size"]
-        activation = layer_info["activation"]
-        
-        # Calculate addresses
-        weights_offset = layer_info.get("weights_offset", 0)
-        biases_offset = layer_info.get("biases_offset", 0)
-        
-        # Buffer management (ping-pong)
-        if layer_idx == 0:
-            input_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]
-            output_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["activation_a"]
-        elif layer_idx % 2 == 1:
-            input_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["activation_a"]
-            output_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["activation_b"]
-        else:
-            input_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["activation_b"]
-            output_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["activation_a"]
-        
-        # For last layer, output to output buffer
-        if is_last_layer:
-            output_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]
-        
-        asm = f"""
-# Layer {layer_idx}: Dense [{input_size} → {output_size}] + {activation}
-layer_{layer_idx}_forward:
-    # Input buffer: 0x{input_buf:08X}
-    # Output buffer: 0x{output_buf:08X}
-    # Weights @ model_base + 0x{weights_offset:X}
-    # Biases @ model_base + 0x{biases_offset:X}
-    
-    # Save callee-saved registers
-    addi sp, sp, -32
-    sw ra, 28(sp)
-    sw s0, 24(sp)
-    sw s1, 20(sp)
-    sw s2, 16(sp)
-    sw s3, 12(sp)
-    sw s4, 8(sp)
-    
-    # Load base addresses
-    lui s0, {model_base >> 12}          # s0 = model base
-    lui s1, {input_buf >> 12}           # s1 = input buffer
-    addi s1, s1, {input_buf & 0xFFF}
-    lui s2, {output_buf >> 12}          # s2 = output buffer  
-    addi s2, s2, {output_buf & 0xFFF}
-    
-    # s3 = output index (j), s4 = input index (i)
-    li s3, 0                            # j = 0
-
-.L{layer_idx}_outer_loop:
-    # Check if j >= output_size
-    li t0, {output_size}
-    bge s3, t0, .L{layer_idx}_done
-    
-    # Load bias[j] into fa0 (accumulator)
-    li t0, {biases_offset}
-    add t1, s0, t0                      # t1 = model_base + bias_offset
-    slli t2, s3, 2                      # t2 = j * 4
-    add t1, t1, t2                      # t1 = &bias[j]
-    flw fa0, 0(t1)                      # fa0 = bias[j] (accumulator)
-    
-    # Inner loop: accumulate weights * inputs
-    li s4, 0                            # i = 0
-
-.L{layer_idx}_inner_loop:
-    # Check if i >= input_size
-    li t0, {input_size}
-    bge s4, t0, .L{layer_idx}_apply_activation
-    
-    # Load input[i]
-    slli t0, s4, 2                      # t0 = i * 4
-    add t1, s1, t0                      # t1 = input_buf + i*4
-    flw fa1, 0(t1)                      # fa1 = input[i]
-    
-    # Load weight[i][j]
-    # offset = (i * output_size + j) * 4
-    li t0, {output_size}
-    mul t1, s4, t0                      # t1 = i * output_size
-    add t1, t1, s3                      # t1 = i * output_size + j
-    slli t1, t1, 2                      # t1 *= 4 (byte offset)
-    li t0, {weights_offset}
-    add t1, t1, t0                      # t1 += weights_offset
-    add t1, s0, t1                      # t1 = model_base + offset
-    flw fa2, 0(t1)                      # fa2 = weight[i][j]
-    
-    # acc += input[i] * weight[i][j]
-    fmul.s fa3, fa1, fa2                # fa3 = input[i] * weight[i][j]
-    fadd.s fa0, fa0, fa3                # fa0 += fa3
-    
-    addi s4, s4, 1                      # i++
-    j .L{layer_idx}_inner_loop
-
-.L{layer_idx}_apply_activation:
-"""
-        
-        # Add activation function
-        if activation == "relu":
-            asm += f"""    # Apply ReLU: max(fa0, 0.0)
-    fmv.w.x fa1, zero                   # fa1 = 0.0
-    fmax.s fa0, fa0, fa1                # fa0 = max(fa0, 0.0)
-"""
-        elif activation == "sigmoid":
-            asm += f"""    # Apply Sigmoid (piecewise linear approximation)
-    # Save fa0 to stack before call
-    addi sp, sp, -8
-    fsw fa0, 4(sp)
-    call sigmoid_piecewise
-    flw fa0, 4(sp)
-    addi sp, sp, 8
-"""
-        # else: no activation
-        
-        asm += f"""    
-    # Store output[j] = fa0
-    slli t0, s3, 2                      # t0 = j * 4
-    add t1, s2, t0                      # t1 = output_buf + j*4
-    fsw fa0, 0(t1)                      # output[j] = fa0
-    
-    addi s3, s3, 1                      # j++
-    j .L{layer_idx}_outer_loop
-
-.L{layer_idx}_done:
-    # Restore callee-saved registers
-    lw ra, 28(sp)
-    lw s0, 24(sp)
-    lw s1, 20(sp)
-    lw s2, 16(sp)
-    lw s3, 12(sp)
-    lw s4, 8(sp)
-    addi sp, sp, 32
-    ret
-
-"""
-        return asm
-    
-    def _generate_input_mapping(self, model_type: str, input_size: int) -> str:
-        """Generate code to map character input to network input."""
-        if model_type == "generator":
-            # For generator: map character code (a0) to 255-dimensional input
-            # Simple approach: one-hot encoding
-            return f"""
-# Input mapping: Character code (a0) -> Network input
-# For generator: one-hot encoding of character
-map_input_generator:
-    # a0 = character code (0-254)
-    # Output: input buffer at 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]:08X}
-
-    lui t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) >> 12}
-    addi t0, t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) & 0xFFF}
-
-    # Zero out entire input buffer (255 floats)
-    li t1, {input_size * 4}
-    xor t2, t2, t2
-.Lclear_input:
-    beq t2, t1, .Lclear_done
-    add t3, t0, t2
-    sw zero, 0(t3)
-    addi t2, t2, 4
-    j .Lclear_input
-
-.Lclear_done:
-    # Set input[char_code] = 1.0
-    # Validate a0 is in range [0, 254]
-    li t1, 255
-    bgeu a0, t1, .Linput_done
-
-    slli t1, a0, 2                  # t1 = char_code * 4
-    add t1, t0, t1                  # t1 = input_buf + offset
-    lui t2, 0x3F800                 # t2 = 1.0 in float
-    sw t2, 0(t1)                    # input[char_code] = 1.0
-
-.Linput_done:
-    ret
-
-"""
-        else:
-            # For recognizer: read pixels from framebuffer
-            return f"""
-# Input mapping: Framebuffer pixels -> Network input
-# For recognizer: read 400 pixels (20x20) and normalize to [0,1]
-map_input_recognizer:
-    # Read from framebuffer at 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
-    # Write to input buffer at 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]:08X}
-
-    lui t0, {self.MEMORY_LAYOUT["framebuffer_base"] >> 12}
-    lui t1, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) >> 12}
-    addi t1, t1, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) & 0xFFF}
-
-    li t2, 0                        # t2 = pixel index
-    li t3, 400                      # t3 = num pixels
-
-.Lread_pixels:
-    bge t2, t3, .Lread_done
-
-    # Read byte pixel[i]
-    add t4, t0, t2
-    lbu t5, 0(t4)                   # t5 = pixel value [0-255]
-
-    # Convert to float: divide by 255.0
-    fcvt.s.wu fa0, t5               # fa0 = (float)pixel
-    lui t6, 0x43800                 # 255.0 in float
-    fmv.w.x fa1, t6
-    fdiv.s fa0, fa0, fa1            # fa0 = pixel / 255.0
-
-    # Store to input[i]
-    slli t4, t2, 2                  # t4 = i * 4
-    add t4, t1, t4                  # t4 = input_buf + i*4
-    fsw fa0, 0(t4)
-
-    addi t2, t2, 1
-    j .Lread_pixels
-
-.Lread_done:
-    ret
-
-"""
-
-    def _generate_output_mapping(self, model_type: str, output_size: int) -> str:
-        """Generate code to map network output to framebuffer."""
-        if model_type == "generator":
-            # For generator: convert 400 floats to pixels and write to framebuffer
-            return f"""
-# Output mapping: Network output -> Framebuffer pixels
-# For generator: convert 400 floats to grayscale pixels
-map_output_generator:
-    # Read from output buffer at 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
-    # Write to framebuffer at 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
-
-    lui t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]) >> 12}
-    addi t0, t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]) & 0xFFF}
-    lui t1, {self.MEMORY_LAYOUT["framebuffer_base"] >> 12}
-
-    li t2, 0                        # t2 = pixel index
-    li t3, {output_size}            # t3 = num pixels (400)
-
-.Lwrite_pixels:
-    bge t2, t3, .Lwrite_done
-
-    # Load float output[i]
-    slli t4, t2, 2                  # t4 = i * 4
-    add t4, t0, t4                  # t4 = output_buf + i*4
-    flw fa0, 0(t4)                  # fa0 = output[i]
-
-    # Clamp to [0.0, 1.0]
-    fmv.w.x fa1, zero
-    fmax.s fa0, fa0, fa1            # fa0 = max(fa0, 0.0)
-    lui t5, 0x3F800                 # 1.0 in float
-    fmv.w.x fa1, t5
-    fmin.s fa0, fa0, fa1            # fa0 = min(fa0, 1.0)
-
-    # Convert to byte: multiply by 255.0
-    lui t5, 0x43800                 # 255.0 in float
-    fmv.w.x fa1, t5
-    fmul.s fa0, fa0, fa1            # fa0 = fa0 * 255.0
-
-    # Convert to unsigned int
-    fcvt.wu.s t5, fa0               # t5 = (uint)fa0
-
-    # Store byte to framebuffer[i]
-    add t4, t1, t2                  # t4 = framebuf + i
-    sb t5, 0(t4)
-
-    addi t2, t2, 1
-    j .Lwrite_pixels
-
-.Lwrite_done:
-    ret
-
-"""
-        else:
-            # For recognizer: show predicted class
-            return f"""
-# Output mapping: Network output -> Display prediction
-# For recognizer: find argmax and display predicted character
-map_output_recognizer:
-    # Read from output buffer at 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
-    # For now: just return (visualization TBD)
-
-    # TODO: Implement argmax and character display
-    ret
-
-"""
-
-    def _generate_model_forward_pass(self) -> str:
-        """Generate complete forward pass through all layers."""
-        if not self.layers:
-            return "    # No layers\n    ret\n"
-
-        model_type = self.metadata.get("model_type", "generator")
-        model_base = (self.MEMORY_LAYOUT["generator_base"] 
-                     if model_type == "generator" 
-                     else self.MEMORY_LAYOUT["recognizer_base"])
-
-        code = f"""
-# Forward pass through all {len(self.layers)} layers
-run_forward_pass:
-    addi sp, sp, -16
-    sw ra, 12(sp)
-
-"""
-        # Generate code for each layer
-        for i, layer in enumerate(self.layers):
-            is_last = (i == len(self.layers) - 1)
-            code += f"    # === Layer {i} ===\n"
-            code += f"    call layer_{i}_forward\n\n"
-
-        code += """    lw ra, 12(sp)
-    addi sp, sp, 16
-    ret
-
-"""
-        return code
-
-
-
-    def _generate_execution_loop(self, model_type: str) -> str:
-        """Generate the main cyclic execution loop."""
-        return f"""
-# Main execution loop: Input -> Forward Pass -> Output -> Repeat
-# Mimics static_char_gen.c behavior but with neural network
-.section .text
-.align 4
-.globl _start
-
-_start:
-    # Initialize stack pointer
-    lui sp, 0x80000              # sp = 0x80000000 (high memory)
-    
-    # Main inference loop (infinite)
-inference_loop:
-    # Step 1: Read input and map to network input
-    # For generator: a0 contains character code (set externally or hardcoded for testing)
-    # For now, use a test character 'A' = 65
-    li a0, 65                    # TODO: Read from external source
-    call map_input_{model_type}
-    
-    # Step 2: Run forward pass through all layers
-    call run_forward_pass
-    
-    # Step 3: Map output to framebuffer
-    call map_output_{model_type}
-    
-    # Step 4: Loop back
-    j inference_loop
-    
-    # Unreachable, but include exit for completeness
-    li a0, 0
-    li a7, 93                    # SYS_exit
-    ecall
-
-"""
-
-
     def compile(self, json_path: str, output_asm: str, with_bootloader: bool = True) -> Tuple[str, str]:
         """
         Compile JSON to assembly and binary with optional bootloader code.
