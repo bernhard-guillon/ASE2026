@@ -179,7 +179,7 @@ class ModelCompiler:
         return self.binary_data
     
     def generate_assembly(self, json_path: str, output_asm: str, temp_bin: str = None, 
-                         with_bootloader: bool = True, with_execution: bool = True) -> str:
+                         with_bootloader: bool = True, with_execution: bool = False) -> str:
         """
         Generate complete RISC-V assembly file with model data and execution code.
         
@@ -231,7 +231,15 @@ class ModelCompiler:
         asm_parts.append(self._generate_asm_header(model_type, num_layers, len(binary)))
         
         # Data section with embedded binary
-        asm_parts.append(self._generate_data_section(temp_bin, len(binary)))
+        # Place model at high address only when execution code is generated
+        # (execution writes to framebuffer at 0x20000 and may overlap low-placed data).
+        asm_parts.append(
+            self._generate_data_section(
+                temp_bin,
+                len(binary),
+                place_model_high=with_execution
+            )
+        )
         
         # Text section with execution code
         if with_execution:
@@ -295,16 +303,22 @@ class ModelCompiler:
 
 """
     
-    def _generate_data_section(self, bin_path: str, binary_size: int) -> str:
+    def _generate_data_section(self, bin_path: str, binary_size: int, place_model_high: bool = False) -> str:
         """Generate .data section with .incbin directive."""
         # Make path relative if possible for portability
         bin_path_display = Path(bin_path).name  # Just filename for comments
-        
-        return f"""# Model binary data (embedded via .incbin)
-# Size: {binary_size} bytes
-# Keep model blob away from framebuffer (0x20000) so framebuffer writes
+
+        if place_model_high:
+            org_prefix = """# Keep model blob away from framebuffer (0x20000) so framebuffer writes
 # cannot corrupt model weights/biases during cyclic inference.
     .org 0x30000
+"""
+        else:
+            org_prefix = ""
+
+        return f"""# Model binary data (embedded via .incbin)
+# Size: {binary_size} bytes
+{org_prefix}\
 model_data_start:
     .incbin "{bin_path}"
 model_data_end:
@@ -1062,7 +1076,8 @@ inference_loop:
 """
 
 
-    def compile(self, json_path: str, output_asm: str, with_bootloader: bool = True) -> Tuple[str, str]:
+    def compile(self, json_path: str, output_asm: str, with_bootloader: bool = True,
+               with_execution: bool = False) -> Tuple[str, str]:
         """
         Compile JSON to assembly and binary with optional bootloader code.
         
@@ -1071,13 +1086,20 @@ inference_loop:
             output_asm: Path to output assembly file
             with_bootloader: If True, generate full bootloader (Phase 2).
                            If False, generate skeleton only (Phase 1).
+            with_execution: If True, generate neural execution code (Sprint 2).
+                           If False, generate only bootloader/skeleton code.
         
         Returns:
             Tuple of (asm_file_path, bin_file_path)
         """
         bin_path = str(Path(output_asm).with_suffix('.bin'))
-        asm_path = self.generate_assembly(json_path, output_asm, bin_path, 
-                                         with_bootloader=with_bootloader)
+        asm_path = self.generate_assembly(
+            json_path,
+            output_asm,
+            bin_path,
+            with_bootloader=with_bootloader,
+            with_execution=with_execution
+        )
         return (asm_path, bin_path)
 
 
