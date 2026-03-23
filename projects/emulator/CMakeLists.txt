@@ -309,3 +309,14 @@ if(RISCV_TOOLCHAIN_FOUND)
     # Create target to build all blackbox test artifacts
     add_blackbox_all_target()
 endif()
+
+# Neural Character Generation Validation Test
+add_test(
+    NAME python/neural_char_gen/validation_256
+    COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_neural_256_chars.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
+    LABELS "neural;validation;blackbox"
+    TIMEOUT 300
+)
