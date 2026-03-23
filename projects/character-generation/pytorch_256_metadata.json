@@ -1,0 +1,1282 @@
+[
+  {
+    "ascii": 0,
+    "character": "\\x00",
+    "pixels": 68
+  },
+  {
+    "ascii": 1,
+    "character": "\\x01",
+    "pixels": 68
+  },
+  {
+    "ascii": 2,
+    "character": "\\x02",
+    "pixels": 68
+  },
+  {
+    "ascii": 3,
+    "character": "\\x03",
+    "pixels": 68
+  },
+  {
+    "ascii": 4,
+    "character": "\\x04",
+    "pixels": 67
+  },
+  {
+    "ascii": 5,
+    "character": "\\x05",
+    "pixels": 67
+  },
+  {
+    "ascii": 6,
+    "character": "\\x06",
+    "pixels": 66
+  },
+  {
+    "ascii": 7,
+    "character": "\\x07",
+    "pixels": 68
+  },
+  {
+    "ascii": 8,
+    "character": "\\x08",
+    "pixels": 68
+  },
+  {
+    "ascii": 9,
+    "character": "\\x09",
+    "pixels": 68
+  },
+  {
+    "ascii": 10,
+    "character": "\\x0a",
+    "pixels": 68
+  },
+  {
+    "ascii": 11,
+    "character": "\\x0b",
+    "pixels": 66
+  },
+  {
+    "ascii": 12,
+    "character": "\\x0c",
+    "pixels": 66
+  },
+  {
+    "ascii": 13,
+    "character": "\\x0d",
+    "pixels": 68
+  },
+  {
+    "ascii": 14,
+    "character": "\\x0e",
+    "pixels": 68
+  },
+  {
+    "ascii": 15,
+    "character": "\\x0f",
+    "pixels": 68
+  },
+  {
+    "ascii": 16,
+    "character": "\\x10",
+    "pixels": 50
+  },
+  {
+    "ascii": 17,
+    "character": "\\x11",
+    "pixels": 50
+  },
+  {
+    "ascii": 18,
+    "character": "\\x12",
+    "pixels": 51
+  },
+  {
+    "ascii": 19,
+    "character": "\\x13",
+    "pixels": 50
+  },
+  {
+    "ascii": 20,
+    "character": "\\x14",
+    "pixels": 50
+  },
+  {
+    "ascii": 21,
+    "character": "\\x15",
+    "pixels": 49
+  },
+  {
+    "ascii": 22,
+    "character": "\\x16",
+    "pixels": 51
+  },
+  {
+    "ascii": 23,
+    "character": "\\x17",
+    "pixels": 51
+  },
+  {
+    "ascii": 24,
+    "character": "\\x18",
+    "pixels": 51
+  },
+  {
+    "ascii": 25,
+    "character": "\\x19",
+    "pixels": 50
+  },
+  {
+    "ascii": 26,
+    "character": "\\x1a",
+    "pixels": 48
+  },
+  {
+    "ascii": 27,
+    "character": "\\x1b",
+    "pixels": 50
+  },
+  {
+    "ascii": 28,
+    "character": "\\x1c",
+    "pixels": 51
+  },
+  {
+    "ascii": 29,
+    "character": "\\x1d",
+    "pixels": 50
+  },
+  {
+    "ascii": 30,
+    "character": "\\x1e",
+    "pixels": 50
+  },
+  {
+    "ascii": 31,
+    "character": "\\x1f",
+    "pixels": 51
+  },
+  {
+    "ascii": 32,
+    "character": " ",
+    "pixels": 0
+  },
+  {
+    "ascii": 33,
+    "character": "!",
+    "pixels": 15
+  },
+  {
+    "ascii": 34,
+    "character": "\"",
+    "pixels": 16
+  },
+  {
+    "ascii": 35,
+    "character": "#",
+    "pixels": 30
+  },
+  {
+    "ascii": 36,
+    "character": "$",
+    "pixels": 48
+  },
+  {
+    "ascii": 37,
+    "character": "%",
+    "pixels": 38
+  },
+  {
+    "ascii": 38,
+    "character": "&",
+    "pixels": 38
+  },
+  {
+    "ascii": 39,
+    "character": "'",
+    "pixels": 7
+  },
+  {
+    "ascii": 40,
+    "character": "(",
+    "pixels": 22
+  },
+  {
+    "ascii": 41,
+    "character": ")",
+    "pixels": 25
+  },
+  {
+    "ascii": 42,
+    "character": "*",
+    "pixels": 16
+  },
+  {
+    "ascii": 43,
+    "character": "+",
+    "pixels": 15
+  },
+  {
+    "ascii": 44,
+    "character": ",",
+    "pixels": 0
+  },
+  {
+    "ascii": 45,
+    "character": "-",
+    "pixels": 4
+  },
+  {
+    "ascii": 46,
+    "character": ".",
+    "pixels": 0
+  },
+  {
+    "ascii": 47,
+    "character": "/",
+    "pixels": 19
+  },
+  {
+    "ascii": 48,
+    "character": "0",
+    "pixels": 41
+  },
+  {
+    "ascii": 49,
+    "character": "1",
+    "pixels": 23
+  },
+  {
+    "ascii": 50,
+    "character": "2",
+    "pixels": 32
+  },
+  {
+    "ascii": 51,
+    "character": "3",
+    "pixels": 32
+  },
+  {
+    "ascii": 52,
+    "character": "4",
+    "pixels": 25
+  },
+  {
+    "ascii": 53,
+    "character": "5",
+    "pixels": 35
+  },
+  {
+    "ascii": 54,
+    "character": "6",
+    "pixels": 36
+  },
+  {
+    "ascii": 55,
+    "character": "7",
+    "pixels": 19
+  },
+  {
+    "ascii": 56,
+    "character": "8",
+    "pixels": 36
+  },
+  {
+    "ascii": 57,
+    "character": "9",
+    "pixels": 39
+  },
+  {
+    "ascii": 58,
+    "character": ":",
+    "pixels": 8
+  },
+  {
+    "ascii": 59,
+    "character": ";",
+    "pixels": 9
+  },
+  {
+    "ascii": 60,
+    "character": "<",
+    "pixels": 20
+  },
+  {
+    "ascii": 61,
+    "character": "=",
+    "pixels": 16
+  },
+  {
+    "ascii": 62,
+    "character": ">",
+    "pixels": 18
+  },
+  {
+    "ascii": 63,
+    "character": "?",
+    "pixels": 21
+  },
+  {
+    "ascii": 64,
+    "character": "@",
+    "pixels": 51
+  },
+  {
+    "ascii": 65,
+    "character": "A",
+    "pixels": 38
+  },
+  {
+    "ascii": 66,
+    "character": "B",
+    "pixels": 48
+  },
+  {
+    "ascii": 67,
+    "character": "C",
+    "pixels": 30
+  },
+  {
+    "ascii": 68,
+    "character": "D",
+    "pixels": 45
+  },
+  {
+    "ascii": 69,
+    "character": "E",
+    "pixels": 38
+  },
+  {
+    "ascii": 70,
+    "character": "F",
+    "pixels": 30
+  },
+  {
+    "ascii": 71,
+    "character": "G",
+    "pixels": 39
+  },
+  {
+    "ascii": 72,
+    "character": "H",
+    "pixels": 37
+  },
+  {
+    "ascii": 73,
+    "character": "I",
+    "pixels": 27
+  },
+  {
+    "ascii": 74,
+    "character": "J",
+    "pixels": 28
+  },
+  {
+    "ascii": 75,
+    "character": "K",
+    "pixels": 42
+  },
+  {
+    "ascii": 76,
+    "character": "L",
+    "pixels": 17
+  },
+  {
+    "ascii": 77,
+    "character": "M",
+    "pixels": 47
+  },
+  {
+    "ascii": 78,
+    "character": "N",
+    "pixels": 44
+  },
+  {
+    "ascii": 79,
+    "character": "O",
+    "pixels": 39
+  },
+  {
+    "ascii": 80,
+    "character": "P",
+    "pixels": 40
+  },
+  {
+    "ascii": 81,
+    "character": "Q",
+    "pixels": 42
+  },
+  {
+    "ascii": 82,
+    "character": "R",
+    "pixels": 46
+  },
+  {
+    "ascii": 83,
+    "character": "S",
+    "pixels": 36
+  },
+  {
+    "ascii": 84,
+    "character": "T",
+    "pixels": 28
+  },
+  {
+    "ascii": 85,
+    "character": "U",
+    "pixels": 38
+  },
+  {
+    "ascii": 86,
+    "character": "V",
+    "pixels": 34
+  },
+  {
+    "ascii": 87,
+    "character": "W",
+    "pixels": 43
+  },
+  {
+    "ascii": 88,
+    "character": "X",
+    "pixels": 30
+  },
+  {
+    "ascii": 89,
+    "character": "Y",
+    "pixels": 27
+  },
+  {
+    "ascii": 90,
+    "character": "Z",
+    "pixels": 32
+  },
+  {
+    "ascii": 91,
+    "character": "[",
+    "pixels": 36
+  },
+  {
+    "ascii": 92,
+    "character": "\\",
+    "pixels": 18
+  },
+  {
+    "ascii": 93,
+    "character": "]",
+    "pixels": 21
+  },
+  {
+    "ascii": 94,
+    "character": "^",
+    "pixels": 16
+  },
+  {
+    "ascii": 95,
+    "character": "_",
+    "pixels": 0
+  },
+  {
+    "ascii": 96,
+    "character": "`",
+    "pixels": 4
+  },
+  {
+    "ascii": 97,
+    "character": "a",
+    "pixels": 34
+  },
+  {
+    "ascii": 98,
+    "character": "b",
+    "pixels": 38
+  },
+  {
+    "ascii": 99,
+    "character": "c",
+    "pixels": 25
+  },
+  {
+    "ascii": 100,
+    "character": "d",
+    "pixels": 34
+  },
+  {
+    "ascii": 101,
+    "character": "e",
+    "pixels": 31
+  },
+  {
+    "ascii": 102,
+    "character": "f",
+    "pixels": 30
+  },
+  {
+    "ascii": 103,
+    "character": "g",
+    "pixels": 33
+  },
+  {
+    "ascii": 104,
+    "character": "h",
+    "pixels": 36
+  },
+  {
+    "ascii": 105,
+    "character": "i",
+    "pixels": 28
+  },
+  {
+    "ascii": 106,
+    "character": "j",
+    "pixels": 29
+  },
+  {
+    "ascii": 107,
+    "character": "k",
+    "pixels": 28
+  },
+  {
+    "ascii": 108,
+    "character": "l",
+    "pixels": 27
+  },
+  {
+    "ascii": 109,
+    "character": "m",
+    "pixels": 38
+  },
+  {
+    "ascii": 110,
+    "character": "n",
+    "pixels": 29
+  },
+  {
+    "ascii": 111,
+    "character": "o",
+    "pixels": 31
+  },
+  {
+    "ascii": 112,
+    "character": "p",
+    "pixels": 34
+  },
+  {
+    "ascii": 113,
+    "character": "q",
+    "pixels": 32
+  },
+  {
+    "ascii": 114,
+    "character": "r",
+    "pixels": 22
+  },
+  {
+    "ascii": 115,
+    "character": "s",
+    "pixels": 25
+  },
+  {
+    "ascii": 116,
+    "character": "t",
+    "pixels": 20
+  },
+  {
+    "ascii": 117,
+    "character": "u",
+    "pixels": 28
+  },
+  {
+    "ascii": 118,
+    "character": "v",
+    "pixels": 25
+  },
+  {
+    "ascii": 119,
+    "character": "w",
+    "pixels": 33
+  },
+  {
+    "ascii": 120,
+    "character": "x",
+    "pixels": 27
+  },
+  {
+    "ascii": 121,
+    "character": "y",
+    "pixels": 24
+  },
+  {
+    "ascii": 122,
+    "character": "z",
+    "pixels": 24
+  },
+  {
+    "ascii": 123,
+    "character": "{",
+    "pixels": 24
+  },
+  {
+    "ascii": 124,
+    "character": "|",
+    "pixels": 19
+  },
+  {
+    "ascii": 125,
+    "character": "}",
+    "pixels": 31
+  },
+  {
+    "ascii": 126,
+    "character": "~",
+    "pixels": 9
+  },
+  {
+    "ascii": 127,
+    "character": "\\x7f",
+    "pixels": 51
+  },
+  {
+    "ascii": 128,
+    "character": "\\x80",
+    "pixels": 14
+  },
+  {
+    "ascii": 129,
+    "character": "\\x81",
+    "pixels": 14
+  },
+  {
+    "ascii": 130,
+    "character": "\\x82",
+    "pixels": 14
+  },
+  {
+    "ascii": 131,
+    "character": "\\x83",
+    "pixels": 14
+  },
+  {
+    "ascii": 132,
+    "character": "\\x84",
+    "pixels": 14
+  },
+  {
+    "ascii": 133,
+    "character": "\\x85",
+    "pixels": 14
+  },
+  {
+    "ascii": 134,
+    "character": "\\x86",
+    "pixels": 14
+  },
+  {
+    "ascii": 135,
+    "character": "\\x87",
+    "pixels": 14
+  },
+  {
+    "ascii": 136,
+    "character": "\\x88",
+    "pixels": 14
+  },
+  {
+    "ascii": 137,
+    "character": "\\x89",
+    "pixels": 14
+  },
+  {
+    "ascii": 138,
+    "character": "\\x8a",
+    "pixels": 14
+  },
+  {
+    "ascii": 139,
+    "character": "\\x8b",
+    "pixels": 14
+  },
+  {
+    "ascii": 140,
+    "character": "\\x8c",
+    "pixels": 14
+  },
+  {
+    "ascii": 141,
+    "character": "\\x8d",
+    "pixels": 14
+  },
+  {
+    "ascii": 142,
+    "character": "\\x8e",
+    "pixels": 14
+  },
+  {
+    "ascii": 143,
+    "character": "\\x8f",
+    "pixels": 14
+  },
+  {
+    "ascii": 144,
+    "character": "\\x90",
+    "pixels": 14
+  },
+  {
+    "ascii": 145,
+    "character": "\\x91",
+    "pixels": 14
+  },
+  {
+    "ascii": 146,
+    "character": "\\x92",
+    "pixels": 14
+  },
+  {
+    "ascii": 147,
+    "character": "\\x93",
+    "pixels": 14
+  },
+  {
+    "ascii": 148,
+    "character": "\\x94",
+    "pixels": 14
+  },
+  {
+    "ascii": 149,
+    "character": "\\x95",
+    "pixels": 14
+  },
+  {
+    "ascii": 150,
+    "character": "\\x96",
+    "pixels": 14
+  },
+  {
+    "ascii": 151,
+    "character": "\\x97",
+    "pixels": 14
+  },
+  {
+    "ascii": 152,
+    "character": "\\x98",
+    "pixels": 14
+  },
+  {
+    "ascii": 153,
+    "character": "\\x99",
+    "pixels": 14
+  },
+  {
+    "ascii": 154,
+    "character": "\\x9a",
+    "pixels": 14
+  },
+  {
+    "ascii": 155,
+    "character": "\\x9b",
+    "pixels": 14
+  },
+  {
+    "ascii": 156,
+    "character": "\\x9c",
+    "pixels": 14
+  },
+  {
+    "ascii": 157,
+    "character": "\\x9d",
+    "pixels": 14
+  },
+  {
+    "ascii": 158,
+    "character": "\\x9e",
+    "pixels": 14
+  },
+  {
+    "ascii": 159,
+    "character": "\\x9f",
+    "pixels": 14
+  },
+  {
+    "ascii": 160,
+    "character": "\\xa0",
+    "pixels": 0
+  },
+  {
+    "ascii": 161,
+    "character": "\\xa1",
+    "pixels": 13
+  },
+  {
+    "ascii": 162,
+    "character": "\\xa2",
+    "pixels": 32
+  },
+  {
+    "ascii": 163,
+    "character": "\\xa3",
+    "pixels": 34
+  },
+  {
+    "ascii": 164,
+    "character": "\\xa4",
+    "pixels": 27
+  },
+  {
+    "ascii": 165,
+    "character": "\\xa5",
+    "pixels": 39
+  },
+  {
+    "ascii": 166,
+    "character": "\\xa6",
+    "pixels": 17
+  },
+  {
+    "ascii": 167,
+    "character": "\\xa7",
+    "pixels": 35
+  },
+  {
+    "ascii": 168,
+    "character": "\\xa8",
+    "pixels": 4
+  },
+  {
+    "ascii": 169,
+    "character": "\\xa9",
+    "pixels": 36
+  },
+  {
+    "ascii": 170,
+    "character": "\\xaa",
+    "pixels": 19
+  },
+  {
+    "ascii": 171,
+    "character": "\\xab",
+    "pixels": 24
+  },
+  {
+    "ascii": 172,
+    "character": "\\xac",
+    "pixels": 10
+  },
+  {
+    "ascii": 173,
+    "character": "\\xad",
+    "pixels": 0
+  },
+  {
+    "ascii": 174,
+    "character": "\\xae",
+    "pixels": 37
+  },
+  {
+    "ascii": 175,
+    "character": "\\xaf",
+    "pixels": 5
+  },
+  {
+    "ascii": 176,
+    "character": "\\xb0",
+    "pixels": 10
+  },
+  {
+    "ascii": 177,
+    "character": "\\xb1",
+    "pixels": 23
+  },
+  {
+    "ascii": 178,
+    "character": "\\xb2",
+    "pixels": 13
+  },
+  {
+    "ascii": 179,
+    "character": "\\xb3",
+    "pixels": 14
+  },
+  {
+    "ascii": 180,
+    "character": "\\xb4",
+    "pixels": 4
+  },
+  {
+    "ascii": 181,
+    "character": "\\xb5",
+    "pixels": 34
+  },
+  {
+    "ascii": 182,
+    "character": "\\xb6",
+    "pixels": 43
+  },
+  {
+    "ascii": 183,
+    "character": "\\xb7",
+    "pixels": 4
+  },
+  {
+    "ascii": 184,
+    "character": "\\xb8",
+    "pixels": 0
+  },
+  {
+    "ascii": 185,
+    "character": "\\xb9",
+    "pixels": 13
+  },
+  {
+    "ascii": 186,
+    "character": "\\xba",
+    "pixels": 16
+  },
+  {
+    "ascii": 187,
+    "character": "\\xbb",
+    "pixels": 20
+  },
+  {
+    "ascii": 188,
+    "character": "\\xbc",
+    "pixels": 33
+  },
+  {
+    "ascii": 189,
+    "character": "\\xbd",
+    "pixels": 30
+  },
+  {
+    "ascii": 190,
+    "character": "\\xbe",
+    "pixels": 33
+  },
+  {
+    "ascii": 191,
+    "character": "\\xbf",
+    "pixels": 20
+  },
+  {
+    "ascii": 192,
+    "character": "\\xc0",
+    "pixels": 43
+  },
+  {
+    "ascii": 193,
+    "character": "\\xc1",
+    "pixels": 40
+  },
+  {
+    "ascii": 194,
+    "character": "\\xc2",
+    "pixels": 45
+  },
+  {
+    "ascii": 195,
+    "character": "\\xc3",
+    "pixels": 45
+  },
+  {
+    "ascii": 196,
+    "character": "\\xc4",
+    "pixels": 40
+  },
+  {
+    "ascii": 197,
+    "character": "\\xc5",
+    "pixels": 45
+  },
+  {
+    "ascii": 198,
+    "character": "\\xc6",
+    "pixels": 37
+  },
+  {
+    "ascii": 199,
+    "character": "\\xc7",
+    "pixels": 34
+  },
+  {
+    "ascii": 200,
+    "character": "\\xc8",
+    "pixels": 42
+  },
+  {
+    "ascii": 201,
+    "character": "\\xc9",
+    "pixels": 42
+  },
+  {
+    "ascii": 202,
+    "character": "\\xca",
+    "pixels": 45
+  },
+  {
+    "ascii": 203,
+    "character": "\\xcb",
+    "pixels": 43
+  },
+  {
+    "ascii": 204,
+    "character": "\\xcc",
+    "pixels": 32
+  },
+  {
+    "ascii": 205,
+    "character": "\\xcd",
+    "pixels": 34
+  },
+  {
+    "ascii": 206,
+    "character": "\\xce",
+    "pixels": 38
+  },
+  {
+    "ascii": 207,
+    "character": "\\xcf",
+    "pixels": 34
+  },
+  {
+    "ascii": 208,
+    "character": "\\xd0",
+    "pixels": 47
+  },
+  {
+    "ascii": 209,
+    "character": "\\xd1",
+    "pixels": 53
+  },
+  {
+    "ascii": 210,
+    "character": "\\xd2",
+    "pixels": 43
+  },
+  {
+    "ascii": 211,
+    "character": "\\xd3",
+    "pixels": 43
+  },
+  {
+    "ascii": 212,
+    "character": "\\xd4",
+    "pixels": 45
+  },
+  {
+    "ascii": 213,
+    "character": "\\xd5",
+    "pixels": 47
+  },
+  {
+    "ascii": 214,
+    "character": "\\xd6",
+    "pixels": 43
+  },
+  {
+    "ascii": 215,
+    "character": "\\xd7",
+    "pixels": 21
+  },
+  {
+    "ascii": 216,
+    "character": "\\xd8",
+    "pixels": 49
+  },
+  {
+    "ascii": 217,
+    "character": "\\xd9",
+    "pixels": 44
+  },
+  {
+    "ascii": 218,
+    "character": "\\xda",
+    "pixels": 42
+  },
+  {
+    "ascii": 219,
+    "character": "\\xdb",
+    "pixels": 49
+  },
+  {
+    "ascii": 220,
+    "character": "\\xdc",
+    "pixels": 44
+  },
+  {
+    "ascii": 221,
+    "character": "\\xdd",
+    "pixels": 28
+  },
+  {
+    "ascii": 222,
+    "character": "\\xde",
+    "pixels": 39
+  },
+  {
+    "ascii": 223,
+    "character": "\\xdf",
+    "pixels": 42
+  },
+  {
+    "ascii": 224,
+    "character": "\\xe0",
+    "pixels": 38
+  },
+  {
+    "ascii": 225,
+    "character": "\\xe1",
+    "pixels": 38
+  },
+  {
+    "ascii": 226,
+    "character": "\\xe2",
+    "pixels": 39
+  },
+  {
+    "ascii": 227,
+    "character": "\\xe3",
+    "pixels": 39
+  },
+  {
+    "ascii": 228,
+    "character": "\\xe4",
+    "pixels": 41
+  },
+  {
+    "ascii": 229,
+    "character": "\\xe5",
+    "pixels": 44
+  },
+  {
+    "ascii": 230,
+    "character": "\\xe6",
+    "pixels": 40
+  },
+  {
+    "ascii": 231,
+    "character": "\\xe7",
+    "pixels": 27
+  },
+  {
+    "ascii": 232,
+    "character": "\\xe8",
+    "pixels": 38
+  },
+  {
+    "ascii": 233,
+    "character": "\\xe9",
+    "pixels": 35
+  },
+  {
+    "ascii": 234,
+    "character": "\\xea",
+    "pixels": 40
+  },
+  {
+    "ascii": 235,
+    "character": "\\xeb",
+    "pixels": 36
+  },
+  {
+    "ascii": 236,
+    "character": "\\xec",
+    "pixels": 27
+  },
+  {
+    "ascii": 237,
+    "character": "\\xed",
+    "pixels": 30
+  },
+  {
+    "ascii": 238,
+    "character": "\\xee",
+    "pixels": 34
+  },
+  {
+    "ascii": 239,
+    "character": "\\xef",
+    "pixels": 30
+  },
+  {
+    "ascii": 240,
+    "character": "\\xf0",
+    "pixels": 34
+  },
+  {
+    "ascii": 241,
+    "character": "\\xf1",
+    "pixels": 39
+  },
+  {
+    "ascii": 242,
+    "character": "\\xf2",
+    "pixels": 37
+  },
+  {
+    "ascii": 243,
+    "character": "\\xf3",
+    "pixels": 34
+  },
+  {
+    "ascii": 244,
+    "character": "\\xf4",
+    "pixels": 41
+  },
+  {
+    "ascii": 245,
+    "character": "\\xf5",
+    "pixels": 40
+  },
+  {
+    "ascii": 246,
+    "character": "\\xf6",
+    "pixels": 36
+  },
+  {
+    "ascii": 247,
+    "character": "\\xf7",
+    "pixels": 11
+  },
+  {
+    "ascii": 248,
+    "character": "\\xf8",
+    "pixels": 37
+  },
+  {
+    "ascii": 249,
+    "character": "\\xf9",
+    "pixels": 32
+  },
+  {
+    "ascii": 250,
+    "character": "\\xfa",
+    "pixels": 32
+  },
+  {
+    "ascii": 251,
+    "character": "\\xfb",
+    "pixels": 34
+  },
+  {
+    "ascii": 252,
+    "character": "\\xfc",
+    "pixels": 34
+  },
+  {
+    "ascii": 253,
+    "character": "\\xfd",
+    "pixels": 30
+  },
+  {
+    "ascii": 254,
+    "character": "\\xfe",
+    "pixels": 48
+  },
+  {
+    "ascii": 255,
+    "character": "\\xff",
+    "pixels": 0
+  }
+]
