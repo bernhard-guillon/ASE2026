@@ -464,15 +464,13 @@ void CPU::executeFPArithmetic(const Instruction& instr) {
             }
             break;
         }
-        case 0b1110000: {  // FMV.W.X / FMV.X.W (rs2 distinguishes)
-            if (instr.rs2 == 0b00000) {
-                if (instr.funct3 == 0b000) {  // FMV.W.X (int to FP)
-                    // Move bits from integer register to FP register
-                    uint32_t bits = getReg(instr.rs1);
-                    setFPRegBits(instr.rd, bits);
-                } else {
-                    throw std::runtime_error("Unsupported FMV.W.X funct3");
-                }
+        case 0b1110000: {  // FMV.X.W / FCLASS.S
+            if (instr.funct3 == 0b000 && instr.rs2 == 0b00000) {  // FMV.X.W
+                // Move bits from FP register to integer register
+                uint32_t bits = getFPRegBits(instr.rs1);
+                setReg(instr.rd, bits);
+            } else if (instr.funct3 == 0b001 && instr.rs2 == 0b00000) {  // FCLASS.S
+                throw std::runtime_error("FCLASS.S not yet implemented");
             } else {
                 throw std::runtime_error("Unsupported funct7=0b1110000 operation");
             }
@@ -510,13 +508,11 @@ void CPU::executeFPArithmetic(const Instruction& instr) {
             setFPRegBits(instr.rd, result_bits);
             break;
         }
-        case 0b1111000: {  // FMV.X.W / FCLASS.S
-            if (instr.funct3 == 0b000 && instr.rs2 == 0b00000) {  // FMV.X.W
-                // Move bits from FP register to integer register
-                uint32_t bits = getFPRegBits(instr.rs1);
-                setReg(instr.rd, bits);
-            } else if (instr.funct3 == 0b001 && instr.rs2 == 0b00000) {  // FCLASS.S
-                throw std::runtime_error("FCLASS.S not yet implemented");
+        case 0b1111000: {  // FMV.W.X
+            if (instr.funct3 == 0b000 && instr.rs2 == 0b00000) {  // FMV.W.X
+                // Move bits from integer register to FP register
+                uint32_t bits = getReg(instr.rs1);
+                setFPRegBits(instr.rd, bits);
             } else {
                 throw std::runtime_error("Unsupported funct7=0b1111000 operation");
             }
@@ -526,4 +522,3 @@ void CPU::executeFPArithmetic(const Instruction& instr) {
             throw std::runtime_error("Unsupported FP arithmetic funct7");
     }
 }
-

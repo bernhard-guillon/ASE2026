@@ -285,11 +285,19 @@ class TestPhase4ErrorHandling(Phase4IntegrationTestSetup):
             finally:
                 os.chdir(old_cwd)
     
-    def test_missing_assembler_tool(self):
+    def test_missing_assembler_tool(self, monkeypatch):
         """Test graceful handling of missing riscv64-elf-as."""
-        # This test verifies error message is clear
-        if self.check_tool_available('riscv64-elf-as'):
-            pytest.skip("This test requires missing riscv64-elf-as")
+        import shutil
+
+        # Force the assembler lookup to fail regardless of host environment.
+        real_which = shutil.which
+
+        def fake_which(tool_name):
+            if tool_name == 'riscv64-elf-as':
+                return None
+            return real_which(tool_name)
+
+        monkeypatch.setattr(shutil, "which", fake_which)
         
         with tempfile.TemporaryDirectory() as tmpdir:
             work_dir = Path(tmpdir)

@@ -1,0 +1,477 @@
+[
+  {
+    "ascii": 32,
+    "char": " ",
+    "pixels_on": 0
+  },
+  {
+    "ascii": 33,
+    "char": "!",
+    "pixels_on": 15
+  },
+  {
+    "ascii": 34,
+    "char": "\"",
+    "pixels_on": 16
+  },
+  {
+    "ascii": 35,
+    "char": "#",
+    "pixels_on": 30
+  },
+  {
+    "ascii": 36,
+    "char": "$",
+    "pixels_on": 48
+  },
+  {
+    "ascii": 37,
+    "char": "%",
+    "pixels_on": 38
+  },
+  {
+    "ascii": 38,
+    "char": "&",
+    "pixels_on": 38
+  },
+  {
+    "ascii": 39,
+    "char": "'",
+    "pixels_on": 7
+  },
+  {
+    "ascii": 40,
+    "char": "(",
+    "pixels_on": 22
+  },
+  {
+    "ascii": 41,
+    "char": ")",
+    "pixels_on": 25
+  },
+  {
+    "ascii": 42,
+    "char": "*",
+    "pixels_on": 16
+  },
+  {
+    "ascii": 43,
+    "char": "+",
+    "pixels_on": 15
+  },
+  {
+    "ascii": 44,
+    "char": ",",
+    "pixels_on": 0
+  },
+  {
+    "ascii": 45,
+    "char": "-",
+    "pixels_on": 4
+  },
+  {
+    "ascii": 46,
+    "char": ".",
+    "pixels_on": 0
+  },
+  {
+    "ascii": 47,
+    "char": "/",
+    "pixels_on": 19
+  },
+  {
+    "ascii": 48,
+    "char": "0",
+    "pixels_on": 41
+  },
+  {
+    "ascii": 49,
+    "char": "1",
+    "pixels_on": 23
+  },
+  {
+    "ascii": 50,
+    "char": "2",
+    "pixels_on": 32
+  },
+  {
+    "ascii": 51,
+    "char": "3",
+    "pixels_on": 32
+  },
+  {
+    "ascii": 52,
+    "char": "4",
+    "pixels_on": 25
+  },
+  {
+    "ascii": 53,
+    "char": "5",
+    "pixels_on": 35
+  },
+  {
+    "ascii": 54,
+    "char": "6",
+    "pixels_on": 36
+  },
+  {
+    "ascii": 55,
+    "char": "7",
+    "pixels_on": 19
+  },
+  {
+    "ascii": 56,
+    "char": "8",
+    "pixels_on": 36
+  },
+  {
+    "ascii": 57,
+    "char": "9",
+    "pixels_on": 39
+  },
+  {
+    "ascii": 58,
+    "char": ":",
+    "pixels_on": 8
+  },
+  {
+    "ascii": 59,
+    "char": ";",
+    "pixels_on": 9
+  },
+  {
+    "ascii": 60,
+    "char": "<",
+    "pixels_on": 20
+  },
+  {
+    "ascii": 61,
+    "char": "=",
+    "pixels_on": 16
+  },
+  {
+    "ascii": 62,
+    "char": ">",
+    "pixels_on": 18
+  },
+  {
+    "ascii": 63,
+    "char": "?",
+    "pixels_on": 21
+  },
+  {
+    "ascii": 64,
+    "char": "@",
+    "pixels_on": 51
+  },
+  {
+    "ascii": 65,
+    "char": "A",
+    "pixels_on": 38
+  },
+  {
+    "ascii": 66,
+    "char": "B",
+    "pixels_on": 48
+  },
+  {
+    "ascii": 67,
+    "char": "C",
+    "pixels_on": 30
+  },
+  {
+    "ascii": 68,
+    "char": "D",
+    "pixels_on": 45
+  },
+  {
+    "ascii": 69,
+    "char": "E",
+    "pixels_on": 38
+  },
+  {
+    "ascii": 70,
+    "char": "F",
+    "pixels_on": 30
+  },
+  {
+    "ascii": 71,
+    "char": "G",
+    "pixels_on": 39
+  },
+  {
+    "ascii": 72,
+    "char": "H",
+    "pixels_on": 37
+  },
+  {
+    "ascii": 73,
+    "char": "I",
+    "pixels_on": 27
+  },
+  {
+    "ascii": 74,
+    "char": "J",
+    "pixels_on": 28
+  },
+  {
+    "ascii": 75,
+    "char": "K",
+    "pixels_on": 42
+  },
+  {
+    "ascii": 76,
+    "char": "L",
+    "pixels_on": 17
+  },
+  {
+    "ascii": 77,
+    "char": "M",
+    "pixels_on": 47
+  },
+  {
+    "ascii": 78,
+    "char": "N",
+    "pixels_on": 44
+  },
+  {
+    "ascii": 79,
+    "char": "O",
+    "pixels_on": 39
+  },
+  {
+    "ascii": 80,
+    "char": "P",
+    "pixels_on": 40
+  },
+  {
+    "ascii": 81,
+    "char": "Q",
+    "pixels_on": 42
+  },
+  {
+    "ascii": 82,
+    "char": "R",
+    "pixels_on": 46
+  },
+  {
+    "ascii": 83,
+    "char": "S",
+    "pixels_on": 36
+  },
+  {
+    "ascii": 84,
+    "char": "T",
+    "pixels_on": 28
+  },
+  {
+    "ascii": 85,
+    "char": "U",
+    "pixels_on": 38
+  },
+  {
+    "ascii": 86,
+    "char": "V",
+    "pixels_on": 34
+  },
+  {
+    "ascii": 87,
+    "char": "W",
+    "pixels_on": 43
+  },
+  {
+    "ascii": 88,
+    "char": "X",
+    "pixels_on": 30
+  },
+  {
+    "ascii": 89,
+    "char": "Y",
+    "pixels_on": 27
+  },
+  {
+    "ascii": 90,
+    "char": "Z",
+    "pixels_on": 32
+  },
+  {
+    "ascii": 91,
+    "char": "[",
+    "pixels_on": 36
+  },
+  {
+    "ascii": 92,
+    "char": "\\",
+    "pixels_on": 18
+  },
+  {
+    "ascii": 93,
+    "char": "]",
+    "pixels_on": 21
+  },
+  {
+    "ascii": 94,
+    "char": "^",
+    "pixels_on": 16
+  },
+  {
+    "ascii": 95,
+    "char": "_",
+    "pixels_on": 0
+  },
+  {
+    "ascii": 96,
+    "char": "`",
+    "pixels_on": 4
+  },
+  {
+    "ascii": 97,
+    "char": "a",
+    "pixels_on": 34
+  },
+  {
+    "ascii": 98,
+    "char": "b",
+    "pixels_on": 38
+  },
+  {
+    "ascii": 99,
+    "char": "c",
+    "pixels_on": 25
+  },
+  {
+    "ascii": 100,
+    "char": "d",
+    "pixels_on": 34
+  },
+  {
+    "ascii": 101,
+    "char": "e",
+    "pixels_on": 31
+  },
+  {
+    "ascii": 102,
+    "char": "f",
+    "pixels_on": 30
+  },
+  {
+    "ascii": 103,
+    "char": "g",
+    "pixels_on": 33
+  },
+  {
+    "ascii": 104,
+    "char": "h",
+    "pixels_on": 36
+  },
+  {
+    "ascii": 105,
+    "char": "i",
+    "pixels_on": 28
+  },
+  {
+    "ascii": 106,
+    "char": "j",
+    "pixels_on": 29
+  },
+  {
+    "ascii": 107,
+    "char": "k",
+    "pixels_on": 28
+  },
+  {
+    "ascii": 108,
+    "char": "l",
+    "pixels_on": 27
+  },
+  {
+    "ascii": 109,
+    "char": "m",
+    "pixels_on": 38
+  },
+  {
+    "ascii": 110,
+    "char": "n",
+    "pixels_on": 29
+  },
+  {
+    "ascii": 111,
+    "char": "o",
+    "pixels_on": 31
+  },
+  {
+    "ascii": 112,
+    "char": "p",
+    "pixels_on": 34
+  },
+  {
+    "ascii": 113,
+    "char": "q",
+    "pixels_on": 32
+  },
+  {
+    "ascii": 114,
+    "char": "r",
+    "pixels_on": 22
+  },
+  {
+    "ascii": 115,
+    "char": "s",
+    "pixels_on": 25
+  },
+  {
+    "ascii": 116,
+    "char": "t",
+    "pixels_on": 20
+  },
+  {
+    "ascii": 117,
+    "char": "u",
+    "pixels_on": 28
+  },
+  {
+    "ascii": 118,
+    "char": "v",
+    "pixels_on": 25
+  },
+  {
+    "ascii": 119,
+    "char": "w",
+    "pixels_on": 33
+  },
+  {
+    "ascii": 120,
+    "char": "x",
+    "pixels_on": 27
+  },
+  {
+    "ascii": 121,
+    "char": "y",
+    "pixels_on": 24
+  },
+  {
+    "ascii": 122,
+    "char": "z",
+    "pixels_on": 24
+  },
+  {
+    "ascii": 123,
+    "char": "{",
+    "pixels_on": 24
+  },
+  {
+    "ascii": 124,
+    "char": "|",
+    "pixels_on": 19
+  },
+  {
+    "ascii": 125,
+    "char": "}",
+    "pixels_on": 31
+  },
+  {
+    "ascii": 126,
+    "char": "~",
+    "pixels_on": 9
+  }
+]

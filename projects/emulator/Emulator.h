@@ -6,6 +6,8 @@
 #include <vector>
 #include <map>
 #include <fstream>
+#include <sstream>
+#include <iomanip>
 #include "CPU.h"
 #include "Memory.h"
 #include "Instruction.h"
@@ -83,6 +85,9 @@ public:
     
     // Reset emulator state
     void reset();
+    
+    // Dump memory region to stdout for debugging
+    void dumpMemory(uint32_t start_addr, uint32_t count);
     
 private:
     CPU cpu_;

@@ -1,0 +1,280 @@
+Loaded PyTorch reference: (256, 20, 20)
+======================================================================
+NEURAL CHARACTER GENERATION - 256 CHARACTER TEST
+======================================================================
+
+Testing characters 0-255...
+
+✗ Char   0 (\x00): ERROR - embedded null byte
+✗ Char   1 (\x01): ERROR - Failed to extract framebuffer grid
+✗ Char   2 (\x02): ERROR - Failed to extract framebuffer grid
+✗ Char   3 (\x03): ERROR - Failed to extract framebuffer grid
+✗ Char   4 (\x04): ERROR - Failed to extract framebuffer grid
+✗ Char   5 (\x05): ERROR - Failed to extract framebuffer grid
+✗ Char   6 (\x06): ERROR - Failed to extract framebuffer grid
+✗ Char   7 (\x07): ERROR - Failed to extract framebuffer grid
+✗ Char   8 (\x08): ERROR - Failed to extract framebuffer grid
+✗ Char   9 (\x09): ERROR - Failed to extract framebuffer grid
+✗ Char  10 (\x0a): ERROR - Failed to extract framebuffer grid
+✗ Char  11 (\x0b): ERROR - Failed to extract framebuffer grid
+✗ Char  12 (\x0c): ERROR - Failed to extract framebuffer grid
+✗ Char  13 (\x0d): ERROR - Failed to extract framebuffer grid
+✗ Char  14 (\x0e): ERROR - Failed to extract framebuffer grid
+✗ Char  15 (\x0f): ERROR - Failed to extract framebuffer grid
+✗ Char  16 (\x10): ERROR - Failed to extract framebuffer grid
+✗ Char  17 (\x11): ERROR - Failed to extract framebuffer grid
+✗ Char  18 (\x12): ERROR - Failed to extract framebuffer grid
+✗ Char  19 (\x13): ERROR - Failed to extract framebuffer grid
+✗ Char  20 (\x14): ERROR - Failed to extract framebuffer grid
+✗ Char  21 (\x15): ERROR - Failed to extract framebuffer grid
+✗ Char  22 (\x16): ERROR - Failed to extract framebuffer grid
+✗ Char  23 (\x17): ERROR - Failed to extract framebuffer grid
+✗ Char  24 (\x18): ERROR - Failed to extract framebuffer grid
+✗ Char  25 (\x19): ERROR - Failed to extract framebuffer grid
+✗ Char  26 (\x1a): ERROR - Failed to extract framebuffer grid
+✗ Char  27 (\x1b): ERROR - Failed to extract framebuffer grid
+✗ Char  28 (\x1c): ERROR - Failed to extract framebuffer grid
+✗ Char  29 (\x1d): ERROR - Failed to extract framebuffer grid
+✗ Char  30 (\x1e): ERROR - Failed to extract framebuffer grid
+✗ Char  31 (\x1f): ERROR - Failed to extract framebuffer grid
+
+✗ Char  32 (    ): ERROR - Failed to extract framebuffer grid
+✗ Char  33 (!   ): ERROR - Failed to extract framebuffer grid
+✗ Char  34 ("   ): ERROR - Failed to extract framebuffer grid
+✗ Char  35 (#   ): ERROR - Failed to extract framebuffer grid
+✗ Char  36 ($   ): ERROR - Failed to extract framebuffer grid
+✗ Char  37 (%   ): ERROR - Failed to extract framebuffer grid
+✗ Char  38 (&   ): ERROR - Failed to extract framebuffer grid
+✗ Char  39 ('   ): ERROR - Failed to extract framebuffer grid
+✗ Char  40 ((   ): ERROR - Failed to extract framebuffer grid
+✗ Char  41 ()   ): ERROR - Failed to extract framebuffer grid
+✗ Char  42 (*   ): ERROR - Failed to extract framebuffer grid
+✗ Char  43 (+   ): ERROR - Failed to extract framebuffer grid
+✗ Char  44 (,   ): ERROR - Failed to extract framebuffer grid
+✗ Char  45 (-   ): ERROR - Failed to extract framebuffer grid
+✗ Char  46 (.   ): ERROR - Failed to extract framebuffer grid
+✗ Char  47 (/   ): ERROR - Failed to extract framebuffer grid
+✗ Char  48 (0   ): ERROR - Failed to extract framebuffer grid
+✗ Char  49 (1   ): ERROR - Failed to extract framebuffer grid
+✗ Char  50 (2   ): ERROR - Failed to extract framebuffer grid
+✗ Char  51 (3   ): ERROR - Failed to extract framebuffer grid
+✗ Char  52 (4   ): ERROR - Failed to extract framebuffer grid
+✗ Char  53 (5   ): ERROR - Failed to extract framebuffer grid
+✗ Char  54 (6   ): ERROR - Failed to extract framebuffer grid
+✗ Char  55 (7   ): ERROR - Failed to extract framebuffer grid
+✗ Char  56 (8   ): ERROR - Failed to extract framebuffer grid
+✗ Char  57 (9   ): ERROR - Failed to extract framebuffer grid
+✗ Char  58 (:   ): ERROR - Failed to extract framebuffer grid
+✗ Char  59 (;   ): ERROR - Failed to extract framebuffer grid
+✗ Char  60 (<   ): ERROR - Failed to extract framebuffer grid
+✗ Char  61 (=   ): ERROR - Failed to extract framebuffer grid
+✗ Char  62 (>   ): ERROR - Failed to extract framebuffer grid
+✗ Char  63 (?   ): ERROR - Failed to extract framebuffer grid
+
+✗ Char  64 (@   ): ERROR - Failed to extract framebuffer grid
+✗ Char  65 (A   ): ERROR - Failed to extract framebuffer grid
+✗ Char  66 (B   ): ERROR - Failed to extract framebuffer grid
+✗ Char  67 (C   ): ERROR - Failed to extract framebuffer grid
+✗ Char  68 (D   ): ERROR - Failed to extract framebuffer grid
+✗ Char  69 (E   ): ERROR - Failed to extract framebuffer grid
+✗ Char  70 (F   ): ERROR - Failed to extract framebuffer grid
+✗ Char  71 (G   ): ERROR - Failed to extract framebuffer grid
+✗ Char  72 (H   ): ERROR - Failed to extract framebuffer grid
+✗ Char  73 (I   ): ERROR - Failed to extract framebuffer grid
+✗ Char  74 (J   ): ERROR - Failed to extract framebuffer grid
+✗ Char  75 (K   ): ERROR - Failed to extract framebuffer grid
+✗ Char  76 (L   ): ERROR - Failed to extract framebuffer grid
+✗ Char  77 (M   ): ERROR - Failed to extract framebuffer grid
+✗ Char  78 (N   ): ERROR - Failed to extract framebuffer grid
+✗ Char  79 (O   ): ERROR - Failed to extract framebuffer grid
+✗ Char  80 (P   ): ERROR - Failed to extract framebuffer grid
+✗ Char  81 (Q   ): ERROR - Failed to extract framebuffer grid
+✗ Char  82 (R   ): ERROR - Failed to extract framebuffer grid
+✗ Char  83 (S   ): ERROR - Failed to extract framebuffer grid
+✗ Char  84 (T   ): ERROR - Failed to extract framebuffer grid
+✗ Char  85 (U   ): ERROR - Failed to extract framebuffer grid
+✗ Char  86 (V   ): ERROR - Failed to extract framebuffer grid
+✗ Char  87 (W   ): ERROR - Failed to extract framebuffer grid
+✗ Char  88 (X   ): ERROR - Failed to extract framebuffer grid
+✗ Char  89 (Y   ): ERROR - Failed to extract framebuffer grid
+✗ Char  90 (Z   ): ERROR - Failed to extract framebuffer grid
+✗ Char  91 ([   ): ERROR - Failed to extract framebuffer grid
+✗ Char  92 (\   ): ERROR - Failed to extract framebuffer grid
+✗ Char  93 (]   ): ERROR - Failed to extract framebuffer grid
+✗ Char  94 (^   ): ERROR - Failed to extract framebuffer grid
+✗ Char  95 (_   ): ERROR - Failed to extract framebuffer grid
+
+✗ Char  96 (`   ): ERROR - Failed to extract framebuffer grid
+✗ Char  97 (a   ): ERROR - Failed to extract framebuffer grid
+✗ Char  98 (b   ): ERROR - Failed to extract framebuffer grid
+✗ Char  99 (c   ): ERROR - Failed to extract framebuffer grid
+✗ Char 100 (d   ): ERROR - Failed to extract framebuffer grid
+✗ Char 101 (e   ): ERROR - Failed to extract framebuffer grid
+✗ Char 102 (f   ): ERROR - Failed to extract framebuffer grid
+✗ Char 103 (g   ): ERROR - Failed to extract framebuffer grid
+✗ Char 104 (h   ): ERROR - Failed to extract framebuffer grid
+✗ Char 105 (i   ): ERROR - Failed to extract framebuffer grid
+✗ Char 106 (j   ): ERROR - Failed to extract framebuffer grid
+✗ Char 107 (k   ): ERROR - Failed to extract framebuffer grid
+✗ Char 108 (l   ): ERROR - Failed to extract framebuffer grid
+✗ Char 109 (m   ): ERROR - Failed to extract framebuffer grid
+✗ Char 110 (n   ): ERROR - Failed to extract framebuffer grid
+✗ Char 111 (o   ): ERROR - Failed to extract framebuffer grid
+✗ Char 112 (p   ): ERROR - Failed to extract framebuffer grid
+✗ Char 113 (q   ): ERROR - Failed to extract framebuffer grid
+✗ Char 114 (r   ): ERROR - Failed to extract framebuffer grid
+✗ Char 115 (s   ): ERROR - Failed to extract framebuffer grid
+✗ Char 116 (t   ): ERROR - Failed to extract framebuffer grid
+✗ Char 117 (u   ): ERROR - Failed to extract framebuffer grid
+✗ Char 118 (v   ): ERROR - Failed to extract framebuffer grid
+✗ Char 119 (w   ): ERROR - Failed to extract framebuffer grid
+✗ Char 120 (x   ): ERROR - Failed to extract framebuffer grid
+✗ Char 121 (y   ): ERROR - Failed to extract framebuffer grid
+✗ Char 122 (z   ): ERROR - Failed to extract framebuffer grid
+✗ Char 123 ({   ): ERROR - Failed to extract framebuffer grid
+✗ Char 124 (|   ): ERROR - Failed to extract framebuffer grid
+✗ Char 125 (}   ): ERROR - Failed to extract framebuffer grid
+✗ Char 126 (~   ): ERROR - Failed to extract framebuffer grid
+✗ Char 127 (\x7f): ERROR - Failed to extract framebuffer grid
+
+✗ Char 128 (\x80): ERROR - Failed to extract framebuffer grid
+✗ Char 129 (\x81): ERROR - Failed to extract framebuffer grid
+✗ Char 130 (\x82): ERROR - Failed to extract framebuffer grid
+✗ Char 131 (\x83): ERROR - Failed to extract framebuffer grid
+✗ Char 132 (\x84): ERROR - Failed to extract framebuffer grid
+✗ Char 133 (\x85): ERROR - Failed to extract framebuffer grid
+✗ Char 134 (\x86): ERROR - Failed to extract framebuffer grid
+✗ Char 135 (\x87): ERROR - Failed to extract framebuffer grid
+✗ Char 136 (\x88): ERROR - Failed to extract framebuffer grid
+✗ Char 137 (\x89): ERROR - Failed to extract framebuffer grid
+✗ Char 138 (\x8a): ERROR - Failed to extract framebuffer grid
+✗ Char 139 (\x8b): ERROR - Failed to extract framebuffer grid
+✗ Char 140 (\x8c): ERROR - Failed to extract framebuffer grid
+✗ Char 141 (\x8d): ERROR - Failed to extract framebuffer grid
+✗ Char 142 (\x8e): ERROR - Failed to extract framebuffer grid
+✗ Char 143 (\x8f): ERROR - Failed to extract framebuffer grid
+✗ Char 144 (\x90): ERROR - Failed to extract framebuffer grid
+✗ Char 145 (\x91): ERROR - Failed to extract framebuffer grid
+✗ Char 146 (\x92): ERROR - Failed to extract framebuffer grid
+✗ Char 147 (\x93): ERROR - Failed to extract framebuffer grid
+✗ Char 148 (\x94): ERROR - Failed to extract framebuffer grid
+✗ Char 149 (\x95): ERROR - Failed to extract framebuffer grid
+✗ Char 150 (\x96): ERROR - Failed to extract framebuffer grid
+✗ Char 151 (\x97): ERROR - Failed to extract framebuffer grid
+✗ Char 152 (\x98): ERROR - Failed to extract framebuffer grid
+✗ Char 153 (\x99): ERROR - Failed to extract framebuffer grid
+✗ Char 154 (\x9a): ERROR - Failed to extract framebuffer grid
+✗ Char 155 (\x9b): ERROR - Failed to extract framebuffer grid
+✗ Char 156 (\x9c): ERROR - Failed to extract framebuffer grid
+✗ Char 157 (\x9d): ERROR - Failed to extract framebuffer grid
+✗ Char 158 (\x9e): ERROR - Failed to extract framebuffer grid
+✗ Char 159 (\x9f): ERROR - Failed to extract framebuffer grid
+
+✗ Char 160 (\xa0): ERROR - Failed to extract framebuffer grid
+✗ Char 161 (\xa1): ERROR - Failed to extract framebuffer grid
+✗ Char 162 (\xa2): ERROR - Failed to extract framebuffer grid
+✗ Char 163 (\xa3): ERROR - Failed to extract framebuffer grid
+✗ Char 164 (\xa4): ERROR - Failed to extract framebuffer grid
+✗ Char 165 (\xa5): ERROR - Failed to extract framebuffer grid
+✗ Char 166 (\xa6): ERROR - Failed to extract framebuffer grid
+✗ Char 167 (\xa7): ERROR - Failed to extract framebuffer grid
+✗ Char 168 (\xa8): ERROR - Failed to extract framebuffer grid
+✗ Char 169 (\xa9): ERROR - Failed to extract framebuffer grid
+✗ Char 170 (\xaa): ERROR - Failed to extract framebuffer grid
+✗ Char 171 (\xab): ERROR - Failed to extract framebuffer grid
+✗ Char 172 (\xac): ERROR - Failed to extract framebuffer grid
+✗ Char 173 (\xad): ERROR - Failed to extract framebuffer grid
+✗ Char 174 (\xae): ERROR - Failed to extract framebuffer grid
+✗ Char 175 (\xaf): ERROR - Failed to extract framebuffer grid
+✗ Char 176 (\xb0): ERROR - Failed to extract framebuffer grid
+✗ Char 177 (\xb1): ERROR - Failed to extract framebuffer grid
+✗ Char 178 (\xb2): ERROR - Failed to extract framebuffer grid
+✗ Char 179 (\xb3): ERROR - Failed to extract framebuffer grid
+✗ Char 180 (\xb4): ERROR - Failed to extract framebuffer grid
+✗ Char 181 (\xb5): ERROR - Failed to extract framebuffer grid
+✗ Char 182 (\xb6): ERROR - Failed to extract framebuffer grid
+✗ Char 183 (\xb7): ERROR - Failed to extract framebuffer grid
+✗ Char 184 (\xb8): ERROR - Failed to extract framebuffer grid
+✗ Char 185 (\xb9): ERROR - Failed to extract framebuffer grid
+✗ Char 186 (\xba): ERROR - Failed to extract framebuffer grid
+✗ Char 187 (\xbb): ERROR - Failed to extract framebuffer grid
+✗ Char 188 (\xbc): ERROR - Failed to extract framebuffer grid
+✗ Char 189 (\xbd): ERROR - Failed to extract framebuffer grid
+✗ Char 190 (\xbe): ERROR - Failed to extract framebuffer grid
+✗ Char 191 (\xbf): ERROR - Failed to extract framebuffer grid
+
+✗ Char 192 (\xc0): ERROR - Failed to extract framebuffer grid
+✗ Char 193 (\xc1): ERROR - Failed to extract framebuffer grid
+✗ Char 194 (\xc2): ERROR - Failed to extract framebuffer grid
+✗ Char 195 (\xc3): ERROR - Failed to extract framebuffer grid
+✗ Char 196 (\xc4): ERROR - Failed to extract framebuffer grid
+✗ Char 197 (\xc5): ERROR - Failed to extract framebuffer grid
+✗ Char 198 (\xc6): ERROR - Failed to extract framebuffer grid
+✗ Char 199 (\xc7): ERROR - Failed to extract framebuffer grid
+✗ Char 200 (\xc8): ERROR - Failed to extract framebuffer grid
+✗ Char 201 (\xc9): ERROR - Failed to extract framebuffer grid
+✗ Char 202 (\xca): ERROR - Failed to extract framebuffer grid
+✗ Char 203 (\xcb): ERROR - Failed to extract framebuffer grid
+✗ Char 204 (\xcc): ERROR - Failed to extract framebuffer grid
+✗ Char 205 (\xcd): ERROR - Failed to extract framebuffer grid
+✗ Char 206 (\xce): ERROR - Failed to extract framebuffer grid
+✗ Char 207 (\xcf): ERROR - Failed to extract framebuffer grid
+✗ Char 208 (\xd0): ERROR - Failed to extract framebuffer grid
+✗ Char 209 (\xd1): ERROR - Failed to extract framebuffer grid
+✗ Char 210 (\xd2): ERROR - Failed to extract framebuffer grid
+✗ Char 211 (\xd3): ERROR - Failed to extract framebuffer grid
+✗ Char 212 (\xd4): ERROR - Failed to extract framebuffer grid
+✗ Char 213 (\xd5): ERROR - Failed to extract framebuffer grid
+✗ Char 214 (\xd6): ERROR - Failed to extract framebuffer grid
+✗ Char 215 (\xd7): ERROR - Failed to extract framebuffer grid
+✗ Char 216 (\xd8): ERROR - Failed to extract framebuffer grid
+✗ Char 217 (\xd9): ERROR - Failed to extract framebuffer grid
+✗ Char 218 (\xda): ERROR - Failed to extract framebuffer grid
+✗ Char 219 (\xdb): ERROR - Failed to extract framebuffer grid
+✗ Char 220 (\xdc): ERROR - Failed to extract framebuffer grid
+✗ Char 221 (\xdd): ERROR - Failed to extract framebuffer grid
+✗ Char 222 (\xde): ERROR - Failed to extract framebuffer grid
+✗ Char 223 (\xdf): ERROR - Failed to extract framebuffer grid
+
+✗ Char 224 (\xe0): ERROR - Failed to extract framebuffer grid
+✗ Char 225 (\xe1): ERROR - Failed to extract framebuffer grid
+✗ Char 226 (\xe2): ERROR - Failed to extract framebuffer grid
+✗ Char 227 (\xe3): ERROR - Failed to extract framebuffer grid
+✗ Char 228 (\xe4): ERROR - Failed to extract framebuffer grid
+✗ Char 229 (\xe5): ERROR - Failed to extract framebuffer grid
+✗ Char 230 (\xe6): ERROR - Failed to extract framebuffer grid
+✗ Char 231 (\xe7): ERROR - Failed to extract framebuffer grid
+✗ Char 232 (\xe8): ERROR - Failed to extract framebuffer grid
+✗ Char 233 (\xe9): ERROR - Failed to extract framebuffer grid
+✗ Char 234 (\xea): ERROR - Failed to extract framebuffer grid
+✗ Char 235 (\xeb): ERROR - Failed to extract framebuffer grid
+✗ Char 236 (\xec): ERROR - Failed to extract framebuffer grid
+✗ Char 237 (\xed): ERROR - Failed to extract framebuffer grid
+✗ Char 238 (\xee): ERROR - Failed to extract framebuffer grid
+✗ Char 239 (\xef): ERROR - Failed to extract framebuffer grid
+✗ Char 240 (\xf0): ERROR - Failed to extract framebuffer grid
+✗ Char 241 (\xf1): ERROR - Failed to extract framebuffer grid
+✗ Char 242 (\xf2): ERROR - Failed to extract framebuffer grid
+✗ Char 243 (\xf3): ERROR - Failed to extract framebuffer grid
+✗ Char 244 (\xf4): ERROR - Failed to extract framebuffer grid
+✗ Char 245 (\xf5): ERROR - Failed to extract framebuffer grid
+✗ Char 246 (\xf6): ERROR - Failed to extract framebuffer grid
+✗ Char 247 (\xf7): ERROR - Failed to extract framebuffer grid
+✗ Char 248 (\xf8): ERROR - Failed to extract framebuffer grid
+✗ Char 249 (\xf9): ERROR - Failed to extract framebuffer grid
+✗ Char 250 (\xfa): ERROR - Failed to extract framebuffer grid
+✗ Char 251 (\xfb): ERROR - Failed to extract framebuffer grid
+✗ Char 252 (\xfc): ERROR - Failed to extract framebuffer grid
+✗ Char 253 (\xfd): ERROR - Failed to extract framebuffer grid
+✗ Char 254 (\xfe): ERROR - Failed to extract framebuffer grid
+✗ Char 255 (\xff): ERROR - Failed to extract framebuffer grid
+
+
+======================================================================
+RESULTS: 0 passed, 256 failed
+Pass rate: 0.0%
+======================================================================
+
+======================================================================
+PASSED TEST PATTERNS (showing first 10)
+======================================================================

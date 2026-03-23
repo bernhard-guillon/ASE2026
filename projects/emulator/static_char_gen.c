@@ -11,13 +11,12 @@
 #define FRAMEBUFFER_ADDR 0x20000
 
 int main() {
-    register int char_code __asm__("a0");
     unsigned char *framebuffer = (unsigned char *)FRAMEBUFFER_ADDR;
     
     /* Run infinitely, reading a0 each iteration and updating framebuffer */
     while (1) {
         /* Read current character code from a0 register */
-        asm volatile ("" : "=r" (char_code) : "0" (char_code));
+        register int char_code __asm__("a0");
         
         /* Validate character code is in valid ASCII range [0, 254] */
         if (char_code < 255) {

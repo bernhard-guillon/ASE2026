@@ -364,7 +364,7 @@ TEST_F(FPInstructionTest, FMV_W_X_MovesBits) {
     emulator.getCPU().setReg(1, bits);
     
     // FMV.W.X f2, x1
-    uint32_t instr = encodeFPR(0b1110000, 2, 0b000, 1, 0b00000);
+    uint32_t instr = encodeFPR(0b1111000, 2, 0b000, 1, 0b00000);
     executeInstr(instr);
     
     float result = emulator.getCPU().getFPReg(2);
@@ -377,7 +377,7 @@ TEST_F(FPInstructionTest, FMV_X_W_MovesBits) {
     emulator.getCPU().setFPReg(1, value);
     
     // FMV.X.W x2, f1
-    uint32_t instr = encodeFPR(0b1111000, 2, 0b000, 1, 0b00000);
+    uint32_t instr = encodeFPR(0b1110000, 2, 0b000, 1, 0b00000);
     executeInstr(instr);
     
     uint32_t result = emulator.getCPU().getReg(2);

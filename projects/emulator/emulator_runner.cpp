@@ -109,14 +109,23 @@ void process_gui_input(Emulator& emulator) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--verbose]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--cycles <count>] [--render-framebuffer] [--verbose]" << std::endl;
         return 1;
     }
     
     bool verbose = false;
     bool gui_mode = false;
+    bool render_fb = false;
+    bool char_specified = false;
     uint32_t char_code = 0;
+    uint32_t max_cycles = 1000000;  // Default 1M cycles
     const char* binary_file = argv[1];
+    
+    struct DumpRegion {
+        uint32_t addr;
+        uint32_t count;
+    };
+    std::vector<DumpRegion> dump_regions;
     
     // Parse command-line arguments
     for (int i = 2; i < argc; ++i) {
@@ -124,11 +133,14 @@ int main(int argc, char** argv) {
             gui_mode = true;
         } else if (std::strcmp(argv[i], "--verbose") == 0 || std::strcmp(argv[i], "-v") == 0) {
             verbose = true;
+        } else if (std::strcmp(argv[i], "--render-framebuffer") == 0) {
+            render_fb = true;
         } else if (std::strcmp(argv[i], "--char") == 0) {
             if (i + 1 < argc) {
                 // Extract ASCII code from character argument
                 const char* char_arg = argv[i + 1];
                 if (char_arg[0] != '\0') {
+                    char_specified = true;
                     char_code = static_cast<unsigned char>(char_arg[0]);
                     if (verbose) {
                         std::cout << "Input character: '" << char_arg[0] << "' (ASCII " << char_code << ")" << std::endl;
@@ -138,6 +150,45 @@ int main(int argc, char** argv) {
             } else {
                 std::cerr << "Error: --char requires an argument" << std::endl;
                 return 1;
+            }
+        } else if (std::strcmp(argv[i], "--char-code") == 0) {
+            if (i + 1 < argc) {
+                char* end = nullptr;
+                unsigned long parsed = std::strtoul(argv[i + 1], &end, 0);
+                if (end == argv[i + 1] || *end != '\0' || parsed > 255) {
+                    std::cerr << "Error: --char-code must be an integer in [0, 255]" << std::endl;
+                    return 1;
+                }
+                char_specified = true;
+                char_code = static_cast<uint32_t>(parsed);
+                if (verbose) {
+                    std::cout << "Input character code: " << char_code << std::endl;
+                }
+                ++i;  // Skip next argument
+            } else {
+                std::cerr << "Error: --char-code requires a number" << std::endl;
+                return 1;
+            }
+        } else if (std::strcmp(argv[i], "--cycles") == 0) {
+            if (i + 1 < argc) {
+                max_cycles = std::atoi(argv[i + 1]);
+                if (verbose) {
+                    std::cout << "Max cycles set to: " << max_cycles << std::endl;
+                }
+                ++i;  // Skip next argument
+            } else {
+                std::cerr << "Error: --cycles requires a number" << std::endl;
+                return 1;
+            }
+        } else if (std::strcmp(argv[i], "--dump-memory") == 0) {
+            if (i + 2 < argc) {
+                uint32_t addr = std::strtoul(argv[i+1], nullptr, 0);
+                uint32_t count = std::strtoul(argv[i+2], nullptr, 0);
+                dump_regions.push_back({addr, count});
+                i += 2;
+            } else {
+                 std::cerr << "Error: --dump-memory requires <addr> <count>" << std::endl;
+                 return 1;
             }
         }
     }
@@ -218,11 +269,12 @@ int main(int argc, char** argv) {
     // Initialize stack pointer to 512MB (high in address space for stack growth)
     emulator.getCPU().setReg(2, 512 * 1024 * 1024);
     
-    // Set register x10 (a0, first function argument) with character code if provided (non-GUI mode)
-    if (!gui_mode && char_code > 0) {
+    // Set register x10 (a0, first function argument) with character code if provided
+    if (char_specified) {
+        // Use provided character code
         emulator.getCPU().setReg(10, char_code);
-    } else if (gui_mode && char_code == 0) {
-        // In GUI mode, initialize with space character
+    } else if (gui_mode) {
+        // In GUI mode without explicit char, initialize with space character
         emulator.getCPU().setReg(10, 32);
     }
     
@@ -230,7 +282,7 @@ int main(int argc, char** argv) {
         std::cout << "Program loaded at address 0" << std::endl;
         if (gui_mode) {
             std::cout << "Running in GUI mode" << std::endl;
-        } else if (char_code > 0) {
+        } else if (char_specified) {
             std::cout << "Register x10 (a0) set to " << char_code << std::endl;
         }
         std::cout << "Starting execution..." << std::endl;
@@ -246,7 +298,16 @@ int main(int argc, char** argv) {
             process_gui_input(emulator);
         } else {
             // Standard single-execution mode
-            emulator.run(1000000);  // Max 1M instructions (for recursive functions)
+            if (char_specified) {
+                // Keep the selected character stable across the full run.
+                // Neural programs are cyclic and may clobber a0 internally.
+                for (uint32_t i = 0; i < max_cycles && !emulator.isHalted(); ++i) {
+                    emulator.getCPU().setReg(10, char_code);
+                    emulator.step();
+                }
+            } else {
+                emulator.run(max_cycles);  // Use configurable cycle limit
+            }
             
             if (verbose) {
                 std::cout << "----------------------------------------" << std::endl;
@@ -259,6 +320,17 @@ int main(int argc, char** argv) {
             }
         }
         
+        // Render framebuffer if requested
+        if (render_fb) {
+            FramebufferRenderer renderer;
+            renderer.render(emulator.getMemory());
+        }
+        
+        // Dump memory regions
+        for (const auto& region : dump_regions) {
+            emulator.dumpMemory(region.addr, region.count);
+        }
+        
         // Return the program's exit code
         return emulator.getExitCode();
         
@@ -269,4 +341,3 @@ int main(int argc, char** argv) {
     
     return 0;
 }
-
