@@ -20,6 +20,11 @@ import pytest
 
 class CMakeBuildTestSetup:
     """Base class providing test helpers for Phase 5."""
+
+    @staticmethod
+    def get_bootloader_module_path() -> Path:
+        """Return canonical path to BootloaderBuild.cmake in this repository."""
+        return Path(__file__).resolve().parent.parent / "cmake" / "BootloaderBuild.cmake"
     
     @staticmethod
     def create_test_cmakelists(work_dir: Path, bootloader_module_path: str) -> Path:
@@ -166,10 +171,7 @@ class TestPhase5CMakeConfiguration(CMakeBuildTestSetup):
     
     def test_cmake_bootloader_module_found(self):
         """Test that BootloaderBuild.cmake module can be included."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = self.get_bootloader_module_path()
         
         # Module should exist and be readable
         assert bootloader_module.exists()
@@ -182,10 +184,7 @@ class TestPhase5CMakeConfiguration(CMakeBuildTestSetup):
     
     def test_cmake_configure_with_bootloader_module(self):
         """Test CMake configuration with BootloaderBuild module."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = self.get_bootloader_module_path()
         
         with tempfile.TemporaryDirectory() as tmpdir:
             work_dir = Path(tmpdir)
@@ -222,10 +221,7 @@ class TestPhase5AddModelBootloader(CMakeBuildTestSetup):
     
     def test_add_model_bootloader_creates_target(self):
         """Test that add_model_bootloader creates a build target."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = self.get_bootloader_module_path()
         
         with tempfile.TemporaryDirectory() as tmpdir:
             work_dir = Path(tmpdir)
@@ -252,10 +248,7 @@ class TestPhase5AddModelBootloader(CMakeBuildTestSetup):
     
     def test_add_model_bootloader_validates_json_file(self):
         """Test that add_model_bootloader validates JSON file exists."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = self.get_bootloader_module_path()
         
         with tempfile.TemporaryDirectory() as tmpdir:
             work_dir = Path(tmpdir)
@@ -280,10 +273,7 @@ add_model_bootloader(test "nonexistent.json")
     
     def test_add_model_bootloader_with_binary_flag(self):
         """Test add_model_bootloader with BINARY flag."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = self.get_bootloader_module_path()
         
         with tempfile.TemporaryDirectory() as tmpdir:
             work_dir = Path(tmpdir)
@@ -347,10 +337,7 @@ class TestPhase5FunctionAccessors(CMakeBuildTestSetup):
     
     def test_get_bootloader_elf_file(self):
         """Test get_bootloader_elf_file() CMake function."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = self.get_bootloader_module_path()
         
         # Function should be defined in module
         content = bootloader_module.read_text()
@@ -359,10 +346,7 @@ class TestPhase5FunctionAccessors(CMakeBuildTestSetup):
     
     def test_get_bootloader_bin_file(self):
         """Test get_bootloader_bin_file() CMake function."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = self.get_bootloader_module_path()
         
         content = bootloader_module.read_text()
         assert "get_bootloader_bin_file" in content
@@ -370,10 +354,7 @@ class TestPhase5FunctionAccessors(CMakeBuildTestSetup):
     
     def test_get_bootloader_model_name(self):
         """Test get_bootloader_model_name() CMake function."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = self.get_bootloader_module_path()
         
         content = bootloader_module.read_text()
         assert "get_bootloader_model_name" in content
@@ -389,10 +370,7 @@ class TestPhase5Documentation:
     
     def test_module_has_docstring_comments(self):
         """Test that BootloaderBuild.cmake has documentation."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = CMakeBuildTestSetup.get_bootloader_module_path()
         
         content = bootloader_module.read_text()
         
@@ -406,10 +384,7 @@ class TestPhase5Documentation:
     
     def test_module_explains_outputs(self):
         """Test that module documents output paths."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = CMakeBuildTestSetup.get_bootloader_module_path()
         
         content = bootloader_module.read_text()
         
@@ -427,10 +402,7 @@ class TestPhase5Integration:
     
     def test_cmake_module_valid_syntax(self):
         """Test that BootloaderBuild.cmake has valid CMake syntax."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = CMakeBuildTestSetup.get_bootloader_module_path()
         
         content = bootloader_module.read_text()
         
@@ -451,10 +423,7 @@ class TestPhase5Integration:
     
     def test_cmake_module_uses_best_practices(self):
         """Test that module follows CMake best practices."""
-        bootloader_module = Path(__file__).parent / "cmake" / "BootloaderBuild.cmake"
-        
-        if not bootloader_module.exists():
-            pytest.skip("BootloaderBuild.cmake not found")
+        bootloader_module = CMakeBuildTestSetup.get_bootloader_module_path()
         
         content = bootloader_module.read_text()
         
