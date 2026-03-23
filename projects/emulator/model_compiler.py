@@ -38,7 +38,7 @@ class ModelCompiler:
         "generator_base": 0x00010000,
         "recognizer_base": 0x00110000,
         "buffer_base": 0x00150000,
-        "framebuffer_base": 0x00200000,
+        "framebuffer_base": 0x00020000,
     }
     
     # Buffer offsets (relative to buffer_base)
@@ -302,6 +302,9 @@ class ModelCompiler:
         
         return f"""# Model binary data (embedded via .incbin)
 # Size: {binary_size} bytes
+# Keep model blob away from framebuffer (0x20000) so framebuffer writes
+# cannot corrupt model weights/biases during cyclic inference.
+    .org 0x30000
 model_data_start:
     .incbin "{bin_path}"
 model_data_end:
@@ -619,11 +622,18 @@ _start:
 
 """
     def _generate_sigmoid_piecewise(self) -> str:
-        """Generate piecewise linear sigmoid approximation function."""
+        """Generate piecewise linear sigmoid approximation function.
+        
+        Uses a simple symmetric approximation:
+        - x <= -4: return 0
+        - x in [-4, 4]: return 0.5 + x * 0.125 (gives 0 at -4, 0.5 at 0, 1 at 4)
+        - x >= 4: return 1
+        """
         return """
 # Sigmoid piecewise linear approximation
 # Input: fa0 (x value)
 # Output: fa0 (sigmoid(x))
+# Formula: clamp(0.5 + x * 0.125, 0, 1) with saturation at x <= -4 and x >= 4
 sigmoid_piecewise:
     # Save registers
     addi sp, sp, -16
@@ -631,51 +641,34 @@ sigmoid_piecewise:
     fsw fa1, 8(sp)
     fsw fa2, 4(sp)
     
-    # Load constants
-    lui t0, 0xC0000          # -2.0 in float
+    # Check x <= -4.0
+    lui t0, 0xC0800          # -4.0 in float (0xC0800000)
     fmv.w.x fa1, t0
-    lui t0, 0x40000          # 2.0 in float
-    fmv.w.x fa2, t0
-    
-    # if x <= -2.0: return 0.0
     fle.s t0, fa0, fa1
-    beq t0, zero, .Lsig_check_mid_neg
-    fmv.w.x fa0, zero        # return 0.0
+    beq t0, zero, .Lsig_check_high
+    # x <= -4: return 0.0
+    fmv.w.x fa0, zero
     j .Lsig_done
     
-.Lsig_check_mid_neg:
-    # if x <= 0.0: return 0.25 + 0.125*x
-    fmv.w.x fa1, zero
-    fle.s t0, fa0, fa1
-    beq t0, zero, .Lsig_check_mid_pos
-    
-    lui t0, 0x3E000          # 0.125 in float
+.Lsig_check_high:
+    # Check x >= 4.0
+    lui t0, 0x40800          # 4.0 in float (0x40800000)
     fmv.w.x fa1, t0
-    fmul.s fa1, fa0, fa1     # 0.125 * x
-    lui t0, 0x3E800          # 0.25 in float
-    fmv.w.x fa2, t0
-    fadd.s fa0, fa2, fa1     # 0.25 + 0.125*x
-    j .Lsig_done
-    
-.Lsig_check_mid_pos:
-    # if x <= 2.0: return 0.75 + 0.125*x
-    lui t0, 0x40000          # 2.0 in float
-    fmv.w.x fa2, t0
-    fle.s t0, fa0, fa2
-    beq t0, zero, .Lsig_saturate
-    
-    lui t0, 0x3E000          # 0.125 in float
-    fmv.w.x fa1, t0
-    fmul.s fa1, fa0, fa1     # 0.125 * x
-    lui t0, 0x3F400          # 0.75 in float
-    fmv.w.x fa2, t0
-    fadd.s fa0, fa2, fa1     # 0.75 + 0.125*x
-    j .Lsig_done
-    
-.Lsig_saturate:
-    # x > 2.0: return 1.0
+    fle.s t0, fa1, fa0       # 4.0 <= x ?
+    beq t0, zero, .Lsig_linear
+    # x >= 4: return 1.0
     lui t0, 0x3F800          # 1.0 in float
     fmv.w.x fa0, t0
+    j .Lsig_done
+    
+.Lsig_linear:
+    # x in [-4, 4]: return 0.5 + x * 0.125
+    lui t0, 0x3E000          # 0.125 in float (0x3E000000)
+    fmv.w.x fa1, t0
+    fmul.s fa1, fa0, fa1     # fa1 = x * 0.125
+    lui t0, 0x3F000          # 0.5 in float (0x3F000000)
+    fmv.w.x fa2, t0
+    fadd.s fa0, fa2, fa1     # fa0 = 0.5 + x * 0.125
     
 .Lsig_done:
     # Restore registers
@@ -779,6 +772,13 @@ layer_{layer_idx}_forward:
     slli t2, s3, 2                      # t2 = j * 4
     add t1, t1, t2                      # t1 = &bias[j]
     flw fa0, 0(t1)                      # fa0 = bias[j] (accumulator)
+
+    # Initialize weight column walk:
+    #   start at weights_offset + j*4, stride by output_size*4 for i++
+    li t5, {weights_offset}
+    add t5, s0, t5
+    add t5, t5, t2
+    li t6, {output_size * 4}
     
     # Inner loop: accumulate weights * inputs
     li s4, 0                            # i = 0
@@ -793,29 +793,15 @@ layer_{layer_idx}_forward:
     add t1, s1, t0                      # t1 = input_buf + i*4
     flw fa1, 0(t1)                      # fa1 = input[i]
     
-    # Load weight[i][j]
-    # offset = (i * output_size + j) * 4
-    # Compute i * output_size without MUL instruction
-    li t1, 0                           # t1 = 0 (accumulator)
-    li t2, {output_size}                # t2 = output_size
-    li t0, 0                           # t0 = loop counter
-.Lmul_{layer_idx}_loop:
-    bge t0, s4, .Lmul_{layer_idx}_done
-    add t1, t1, t2                      # t1 += output_size
-    addi t0, t0, 1
-    j .Lmul_{layer_idx}_loop
-.Lmul_{layer_idx}_done:
-    add t1, t1, s3                      # t1 = i * output_size + j
-    slli t1, t1, 2                      # t1 *= 4 (byte offset)
-    li t0, {weights_offset}
-    add t1, t1, t0                      # t1 += weights_offset
-    add t1, s0, t1                      # t1 = model_base + offset
-    flw fa2, 0(t1)                      # fa2 = weight[i][j]
+    # Load weight[i][j] from column-walk pointer t5
+    flw fa2, 0(t5)                      # fa2 = weight[i][j]
     
     # acc += input[i] * weight[i][j]
     fmul.s fa3, fa1, fa2                # fa3 = input[i] * weight[i][j]
     fadd.s fa0, fa0, fa3                # fa0 += fa3
     
+    # Advance to weight[i+1][j]
+    add t5, t5, t6
     addi s4, s4, 1                      # i++
     j .L{layer_idx}_inner_loop
 
@@ -830,12 +816,8 @@ layer_{layer_idx}_forward:
 """
         elif activation == "sigmoid":
             asm += f"""    # Apply Sigmoid (piecewise linear approximation)
-    # Save fa0 to stack before call
-    addi sp, sp, -8
-    fsw fa0, 4(sp)
+    # fa0 contains input, sigmoid_piecewise returns result in fa0
     call sigmoid_piecewise
-    flw fa0, 4(sp)
-    addi sp, sp, 8
 """
         # else: no activation
         

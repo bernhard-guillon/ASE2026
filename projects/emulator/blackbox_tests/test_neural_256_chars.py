@@ -28,24 +28,19 @@ class NeuralCharTest:
         # Remove ANSI escape codes
         ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
         clean_text = ansi_escape.sub('', output_text)
-        
-        lines = clean_text.strip().split('\n')
-        
-        # Take first 20 non-empty lines and pad to 20 chars
+
+        # Keep leading/trailing blank rows from framebuffer output. Using strip()
+        # here would remove valid all-space rows and break extraction.
+        lines = clean_text.splitlines()
+
         grid_lines = []
         for line in lines:
-            # Skip truly empty lines (but keep lines with spaces)
-            if len(line) == 0:
+            normalized = line.replace('█', '#')
+            if len(normalized) == 0:
                 continue
-            
-            # Pad or truncate to exactly 20 chars
-            padded_line = (line + ' ' * 20)[:20]
-            
-            # Replace █ with # for consistency
-            padded_line = padded_line.replace('█', '#')
-            
-            grid_lines.append(padded_line)
-            
+            if any(ch not in ' #' for ch in normalized):
+                continue
+            grid_lines.append((normalized + ' ' * 20)[:20])
             if len(grid_lines) == 20:
                 break
         
@@ -74,7 +69,7 @@ class NeuralCharTest:
         try:
             result = subprocess.run(
                 [str(self.emulator_bin), str(self.neural_elf),
-                 '--char', chr(ascii_code),
+                 '--char-code', str(ascii_code),
                  '--cycles', '5000000',
                  '--render-framebuffer'],
                 cwd=self.emulator_dir,

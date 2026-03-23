@@ -1,6 +1,8 @@
 #include "Emulator.h"
 #include <iostream>
 #include <stdexcept>
+#include <iomanip>
+#include <cstring>
 
 Emulator::Emulator(size_t memory_size) 
     : cpu_(), memory_(memory_size), halted_(false), exit_code_(0), heap_break_(0x1000), 
@@ -466,6 +468,25 @@ void Emulator::reset() {
     open_files_.clear();
     file_positions_.clear();
     next_fd_ = 3;
+}
+
+void Emulator::dumpMemory(uint32_t start_addr, uint32_t count) {
+    std::cout << "Memory Dump at 0x" << std::hex << start_addr << std::dec << ":" << std::endl;
+    for (uint32_t i = 0; i < count; ++i) {
+        uint32_t addr = start_addr + i * 4;
+        uint32_t val = memory_.read32(addr);
+        
+        // Print address
+        std::cout << "0x" << std::hex << std::setw(8) << std::setfill('0') << addr << ": ";
+        
+        // Print hex value
+        std::cout << "0x" << std::setw(8) << std::setfill('0') << val;
+        
+        // Interpret as float
+        float f_val;
+        std::memcpy(&f_val, &val, sizeof(float));
+        std::cout << " (" << std::dec << std::setprecision(6) << f_val << ")" << std::endl;
+    }
 }
 
 // FramebufferRenderer implementation

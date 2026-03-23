@@ -131,12 +131,9 @@ map_output_framebuffer:
             "# a0 already contains character code (read by emulator)"
         )
         
-        # Modify 2: Replace output buffer address (0x00153000) with framebuffer (0x20000)
-        # Find "lui t0, 339" pattern and replace with "li t0, 0x20000"
-        asm_code = asm_code.replace(
-            "lui t0, 339\n    addi t0, t0, 0",
-            "li t0, 0x20000             # Framebuffer address"
-        )
+        # Modify 2: REMOVED - The output buffer address should NOT be replaced
+        # The code correctly reads from output buffer (0x00153000) and writes to framebuffer (0x00200000)
+        # Replacing the output buffer address would cause reading from framebuffer instead!
         
         # Write modified assembly
         with open(output_asm, 'w') as f:
