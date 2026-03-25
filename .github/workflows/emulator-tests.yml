@@ -94,6 +94,11 @@ jobs:
           cd projects/emulator/build
           ctest --output-on-failure -R "^python/verilator/differential_validation$"
 
+      - name: Run Verilator GUI smoke
+        run: |
+          cd projects/emulator/build
+          printf 'A' | timeout 2 ./verilator_runner ../neural.elf --gui || test $? -eq 124
+
       - name: Test summary
         if: always()
         run: |
