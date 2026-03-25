@@ -7,12 +7,23 @@ Validates that neural model produces character-like patterns in framebuffer.
 """
 
 import subprocess
+import os
 from pathlib import Path
 import sys
 
+
+def resolve_emulator_runner(emulator_dir: Path) -> Path:
+    runner = os.environ.get("EMULATOR_RUNNER")
+    if runner:
+        return Path(runner)
+    if os.environ.get("EMULATOR_BACKEND", "").lower() == "verilator":
+        return emulator_dir / "hdl" / "sim" / "verilator_runner"
+    return emulator_dir / "build" / "emulator_runner"
+
 class NeuralCharGenValidator:
     def __init__(self):
-        self.emulator_bin = Path(__file__).parent.parent / "build" / "emulator_runner"
+        self.emulator_dir = Path(__file__).parent.parent
+        self.emulator_bin = resolve_emulator_runner(self.emulator_dir)
         self.neural_elf = Path(__file__).parent.parent / "build" / "neural_chargen.elf"
         self.static_elf = Path(__file__).parent.parent / "build" / "static_char_gen.elf"
         

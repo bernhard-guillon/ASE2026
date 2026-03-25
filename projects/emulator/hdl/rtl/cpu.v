@@ -115,10 +115,20 @@ module cpu (
     reg        mem_we_reg;
     reg [1:0]  mem_size_reg;
     
-    assign mem_addr  = mem_addr_reg;
+    // Compute load/store address combinationally for single-cycle operation
+    wire [31:0] load_addr = rs1_val + imm_i;
+    wire [31:0] store_addr = rs1_val + imm_s;
+    wire is_load = (opcode == OP_LOAD) || (opcode == OP_LOAD_FP);
+    wire is_store = (opcode == OP_STORE) || (opcode == OP_STORE_FP);
+    
+    // If a delayed store is pending, keep its address selected so a following load
+    // does not redirect that write to the load address.
+    assign mem_addr  = mem_we_reg ? mem_addr_reg
+                                  : (is_load ? load_addr : (is_store ? store_addr : mem_addr_reg));
     assign mem_wdata = mem_wdata_reg;
     assign mem_we    = mem_we_reg;
-    assign mem_size  = mem_size_reg;
+    assign mem_size  = mem_we_reg ? mem_size_reg
+                                  : (is_load ? funct3[1:0] : (is_store ? funct3[1:0] : mem_size_reg));
     
     // Syscall signals
     assign syscall_num = regs[17];  // a7
@@ -140,15 +150,21 @@ module cpu (
         endcase
     end
     
-    // State machine for syscall handling
+    // State machine for multi-cycle operations
     reg [1:0] state;
-    localparam ST_EXEC    = 2'd0;
-    localparam ST_SYSCALL = 2'd1;
+    localparam ST_EXEC     = 2'd0;
+    localparam ST_SYSCALL  = 2'd1;
+    localparam ST_LOAD     = 2'd2;
+    localparam ST_LOAD_FP  = 2'd3;
+    
+    // Pending load metadata for ST_LOAD/ST_LOAD_FP
+    reg [4:0] load_rd;
+    reg [2:0] load_funct3;
     
     // Load result processing
     reg [31:0] load_result;
     always @(*) begin
-        case (funct3)
+        case (load_funct3)
             3'b000: load_result = {{24{mem_rdata[7]}}, mem_rdata[7:0]};   // LB
             3'b001: load_result = {{16{mem_rdata[15]}}, mem_rdata[15:0]}; // LH
             3'b010: load_result = mem_rdata;                              // LW
@@ -171,6 +187,8 @@ module cpu (
             mem_addr_reg <= 32'd0;
             mem_wdata_reg <= 32'd0;
             mem_size_reg <= 2'b10;
+            load_rd <= 5'd0;
+            load_funct3 <= 3'd0;
             
             // Reset registers
             for (i = 0; i < 32; i = i + 1) begin
@@ -222,8 +240,9 @@ module cpu (
                         OP_LOAD: begin
                             mem_addr_reg <= rs1_val + imm_i;
                             mem_size_reg <= funct3[1:0];
-                            // Result available next cycle, but in single-cycle we cheat
-                            if (rd != 5'd0) regs[rd] <= load_result;
+                            load_rd <= rd;
+                            load_funct3 <= funct3;
+                            state <= ST_LOAD;
                             pc <= pc + 4;
                         end
                         
@@ -278,7 +297,8 @@ module cpu (
                             // FLW: Load float from memory
                             mem_addr_reg <= rs1_val + imm_i;
                             mem_size_reg <= 2'b10;  // Word
-                            fp_regs[rd] <= mem_rdata;
+                            load_rd <= rd;
+                            state <= ST_LOAD_FP;
                             pc <= pc + 4;
                         end
                         
@@ -357,6 +377,18 @@ module cpu (
                         
                         state <= ST_EXEC;
                     end
+                end
+                
+                ST_LOAD: begin
+                    if (load_rd != 5'd0) begin
+                        regs[load_rd] <= load_result;
+                    end
+                    state <= ST_EXEC;
+                end
+                
+                ST_LOAD_FP: begin
+                    fp_regs[load_rd] <= mem_rdata;
+                    state <= ST_EXEC;
                 end
             endcase
         end

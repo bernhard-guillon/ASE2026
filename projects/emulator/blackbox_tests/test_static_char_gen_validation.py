@@ -10,15 +10,25 @@ Uses --cycles and --render-framebuffer flags to run and capture output.
 """
 
 import subprocess
+import os
 import re
 from pathlib import Path
+
+
+def resolve_emulator_runner(emulator_dir: Path) -> Path:
+    runner = os.environ.get("EMULATOR_RUNNER")
+    if runner:
+        return Path(runner)
+    if os.environ.get("EMULATOR_BACKEND", "").lower() == "verilator":
+        return emulator_dir / "hdl" / "sim" / "verilator_runner"
+    return emulator_dir / "build" / "emulator_runner"
 
 class StaticCharGenValidator:
     """Validate static character generator against font file."""
     
     def __init__(self):
         self.emulator_dir = Path(__file__).parent.parent
-        self.emulator_bin = self.emulator_dir / "build/emulator_runner"
+        self.emulator_bin = resolve_emulator_runner(self.emulator_dir)
         self.static_elf = self.emulator_dir / "build/static_char_gen.elf"
         self.font_header = self.emulator_dir / "character_font.h"
         

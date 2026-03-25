@@ -11,10 +11,20 @@ Tests that the neural model produces reasonable output by:
 """
 
 import subprocess
+import os
 import tempfile
 import json
 from pathlib import Path
 import struct
+
+
+def resolve_emulator_runner(emulator_dir: Path) -> Path:
+    runner = os.environ.get("EMULATOR_RUNNER")
+    if runner:
+        return Path(runner)
+    if os.environ.get("EMULATOR_BACKEND", "").lower() == "verilator":
+        return emulator_dir / "hdl" / "sim" / "verilator_runner"
+    return emulator_dir / "build" / "emulator_runner"
 
 class CharacterComparisonTest:
     """Compare neural vs static character generation."""
@@ -22,7 +32,7 @@ class CharacterComparisonTest:
     def __init__(self):
         self.emulator_dir = Path(__file__).parent.parent
         self.model_path = self.emulator_dir.parent.parent / "projects/weight-export/character_generator.json"
-        self.emulator_bin = self.emulator_dir / "build/emulator_runner"
+        self.emulator_bin = resolve_emulator_runner(self.emulator_dir)
         self.compiler_interactive = self.emulator_dir / "model_compiler_interactive.py"
         self.linker_script = self.emulator_dir / "linker.ld"
         self.static_elf = self.emulator_dir / "build/static_char_gen.elf"

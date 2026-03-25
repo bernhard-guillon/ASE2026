@@ -4,6 +4,7 @@ Blackbox test for neural character generation - all 256 characters.
 """
 
 import subprocess
+import os
 import numpy as np
 from pathlib import Path
 import sys
@@ -11,10 +12,19 @@ import re
 import shutil
 import tempfile
 
+
+def resolve_emulator_runner(emulator_dir: Path) -> Path:
+    runner = os.environ.get("EMULATOR_RUNNER")
+    if runner:
+        return Path(runner)
+    if os.environ.get("EMULATOR_BACKEND", "").lower() == "verilator":
+        return emulator_dir / "hdl" / "sim" / "verilator_runner"
+    return emulator_dir / "build" / "emulator_runner"
+
 class NeuralCharTest:
     def __init__(self):
         self.emulator_dir = Path(__file__).parent.parent
-        self.emulator_bin = self.emulator_dir / "build/emulator_runner"
+        self.emulator_bin = resolve_emulator_runner(self.emulator_dir)
         self.neural_elf = self.emulator_dir / "neural.elf"
         self.compiler_script = self.emulator_dir / "model_compiler_interactive.py"
         self.model_json = self.emulator_dir.parent / "weight-export/character_generator.json"

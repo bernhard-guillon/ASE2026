@@ -122,9 +122,11 @@ constexpr uint32_t PT_LOAD = 1;
 constexpr uint32_t FRAMEBUFFER_ADDR = 0x20000;
 constexpr uint32_t FRAMEBUFFER_SIZE = 400;
 
+#include <verilated_vcd_c.h>
+
 class VerilatorRunner {
 public:
-    VerilatorRunner() : top_(new Vemulator_top), time_(0) {
+    VerilatorRunner() : top_(new Vemulator_top), time_(0), trace_(nullptr) {
         top_->clk = 0;
         top_->rst_n = 0;
         top_->start = 0;
@@ -133,7 +135,18 @@ public:
     }
     
     ~VerilatorRunner() {
+        if (trace_) {
+            trace_->close();
+            delete trace_;
+        }
         delete top_;
+    }
+    
+    void enableTrace(const char* filename) {
+        Verilated::traceEverOn(true);
+        trace_ = new VerilatedVcdC;
+        top_->trace(trace_, 99);
+        trace_->open(filename);
     }
     
     void reset() {
@@ -148,10 +161,12 @@ public:
     void tick() {
         top_->clk = 0;
         top_->eval();
+        if (trace_) trace_->dump(time_);
         time_++;
         
         top_->clk = 1;
         top_->eval();
+        if (trace_) trace_->dump(time_);
         time_++;
     }
     
@@ -312,6 +327,7 @@ public:
 
 private:
     Vemulator_top* top_;
+    VerilatedVcdC* trace_;
     uint64_t time_;
     uint32_t heap_break_ = 0x80000000;
 };
@@ -340,6 +356,7 @@ int main(int argc, char** argv) {
     bool verbose = false;
     bool render_fb = false;
     bool char_specified = false;
+    bool trace_enabled = false;
     uint32_t char_code = 0;
     uint32_t max_cycles = 1000000;
     
@@ -349,6 +366,8 @@ int main(int argc, char** argv) {
             verbose = true;
         } else if (strcmp(argv[i], "--render-framebuffer") == 0) {
             render_fb = true;
+        } else if (strcmp(argv[i], "--trace") == 0) {
+            trace_enabled = true;
         } else if (strcmp(argv[i], "--gui") == 0) {
             std::cerr << "Warning: --gui not supported in Verilator runner" << std::endl;
         } else if (strcmp(argv[i], "--char") == 0 && i + 1 < argc) {
@@ -384,6 +403,12 @@ int main(int argc, char** argv) {
     
     // Initialize emulator
     VerilatorRunner runner;
+    if (trace_enabled) {
+        runner.enableTrace("trace.vcd");
+        if (verbose) {
+            std::cout << "VCD tracing enabled: trace.vcd" << std::endl;
+        }
+    }
     runner.reset();
     
     // Load program
