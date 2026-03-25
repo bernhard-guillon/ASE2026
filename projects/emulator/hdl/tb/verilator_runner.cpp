@@ -10,6 +10,8 @@
 #include <cstring>
 #include <cstdint>
 #include <cmath>
+#include <string>
+#include <unordered_map>
 
 // DPI-C functions for FPU operations (IEEE 754 single-precision)
 extern "C" {
@@ -136,6 +138,13 @@ public:
     }
     
     ~VerilatorRunner() {
+        for (auto& pair : open_files_) {
+            pair.second->close();
+            delete pair.second;
+        }
+        open_files_.clear();
+        file_positions_.clear();
+
         if (trace_) {
             trace_->close();
             delete trace_;
@@ -267,23 +276,216 @@ public:
         uint32_t a0 = top_->syscall_a0;
         uint32_t a1 = top_->syscall_a1;
         uint32_t a2 = top_->syscall_a2;
+        uint32_t a3 = top_->syscall_a3;
+        uint32_t a4 = top_->syscall_a4;
+        uint32_t a5 = top_->syscall_a5;
         
         uint32_t ret = 0;
         
         switch (num) {
-            case 64:  // write
+            case 64: { // write(fd, buf, count)
                 if (a0 == 1 || a0 == 2) {  // stdout/stderr
                     for (uint32_t i = 0; i < a2; ++i) {
                         char c = readMem(a1 + i);
                         std::cout << c;
                     }
+                    std::cout.flush();
                     ret = a2;
+                } else if (a0 >= 3) {
+                    auto it = open_files_.find(static_cast<int>(a0));
+                    if (it == open_files_.end()) {
+                        ret = static_cast<uint32_t>(-1);
+                        break;
+                    }
+
+                    std::fstream* file = it->second;
+                    uint32_t bytes_written = 0;
+                    for (uint32_t i = 0; i < a2; ++i) {
+                        file->put(static_cast<char>(readMem(a1 + i)));
+                        bytes_written++;
+                    }
+                    file->flush();
+                    file_positions_[static_cast<int>(a0)] += bytes_written;
+                    ret = bytes_written;
+                } else {
+                    ret = static_cast<uint32_t>(-1);
                 }
                 break;
+            }
                 
             case 93:  // exit
                 // Handled by CPU
                 break;
+
+            case 56: { // openat(dirfd, pathname, flags, mode)
+                (void)a0;  // dirfd ignored in this simplified implementation
+                (void)a3;  // mode ignored
+
+                std::string filename;
+                for (uint32_t i = 0; i < 256; ++i) {
+                    char c = static_cast<char>(readMem(a1 + i));
+                    if (c == '\0') {
+                        break;
+                    }
+                    filename += c;
+                }
+
+                const uint32_t O_RDONLY = 0;
+                const uint32_t O_WRONLY = 1;
+                const uint32_t O_RDWR = 2;
+                const uint32_t O_CREAT = 0x40;
+                const uint32_t O_APPEND = 0x400;
+
+                uint32_t open_mode_bits = (a2 & 3);
+                std::ios::openmode mode_flags = std::ios::binary;
+                if (open_mode_bits == O_RDONLY) {
+                    mode_flags |= std::ios::in;
+                } else if (open_mode_bits == O_WRONLY) {
+                    mode_flags |= std::ios::out;
+                } else if (open_mode_bits == O_RDWR) {
+                    mode_flags |= (std::ios::in | std::ios::out);
+                }
+
+                if (a2 & O_CREAT) {
+                    mode_flags |= std::ios::trunc;
+                }
+                if (a2 & O_APPEND) {
+                    mode_flags |= std::ios::app;
+                }
+
+                std::fstream* file = new std::fstream(filename, mode_flags);
+                if (!file->is_open()) {
+                    delete file;
+                    ret = static_cast<uint32_t>(-1);
+                    break;
+                }
+
+                int fd = next_fd_++;
+                open_files_[fd] = file;
+                file_positions_[fd] = 0;
+                ret = static_cast<uint32_t>(fd);
+                break;
+            }
+
+            case 63: { // read(fd, buf, count)
+                int fd = static_cast<int>(a0);
+                uint32_t buf = a1;
+                uint32_t count = a2;
+
+                if (fd == 0) {
+                    ret = 0;
+                    break;
+                }
+
+                auto it = open_files_.find(fd);
+                if (it == open_files_.end()) {
+                    ret = static_cast<uint32_t>(-1);
+                    break;
+                }
+
+                std::fstream* file = it->second;
+                uint32_t bytes_read = 0;
+                for (uint32_t i = 0; i < count; ++i) {
+                    int c = file->get();
+                    if (c == EOF) {
+                        break;
+                    }
+                    writeMem(buf + i, static_cast<uint8_t>(c));
+                    bytes_read++;
+                }
+
+                file_positions_[fd] += bytes_read;
+                ret = bytes_read;
+                break;
+            }
+
+            case 57: { // close(fd)
+                int fd = static_cast<int>(a0);
+                if (fd < 3) {
+                    ret = 0;
+                    break;
+                }
+
+                auto it = open_files_.find(fd);
+                if (it == open_files_.end()) {
+                    ret = static_cast<uint32_t>(-1);
+                    break;
+                }
+
+                it->second->close();
+                delete it->second;
+                open_files_.erase(it);
+                file_positions_.erase(fd);
+                ret = 0;
+                break;
+            }
+
+            case 19: { // lseek(fd, offset, whence)
+                int fd = static_cast<int>(a0);
+                int32_t offset = static_cast<int32_t>(a1);
+                int whence = static_cast<int>(a2);
+
+                auto it = open_files_.find(fd);
+                if (it == open_files_.end()) {
+                    ret = static_cast<uint32_t>(-1);
+                    break;
+                }
+
+                std::fstream* file = it->second;
+                auto pos_it = file_positions_.find(fd);
+                uint32_t current_pos = (pos_it != file_positions_.end()) ? pos_it->second : 0;
+                uint32_t new_position = 0;
+
+                switch (whence) {
+                    case 0: {  // SEEK_SET
+                        if (offset < 0) {
+                            ret = static_cast<uint32_t>(-1);
+                            break;
+                        }
+                        new_position = static_cast<uint32_t>(offset);
+                        break;
+                    }
+                    case 1: {  // SEEK_CUR
+                        int32_t result = static_cast<int32_t>(current_pos) + offset;
+                        if (result < 0) {
+                            ret = static_cast<uint32_t>(-1);
+                            break;
+                        }
+                        new_position = static_cast<uint32_t>(result);
+                        break;
+                    }
+                    case 2: {  // SEEK_END
+                        file->clear();
+                        file->seekg(0, std::ios::end);
+                        std::streampos end_pos = file->tellg();
+                        if (end_pos < 0) {
+                            ret = static_cast<uint32_t>(-1);
+                            break;
+                        }
+                        int32_t file_size = static_cast<int32_t>(end_pos);
+                        int32_t result = file_size + offset;
+                        if (result < 0) {
+                            ret = static_cast<uint32_t>(-1);
+                            break;
+                        }
+                        new_position = static_cast<uint32_t>(result);
+                        break;
+                    }
+                    default:
+                        ret = static_cast<uint32_t>(-1);
+                        break;
+                }
+                if (ret == static_cast<uint32_t>(-1)) {
+                    break;
+                }
+
+                file->clear();
+                file->seekg(static_cast<std::streamoff>(new_position), std::ios::beg);
+                file->seekp(static_cast<std::streamoff>(new_position), std::ios::beg);
+                file_positions_[fd] = new_position;
+                ret = new_position;
+                break;
+            }
                 
             case 214:  // brk
                 if (a0 == 0) {
@@ -295,6 +497,65 @@ public:
                     ret = heap_break_;
                 }
                 break;
+
+            case 192: { // mmap2(addr, len, prot, flags, fd, offset)
+                (void)a2;  // prot unused
+                (void)a4;  // fd unused for anonymous mappings
+                (void)a5;  // offset unused for anonymous mappings
+
+                const uint32_t MAP_ANONYMOUS = 0x20;
+                const uint32_t MAP_FIXED = 0x10;
+
+                if ((a3 & MAP_ANONYMOUS) == 0) {
+                    ret = static_cast<uint32_t>(-1);
+                    break;
+                }
+
+                uint32_t aligned_len = (a1 + 0xFFF) & ~0xFFF;
+                uint32_t result_addr = 0;
+
+                if (a3 & MAP_FIXED) {
+                    if (a0 + aligned_len > MEM_SIZE) {
+                        ret = static_cast<uint32_t>(-1);
+                        break;
+                    }
+                    result_addr = a0;
+                } else {
+                    if (mmap_base_ + aligned_len > MEM_SIZE) {
+                        ret = static_cast<uint32_t>(-1);
+                        break;
+                    }
+                    result_addr = mmap_base_;
+                    mmap_base_ += aligned_len;
+                }
+
+                mmap_regions_[result_addr] = aligned_len;
+                for (uint32_t i = 0; i < aligned_len; ++i) {
+                    writeMem(result_addr + i, 0);
+                }
+                ret = result_addr;
+                break;
+            }
+
+            case 215: { // munmap(addr, len)
+                auto it = mmap_regions_.find(a0);
+                if (it == mmap_regions_.end()) {
+                    ret = static_cast<uint32_t>(-1);
+                    break;
+                }
+
+                uint32_t aligned_len = (a1 + 0xFFF) & ~0xFFF;
+                if (it->second != aligned_len && it->second != a1) {
+                    if (a0 + a1 > MEM_SIZE) {
+                        ret = static_cast<uint32_t>(-1);
+                        break;
+                    }
+                }
+
+                mmap_regions_.erase(it);
+                ret = 0;
+                break;
+            }
                 
             default:
                 std::cerr << "Unknown syscall: " << num << std::endl;
@@ -339,6 +600,11 @@ private:
     VerilatedVcdC* trace_;
     uint64_t time_;
     uint32_t heap_break_ = 0x1000;
+    uint32_t mmap_base_ = 0x10000;
+    int next_fd_ = 3;
+    std::unordered_map<int, std::fstream*> open_files_;
+    std::unordered_map<int, uint32_t> file_positions_;
+    std::unordered_map<uint32_t, uint32_t> mmap_regions_;
     bool syscall_error_ = false;
     uint32_t syscall_error_num_ = 0;
 };

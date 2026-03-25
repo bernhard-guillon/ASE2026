@@ -28,6 +28,9 @@ module cpu (
     output wire [31:0] syscall_a0,
     output wire [31:0] syscall_a1,
     output wire [31:0] syscall_a2,
+    output wire [31:0] syscall_a3,
+    output wire [31:0] syscall_a4,
+    output wire [31:0] syscall_a5,
     input  wire        syscall_done,
     input  wire [31:0] syscall_ret,
     
@@ -145,6 +148,9 @@ module cpu (
     assign syscall_a0  = regs[10];  // a0
     assign syscall_a1  = regs[11];  // a1
     assign syscall_a2  = regs[12];  // a2
+    assign syscall_a3  = regs[13];  // a3
+    assign syscall_a4  = regs[14];  // a4
+    assign syscall_a5  = regs[15];  // a5
     
     // Branch condition
     reg branch_taken;

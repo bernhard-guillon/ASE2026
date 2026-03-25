@@ -35,6 +35,9 @@ module emulator_top #(
     output wire [31:0] syscall_a0,
     output wire [31:0] syscall_a1,
     output wire [31:0] syscall_a2,
+    output wire [31:0] syscall_a3,
+    output wire [31:0] syscall_a4,
+    output wire [31:0] syscall_a5,
     input  wire        syscall_done,
     input  wire [31:0] syscall_ret
 );
@@ -82,6 +85,9 @@ module emulator_top #(
         .syscall_a0(syscall_a0),
         .syscall_a1(syscall_a1),
         .syscall_a2(syscall_a2),
+        .syscall_a3(syscall_a3),
+        .syscall_a4(syscall_a4),
+        .syscall_a5(syscall_a5),
         .syscall_done(syscall_done),
         .syscall_ret(syscall_ret),
         
