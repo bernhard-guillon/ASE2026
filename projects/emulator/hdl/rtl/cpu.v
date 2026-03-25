@@ -21,6 +21,8 @@ module cpu (
     input  wire        reg_write_en,
     input  wire [4:0]  reg_write_addr,
     input  wire [31:0] reg_write_data,
+    input  wire        force_a0_en,
+    input  wire [31:0] force_a0_data,
     
     // Syscall interface
     output reg         syscall_valid,
@@ -220,6 +222,9 @@ module cpu (
             end
             
         end else if (enable && !halted) begin
+            if (force_a0_en) begin
+                regs[10] <= force_a0_data;
+            end
             // Default: no memory write
             mem_we_reg <= 1'b0;
             

@@ -3,7 +3,7 @@
 // Little-endian byte ordering
 
 module memory #(
-    parameter SIZE = 32'h100000  // 1MB default for simulation (configurable)
+    parameter SIZE = 32'h200000  // 2MB default for simulation (configurable)
 )(
     input  wire        clk,
     

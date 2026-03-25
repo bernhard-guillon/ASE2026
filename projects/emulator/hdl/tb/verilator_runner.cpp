@@ -124,7 +124,7 @@ struct Elf32_Phdr {
 constexpr uint32_t PT_LOAD = 1;
 constexpr uint32_t FRAMEBUFFER_ADDR = 0x20000;
 constexpr uint32_t FRAMEBUFFER_SIZE = 400;
-constexpr uint32_t MEM_SIZE = 0x100000;  // Keep in sync with emulator_top default
+constexpr uint32_t MEM_SIZE = 0x200000;  // Keep in sync with emulator_top default
 
 #include <verilated_vcd_c.h>
 
@@ -135,6 +135,8 @@ public:
         top_->rst_n = 0;
         top_->start = 0;
         top_->reg_write_en = 0;
+        top_->force_a0_en = 0;
+        top_->force_a0_data = 0;
         top_->mem_init_en = 0;
     }
     
@@ -253,12 +255,14 @@ public:
         top_->start = 0;
     }
     
-    bool run(uint32_t max_cycles) {
+    bool run(uint32_t max_cycles, bool hold_char = false, uint32_t char_code = 0) {
         // Handle syscalls in testbench
         top_->syscall_done = 0;
         top_->syscall_ret = 0;
         syscall_error_ = false;
         syscall_error_num_ = 0;
+        top_->force_a0_en = hold_char ? 1 : 0;
+        top_->force_a0_data = char_code;
         
         for (uint32_t i = 0; i < max_cycles && !top_->halted && !syscall_error_; ++i) {
             tick();
@@ -268,6 +272,7 @@ public:
                 handleSyscall();
             }
         }
+        top_->force_a0_en = 0;
         
         return top_->halted && !syscall_error_;
     }
@@ -704,7 +709,7 @@ int main(int argc, char** argv) {
         std::cout << "Loaded ELF, entry point: 0x" << std::hex << entry_point << std::dec << std::endl;
     }
     
-    // Initialize stack pointer near top of simulated RAM (1MB default).
+    // Initialize stack pointer near top of simulated RAM (2MB default).
     runner.setReg(2, MEM_SIZE - 4);
     
     // Set character code if specified
@@ -721,7 +726,7 @@ int main(int argc, char** argv) {
     }
     
     runner.start();
-    runner.run(max_cycles);
+    runner.run(max_cycles, char_specified, char_code);
     if (runner.hasSyscallError()) {
         if (verbose) {
             std::cerr << "Execution stopped on unsupported syscall "

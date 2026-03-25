@@ -2,7 +2,7 @@
 // Synthesizable design for simulation with Verilator
 
 module emulator_top #(
-    parameter MEM_SIZE = 32'h100000,  // 1MB default for simulation
+    parameter MEM_SIZE = 32'h200000,  // 2MB default for simulation
     parameter FRAMEBUFFER_ADDR = 32'h20000,
     parameter FRAMEBUFFER_SIZE = 400    // 20x20 pixels
 )(
@@ -19,6 +19,8 @@ module emulator_top #(
     input  wire        reg_write_en,
     input  wire [4:0]  reg_write_addr,
     input  wire [31:0] reg_write_data,
+    input  wire        force_a0_en,
+    input  wire [31:0] force_a0_data,
     
     // Memory initialization interface
     input  wire        mem_init_en,
@@ -78,6 +80,8 @@ module emulator_top #(
         .reg_write_en(reg_write_en && !running),
         .reg_write_addr(reg_write_addr),
         .reg_write_data(reg_write_data),
+        .force_a0_en(force_a0_en),
+        .force_a0_data(force_a0_data),
         
         // Syscall interface
         .syscall_valid(syscall_valid),
