@@ -61,6 +61,19 @@ if(VERILATOR)
         COMMENT "Running Verilator lint"
         VERBATIM
     )
+
+    # Add a basic Verilator smoke test when blackbox artifacts are available.
+    # This uses the already-generated asm/basic/hello ELF from the top-level
+    # blackbox build targets.
+    if(RISCV_TOOLCHAIN_FOUND)
+        set(VERILATOR_SMOKE_ELF ${CMAKE_BINARY_DIR}/blackbox_tests/asm/basic/hello/test.elf)
+        add_test(
+            NAME verilator/asm/basic_hello
+            COMMAND ${CMAKE_BINARY_DIR}/verilator_runner ${VERILATOR_SMOKE_ELF} --cycles 50000
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+        set_tests_properties(verilator/asm/basic_hello PROPERTIES TIMEOUT 10)
+    endif()
     
 else()
     message(STATUS "Verilator not found - HDL simulation targets disabled")

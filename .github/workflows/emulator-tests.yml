@@ -38,7 +38,8 @@ jobs:
             git \
             python \
             python-pytest \
-            python-numpy
+            python-numpy \
+            verilator
 
       - name: Install RISC-V toolchain
         run: |
@@ -67,6 +68,9 @@ jobs:
           echo ""
           echo "=== RISC-V Linker Version ==="
           riscv64-elf-ld --version
+          echo ""
+          echo "=== Verilator Version ==="
+          verilator --version
 
       - name: Configure CMake
         run: |
