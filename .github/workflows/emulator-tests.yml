@@ -82,7 +82,7 @@ jobs:
       - name: Build emulator
         run: |
           cd projects/emulator/build
-          cmake --build . -j4 --verbose --target neural_elf
+          cmake --build . -j4 --verbose
 
       - name: Run unit tests
         run: |
