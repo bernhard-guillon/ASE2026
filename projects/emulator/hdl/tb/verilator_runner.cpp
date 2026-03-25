@@ -121,6 +121,7 @@ struct Elf32_Phdr {
 constexpr uint32_t PT_LOAD = 1;
 constexpr uint32_t FRAMEBUFFER_ADDR = 0x20000;
 constexpr uint32_t FRAMEBUFFER_SIZE = 400;
+constexpr uint32_t MEM_SIZE = 0x100000;  // Keep in sync with emulator_top default
 
 #include <verilated_vcd_c.h>
 
@@ -246,8 +247,10 @@ public:
         // Handle syscalls in testbench
         top_->syscall_done = 0;
         top_->syscall_ret = 0;
+        syscall_error_ = false;
+        syscall_error_num_ = 0;
         
-        for (uint32_t i = 0; i < max_cycles && !top_->halted; ++i) {
+        for (uint32_t i = 0; i < max_cycles && !top_->halted && !syscall_error_; ++i) {
             tick();
             
             // Check for syscall
@@ -256,7 +259,7 @@ public:
             }
         }
         
-        return top_->halted;
+        return top_->halted && !syscall_error_;
     }
     
     void handleSyscall() {
@@ -285,14 +288,18 @@ public:
             case 214:  // brk
                 if (a0 == 0) {
                     ret = heap_break_;
-                } else {
+                } else if (a0 < MEM_SIZE) {
                     heap_break_ = a0;
+                    ret = heap_break_;
+                } else {
                     ret = heap_break_;
                 }
                 break;
                 
             default:
                 std::cerr << "Unknown syscall: " << num << std::endl;
+                syscall_error_ = true;
+                syscall_error_num_ = num;
                 ret = static_cast<uint32_t>(-1);
                 break;
         }
@@ -306,6 +313,8 @@ public:
     bool isHalted() const { return top_->halted; }
     uint32_t getExitCode() const { return top_->exit_code; }
     uint32_t getCycleCount() const { return top_->cycle_count; }
+    bool hasSyscallError() const { return syscall_error_; }
+    uint32_t getSyscallErrorNum() const { return syscall_error_num_; }
     
     void renderFramebuffer() {
         std::cout << "\n";
@@ -329,7 +338,9 @@ private:
     Vemulator_top* top_;
     VerilatedVcdC* trace_;
     uint64_t time_;
-    uint32_t heap_break_ = 0x80000000;
+    uint32_t heap_break_ = 0x1000;
+    bool syscall_error_ = false;
+    uint32_t syscall_error_num_ = 0;
 };
 
 void printUsage(const char* prog) {
@@ -422,8 +433,8 @@ int main(int argc, char** argv) {
         std::cout << "Loaded ELF, entry point: 0x" << std::hex << entry_point << std::dec << std::endl;
     }
     
-    // Initialize stack pointer (x2) to 512MB
-    runner.setReg(2, 512 * 1024 * 1024);
+    // Initialize stack pointer near top of simulated RAM (1MB default).
+    runner.setReg(2, MEM_SIZE - 4);
     
     // Set character code if specified
     if (char_specified) {
@@ -440,6 +451,13 @@ int main(int argc, char** argv) {
     
     runner.start();
     runner.run(max_cycles);
+    if (runner.hasSyscallError()) {
+        if (verbose) {
+            std::cerr << "Execution stopped on unsupported syscall "
+                      << runner.getSyscallErrorNum() << std::endl;
+        }
+        return 1;
+    }
     
     if (verbose) {
         std::cout << "Execution complete. Cycles: " << runner.getCycleCount() << std::endl;

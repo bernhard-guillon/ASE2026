@@ -107,7 +107,17 @@ module cpu (
         .cmp_result(fpu_cmp_result)
     );
     
-    reg [4:0] fpu_op;
+    wire [4:0] fpu_op =
+        (funct7 == 7'b0000000) ? 5'd0 :  // FADD.S
+        (funct7 == 7'b0000100) ? 5'd1 :  // FSUB.S
+        (funct7 == 7'b0001000) ? 5'd2 :  // FMUL.S
+        (funct7 == 7'b0001100) ? 5'd3 :  // FDIV.S
+        (funct7 == 7'b0010000) ? 5'd4 :  // FSGNJ*.S
+        (funct7 == 7'b0010100) ? 5'd5 :  // FMIN/FMAX.S
+        (funct7 == 7'b1100000) ? 5'd6 :  // FCVT.W*.S
+        (funct7 == 7'b1101000) ? 5'd7 :  // FCVT.S.W*
+        (funct7 == 7'b1010000) ? 5'd8 :  // FEQ/FLT/FLE.S
+                                  5'd0;
     
     // Memory interface
     reg [31:0] mem_addr_reg;
@@ -123,11 +133,11 @@ module cpu (
     
     // If a delayed store is pending, keep its address selected so a following load
     // does not redirect that write to the load address.
-    assign mem_addr  = mem_we_reg ? mem_addr_reg
+    assign mem_addr  = (mem_we_reg || load_pending) ? mem_addr_reg
                                   : (is_load ? load_addr : (is_store ? store_addr : mem_addr_reg));
     assign mem_wdata = mem_wdata_reg;
     assign mem_we    = mem_we_reg;
-    assign mem_size  = mem_we_reg ? mem_size_reg
+    assign mem_size  = (mem_we_reg || load_pending) ? mem_size_reg
                                   : (is_load ? funct3[1:0] : (is_store ? funct3[1:0] : mem_size_reg));
     
     // Syscall signals
@@ -156,6 +166,7 @@ module cpu (
     localparam ST_SYSCALL  = 2'd1;
     localparam ST_LOAD     = 2'd2;
     localparam ST_LOAD_FP  = 2'd3;
+    wire load_pending = (state == ST_LOAD) || (state == ST_LOAD_FP);
     
     // Pending load metadata for ST_LOAD/ST_LOAD_FP
     reg [4:0] load_rd;
