@@ -13,6 +13,9 @@
 #include <iomanip>
 #include <string>
 #include <unordered_map>
+#include <termios.h>
+#include <unistd.h>
+#include <csignal>
 
 // DPI-C functions for FPU operations (IEEE 754 single-precision)
 extern "C" {
@@ -615,10 +618,71 @@ private:
     uint32_t syscall_error_num_ = 0;
 };
 
+static volatile sig_atomic_t g_should_exit = 0;
+
+void signal_handler(int signum) {
+    if (signum == SIGINT) {
+        g_should_exit = 1;
+    }
+}
+
+struct TerminalMode {
+    termios original_settings{};
+    bool active = false;
+
+    TerminalMode() {
+        if (tcgetattr(STDIN_FILENO, &original_settings) != 0) {
+            return;
+        }
+        termios raw = original_settings;
+        raw.c_lflag &= ~(ICANON | ECHO);
+        raw.c_cc[VMIN] = 0;
+        raw.c_cc[VTIME] = 0;
+        if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == 0) {
+            active = true;
+        }
+    }
+
+    ~TerminalMode() {
+        if (active) {
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_settings);
+        }
+    }
+};
+
+void process_gui_input(VerilatorRunner& runner, uint32_t initial_char) {
+    TerminalMode terminal;
+    std::signal(SIGINT, signal_handler);
+    g_should_exit = 0;
+
+    uint32_t current_char = initial_char;
+    std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
+    std::cout << "Starting with character code " << current_char << "..." << std::endl;
+
+    while (!g_should_exit) {
+        unsigned char ch = 0;
+        if (read(STDIN_FILENO, &ch, 1) == 1) {
+            current_char = static_cast<uint32_t>(ch);
+        }
+
+        runner.run(10000, true, current_char);
+
+        std::cout << "\033[2J\033[H";
+        runner.renderFramebuffer();
+
+        if (runner.isHalted() || runner.hasSyscallError()) {
+            break;
+        }
+        usleep(10000);
+    }
+
+    std::cout << "\nGUI mode closed." << std::endl;
+}
+
 void printUsage(const char* prog) {
     std::cerr << "Usage: " << prog << " <binary_file> [options]\n"
               << "Options:\n"
-              << "  --gui                 Interactive GUI mode (not supported in Verilator)\n"
+              << "  --gui                 Interactive GUI mode\n"
               << "  --char <char>         Set a0 to ASCII code of character\n"
               << "  --char-code <code>    Set a0 to numeric code (0-255)\n"
               << "  --cycles <count>      Max cycles (default: 1000000)\n"
@@ -638,6 +702,7 @@ int main(int argc, char** argv) {
     
     const char* binary_file = argv[1];
     bool verbose = false;
+    bool gui_mode = false;
     bool render_fb = false;
     bool dump_fb = false;
     bool char_specified = false;
@@ -649,14 +714,14 @@ int main(int argc, char** argv) {
     for (int i = 2; i < argc; ++i) {
         if (strcmp(argv[i], "--verbose") == 0 || strcmp(argv[i], "-v") == 0) {
             verbose = true;
+        } else if (strcmp(argv[i], "--gui") == 0) {
+            gui_mode = true;
         } else if (strcmp(argv[i], "--render-framebuffer") == 0) {
             render_fb = true;
         } else if (strcmp(argv[i], "--dump-framebuffer") == 0) {
             dump_fb = true;
         } else if (strcmp(argv[i], "--trace") == 0) {
             trace_enabled = true;
-        } else if (strcmp(argv[i], "--gui") == 0) {
-            std::cerr << "Warning: --gui not supported in Verilator runner" << std::endl;
         } else if (strcmp(argv[i], "--char") == 0 && i + 1 < argc) {
             char_specified = true;
             char_code = static_cast<uint8_t>(argv[++i][0]);
@@ -718,6 +783,9 @@ int main(int argc, char** argv) {
         if (verbose) {
             std::cout << "Set a0 (x10) to " << char_code << std::endl;
         }
+    } else if (gui_mode) {
+        char_code = 32;
+        runner.setReg(10, char_code);
     }
     
     // Run
@@ -726,7 +794,11 @@ int main(int argc, char** argv) {
     }
     
     runner.start();
-    runner.run(max_cycles, char_specified, char_code);
+    if (gui_mode) {
+        process_gui_input(runner, char_code);
+    } else {
+        runner.run(max_cycles, char_specified, char_code);
+    }
     if (runner.hasSyscallError()) {
         if (verbose) {
             std::cerr << "Execution stopped on unsupported syscall "
