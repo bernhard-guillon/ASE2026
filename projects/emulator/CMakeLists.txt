@@ -321,6 +321,16 @@ set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
     TIMEOUT 300
 )
 
+add_test(
+    NAME python/verilator/differential_validation
+    COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_verilator_differential.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+set_tests_properties(python/verilator/differential_validation PROPERTIES
+    LABELS "verilator;differential;validation"
+    TIMEOUT 120
+)
+
 # ============================================================================
 # HDL (Verilog) Simulation with Verilator
 # ============================================================================

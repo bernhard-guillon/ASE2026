@@ -89,6 +89,11 @@ jobs:
           cd projects/emulator/build
           ctest --output-on-failure --verbose
 
+      - name: Run Verilator differential validation
+        run: |
+          cd projects/emulator/build
+          ctest --output-on-failure -R "^python/verilator/differential_validation$"
+
       - name: Test summary
         if: always()
         run: |

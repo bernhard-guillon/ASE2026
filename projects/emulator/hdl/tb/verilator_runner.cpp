@@ -10,6 +10,7 @@
 #include <cstring>
 #include <cstdint>
 #include <cmath>
+#include <iomanip>
 #include <string>
 #include <unordered_map>
 
@@ -618,6 +619,7 @@ void printUsage(const char* prog) {
               << "  --cycles <count>      Max cycles (default: 1000000)\n"
               << "  --verbose / -v        Print debug info\n"
               << "  --render-framebuffer  Render 20x20 framebuffer\n"
+              << "  --dump-framebuffer    Dump 400 framebuffer bytes (hex)\n"
               << std::endl;
 }
 
@@ -632,6 +634,7 @@ int main(int argc, char** argv) {
     const char* binary_file = argv[1];
     bool verbose = false;
     bool render_fb = false;
+    bool dump_fb = false;
     bool char_specified = false;
     bool trace_enabled = false;
     uint32_t char_code = 0;
@@ -643,6 +646,8 @@ int main(int argc, char** argv) {
             verbose = true;
         } else if (strcmp(argv[i], "--render-framebuffer") == 0) {
             render_fb = true;
+        } else if (strcmp(argv[i], "--dump-framebuffer") == 0) {
+            dump_fb = true;
         } else if (strcmp(argv[i], "--trace") == 0) {
             trace_enabled = true;
         } else if (strcmp(argv[i], "--gui") == 0) {
@@ -732,6 +737,21 @@ int main(int argc, char** argv) {
         } else {
             std::cout << "Program reached cycle limit" << std::endl;
         }
+    }
+
+    if (dump_fb) {
+        uint8_t fb[FRAMEBUFFER_SIZE];
+        runner.getFramebuffer(fb);
+        std::ios::fmtflags old_flags = std::cout.flags();
+        char old_fill = std::cout.fill();
+        std::cout << "FRAMEBUFFER_HEX:";
+        for (uint32_t i = 0; i < FRAMEBUFFER_SIZE; ++i) {
+            std::cout << std::hex << std::setw(2) << std::setfill('0')
+                      << static_cast<unsigned>(fb[i]);
+        }
+        std::cout.flags(old_flags);
+        std::cout.fill(old_fill);
+        std::cout << std::endl;
     }
     
     // Render framebuffer if requested
