@@ -56,11 +56,12 @@ class DifferentialValidator:
         self.neural_elf = self._resolve_neural_elf()
 
     def _resolve_build_dir(self) -> Path:
-        for name in ("build-ci", "build"):
-            candidate = self.emulator_dir / name
-            if (candidate / "emulator_runner").exists() and (candidate / "verilator_runner").exists():
-                return candidate
-        raise FileNotFoundError("Missing build directory with emulator_runner and verilator_runner")
+        candidate = self.emulator_dir / "build"
+        if (candidate / "emulator_runner").exists() and (candidate / "verilator_runner").exists():
+            return candidate
+        raise FileNotFoundError(
+            "Missing build directory artifacts. Configure/build with: cmake -S . -B build && cmake --build build"
+        )
 
     def _resolve_neural_elf(self):
         for candidate in (
