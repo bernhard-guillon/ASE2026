@@ -11,11 +11,21 @@ Tests that the neural network model can:
 """
 
 import subprocess
+import os
 import tempfile
 import json
 from pathlib import Path
 import sys
 
+
+
+def resolve_emulator_runner(emulator_dir: Path) -> Path:
+    runner = os.environ.get("EMULATOR_RUNNER")
+    if runner:
+        return Path(runner)
+    if os.environ.get("EMULATOR_BACKEND", "").lower() == "verilator":
+        return emulator_dir / "hdl" / "sim" / "verilator_runner"
+    return emulator_dir / "build" / "emulator_runner"
 
 class NeuralCharGenTest:
     """Test neural character generation integration."""
@@ -23,7 +33,7 @@ class NeuralCharGenTest:
     def __init__(self):
         self.emulator_dir = Path(__file__).parent.parent
         self.model_path = self.emulator_dir.parent.parent / "projects/weight-export/character_generator.json"
-        self.emulator_bin = self.emulator_dir / "build/emulator_runner"
+        self.emulator_bin = resolve_emulator_runner(self.emulator_dir)
         self.tests_passed = 0
         self.tests_failed = 0
     

@@ -38,7 +38,8 @@ jobs:
             git \
             python \
             python-pytest \
-            python-numpy
+            python-numpy \
+            verilator
 
       - name: Install RISC-V toolchain
         run: |
@@ -67,6 +68,9 @@ jobs:
           echo ""
           echo "=== RISC-V Linker Version ==="
           riscv64-elf-ld --version
+          echo ""
+          echo "=== Verilator Version ==="
+          verilator --version
 
       - name: Configure CMake
         run: |
@@ -84,6 +88,23 @@ jobs:
         run: |
           cd projects/emulator/build
           ctest --output-on-failure --verbose
+
+      - name: Run Verilator differential validation
+        run: |
+          cd projects/emulator/build
+          ctest --output-on-failure -R "^python/verilator/differential_validation$"
+
+      - name: Run Verilator GUI smoke
+        run: |
+          cd projects/emulator/build
+          set +e
+          printf 'A' | timeout 2 ./verilator_runner ./neural.elf --gui
+          rc=$?
+          set -e
+          if [ "$rc" -ne 124 ]; then
+            echo "Expected timeout exit 124 from GUI smoke, got $rc"
+            exit "$rc"
+          fi
 
       - name: Test summary
         if: always()

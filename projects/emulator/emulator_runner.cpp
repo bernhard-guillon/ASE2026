@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <cstring>
+#include <iomanip>
 #include <termios.h>
 #include <unistd.h>
 #include <signal.h>
@@ -109,13 +110,14 @@ void process_gui_input(Emulator& emulator) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--cycles <count>] [--render-framebuffer] [--verbose]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--cycles <count>] [--render-framebuffer] [--dump-framebuffer] [--verbose]" << std::endl;
         return 1;
     }
     
     bool verbose = false;
     bool gui_mode = false;
     bool render_fb = false;
+    bool dump_fb = false;
     bool char_specified = false;
     uint32_t char_code = 0;
     uint32_t max_cycles = 1000000;  // Default 1M cycles
@@ -135,6 +137,8 @@ int main(int argc, char** argv) {
             verbose = true;
         } else if (std::strcmp(argv[i], "--render-framebuffer") == 0) {
             render_fb = true;
+        } else if (std::strcmp(argv[i], "--dump-framebuffer") == 0) {
+            dump_fb = true;
         } else if (std::strcmp(argv[i], "--char") == 0) {
             if (i + 1 < argc) {
                 // Extract ASCII code from character argument
@@ -298,15 +302,14 @@ int main(int argc, char** argv) {
             process_gui_input(emulator);
         } else {
             // Standard single-execution mode
-            if (char_specified) {
-                // Keep the selected character stable across the full run.
-                // Neural programs are cyclic and may clobber a0 internally.
-                for (uint32_t i = 0; i < max_cycles && !emulator.isHalted(); ++i) {
+            uint32_t executed_cycles = 0;
+            for (; executed_cycles < max_cycles && !emulator.isHalted(); ++executed_cycles) {
+                if (char_specified) {
+                    // Keep the selected character stable across the full run.
+                    // Neural programs are cyclic and may clobber a0 internally.
                     emulator.getCPU().setReg(10, char_code);
-                    emulator.step();
                 }
-            } else {
-                emulator.run(max_cycles);  // Use configurable cycle limit
+                emulator.step();
             }
             
             if (verbose) {
@@ -316,10 +319,25 @@ int main(int argc, char** argv) {
                 } else {
                     std::cout << "Program reached instruction limit" << std::endl;
                 }
+                std::cout << "Cycles: " << executed_cycles << std::endl;
                 std::cout << "Final PC: 0x" << std::hex << emulator.getCPU().getPC() << std::endl;
             }
         }
         
+        if (dump_fb) {
+            std::ios::fmtflags old_flags = std::cout.flags();
+            char old_fill = std::cout.fill();
+            std::cout << "FRAMEBUFFER_HEX:";
+            for (uint32_t i = 0; i < 400; ++i) {
+                uint8_t v = emulator.getMemory().read8(0x20000 + i);
+                std::cout << std::hex << std::setw(2) << std::setfill('0')
+                          << static_cast<unsigned>(v);
+            }
+            std::cout.flags(old_flags);
+            std::cout.fill(old_fill);
+            std::cout << std::endl;
+        }
+
         // Render framebuffer if requested
         if (render_fb) {
             FramebufferRenderer renderer;

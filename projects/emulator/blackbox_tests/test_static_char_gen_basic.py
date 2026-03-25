@@ -10,13 +10,22 @@ Tests:
 
 import subprocess
 import sys
+import os
 from pathlib import Path
 import numpy as np
+
+def resolve_emulator_runner(emulator_dir: Path) -> Path:
+    runner = os.environ.get("EMULATOR_RUNNER")
+    if runner:
+        return Path(runner)
+    if os.environ.get("EMULATOR_BACKEND", "").lower() == "verilator":
+        return emulator_dir / "hdl" / "sim" / "verilator_runner"
+    return emulator_dir / "build" / "emulator_runner"
 
 def run_char_gen_test(char_code, emulator_dir):
     """Run static_char_gen.elf with a character code and capture framebuffer"""
     
-    emulator_path = emulator_dir / 'build' / 'emulator_runner'
+    emulator_path = resolve_emulator_runner(emulator_dir)
     program_path = emulator_dir / 'build' / 'static_char_gen.elf'
     
     if not emulator_path.exists():

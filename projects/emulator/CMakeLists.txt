@@ -306,6 +306,43 @@ if(RISCV_TOOLCHAIN_FOUND)
     )
     add_custom_target(static_char_gen_elf ALL DEPENDS ${STATIC_CHAR_GEN_ELF})
 
+    # Build neural.elf from model JSON for GUI/differential Verilator smoke tests
+    if(PYTHON_EXECUTABLE)
+        set(NEURAL_ASM "${CMAKE_CURRENT_BINARY_DIR}/neural.s")
+        set(NEURAL_OBJ "${CMAKE_CURRENT_BINARY_DIR}/neural.o")
+        set(NEURAL_ELF "${CMAKE_CURRENT_BINARY_DIR}/neural.elf")
+        set(NEURAL_MODEL_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
+        set(NEURAL_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_interactive.py")
+
+        add_custom_command(
+            OUTPUT ${NEURAL_ASM}
+            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${NEURAL_ASM} ${NEURAL_MODEL_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+            COMMENT "Generating neural.s from model JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${NEURAL_OBJ}
+            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${NEURAL_OBJ} ${NEURAL_ASM}
+            DEPENDS ${NEURAL_ASM}
+            COMMENT "Assembling neural.o"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${NEURAL_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${NEURAL_ELF} ${NEURAL_OBJ}
+            DEPENDS ${NEURAL_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            COMMENT "Linking neural.elf"
+            VERBATIM
+        )
+
+        add_custom_target(neural_elf ALL DEPENDS ${NEURAL_ELF})
+    else()
+        message(WARNING "Python not found - neural_elf target disabled")
+    endif()
+
     # Create target to build all blackbox test artifacts
     add_blackbox_all_target()
 endif()
@@ -320,3 +357,18 @@ set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
     LABELS "neural;validation;blackbox"
     TIMEOUT 300
 )
+
+add_test(
+    NAME python/verilator/differential_validation
+    COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_verilator_differential.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+set_tests_properties(python/verilator/differential_validation PROPERTIES
+    LABELS "verilator;differential;validation"
+    TIMEOUT 120
+)
+
+# ============================================================================
+# HDL (Verilog) Simulation with Verilator
+# ============================================================================
+add_subdirectory(hdl)
