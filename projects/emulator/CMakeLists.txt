@@ -320,3 +320,8 @@ set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
     LABELS "neural;validation;blackbox"
     TIMEOUT 300
 )
+
+# ============================================================================
+# HDL (Verilog) Simulation with Verilator
+# ============================================================================
+add_subdirectory(hdl)
