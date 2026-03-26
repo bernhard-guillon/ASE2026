@@ -156,7 +156,15 @@ vec_sigmoid_pwl_f32(out2)
 vec_clamp_scale_u8(out2, fb)
 ```
 
-## 7. Testing strategy (foundation)
+## 7. Instruction-reference manual
+
+For ARM-style per-instruction semantics, see:
+
+- `docs/guides/NEURAL_INSTRUCTION_REFERENCE.md`
+
+This file is the canonical source for instruction syntax, descriptor format, constraints, and pseudocode semantics.
+
+## 8. Testing strategy (foundation)
 
 Phase-A test scaffolding includes:
 - `test_neural_ops_oracle.py`: reference semantics tests.
