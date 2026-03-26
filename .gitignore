@@ -35,3 +35,7 @@ Thumbs.db
 
 # Rust/Cargo build outputs
 projects/rv32_assembler/target/
+
+# Generated/binary test artifacts
+projects/rv32_assembler/test-asm/*.o
+test_lex
