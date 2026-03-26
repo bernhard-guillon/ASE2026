@@ -318,6 +318,16 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_assembler_dropin_parity_scaffold.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+
+    # Neural instruction assembler blackbox tests
+    add_test(
+        NAME python/assembler/neural_instr_encoding
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_neural_instr_assembler.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/assembler/neural_instr_encoding PROPERTIES
+        LABELS "assembler;neural;blackbox"
+    )
     
 else()
     message(WARNING "Python3 not found - Python tests will be skipped")

@@ -273,7 +273,7 @@ fn parse_identifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<
     let mut name = String::new();
 
     while let Some(&ch) = chars.peek() {
-        if ch.is_ascii_alphanumeric() || ch == '_' {
+        if ch.is_ascii_alphanumeric() || ch == '_' || ch == '.' || ch == '$' {
             name.push(chars.next().unwrap());
         } else {
             break;
@@ -380,5 +380,11 @@ mod tests {
         let tokens = tokenize(".Lclear_done:").unwrap();
         assert_eq!(tokens.len(), 1);
         assert_eq!(tokens[0], Token::Label(".lclear_done".to_string()));
+    }
+
+    #[test]
+    fn test_tokenize_custom_mnemonic_with_dot() {
+        let tokens = tokenize("NMATVEC.F32 t1, t0").unwrap();
+        assert_eq!(tokens[0], Token::Mnemonic("NMATVEC.F32".to_string()));
     }
 }

@@ -21,7 +21,7 @@ impl Parser {
         }
 
         let raw_mnemonic = match &tokens[0] {
-            Token::Mnemonic(m) => m.clone(),
+            Token::Mnemonic(m) => m.to_lowercase(),
             _ => {
                 return Err(AssemblerError::ParserError(
                     "expected mnemonic".to_string(),
@@ -95,6 +95,11 @@ impl Parser {
             "fmv.x.w" => Self::parse_f_move_type(mnemonic, tokens).map(Some),
             // RV32F FMV (int to float reg)
             "fmv.w.x" => Self::parse_f_move_rev_type(mnemonic, tokens).map(Some),
+            // Neural custom ops (Phase D.2)
+            "nmatvec.f32" => Self::parse_n_desc_type(mnemonic, tokens).map(Some),
+            "nvrelu.f32" | "nvsigpwl.f32" | "nvclampu8.f32" => {
+                Self::parse_n_vec_type(mnemonic, tokens).map(Some)
+            }
             _ => Err(AssemblerError::UnknownInstruction(mnemonic)),
         }
     }
@@ -462,6 +467,56 @@ impl Parser {
         })
     }
 
+    fn parse_n_desc_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        // Format: nmatvec.f32 rd_status, rs_desc
+        if tokens.len() != 4 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                2,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs1 = Self::expect_register(&tokens[3])?;
+
+        Ok(Instruction::NType {
+            mnemonic,
+            rd,
+            rs1,
+            rs2: Register::X0,
+            rs3: Register::X0,
+        })
+    }
+
+    fn parse_n_vec_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        // Format: nvrelu.f32 rd_status, rs_dst, rs_src, rs_len
+        if tokens.len() != 8 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                4,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs1 = Self::expect_register(&tokens[3])?;
+        Self::expect_comma(&tokens[4])?;
+        let rs2 = Self::expect_register(&tokens[5])?;
+        Self::expect_comma(&tokens[6])?;
+        let rs3 = Self::expect_register(&tokens[7])?;
+
+        Ok(Instruction::NType {
+            mnemonic,
+            rd,
+            rs1,
+            rs2,
+            rs3,
+        })
+    }
+
     // Helper methods
     fn expect_register(token: &Token) -> Result<Register> {
         match token {
@@ -704,6 +759,98 @@ mod tests {
                 assert_eq!(rs1, FloatRegister::F10);
             }
             _ => panic!("expected FCvtType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_nmatvec_f32() {
+        let tokens = crate::lexer::tokenize("NMATVEC.F32 t1, t0").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::NType {
+                mnemonic,
+                rd,
+                rs1,
+                rs2,
+                rs3,
+            }) => {
+                assert_eq!(mnemonic, "nmatvec.f32");
+                assert_eq!(rd, Register::X6);
+                assert_eq!(rs1, Register::X5);
+                assert_eq!(rs2, Register::X0);
+                assert_eq!(rs3, Register::X0);
+            }
+            _ => panic!("expected NType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_nvrelu_f32() {
+        let tokens = crate::lexer::tokenize("NVRELU.F32 a0, a1, a2, a3").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::NType {
+                mnemonic,
+                rd,
+                rs1,
+                rs2,
+                rs3,
+            }) => {
+                assert_eq!(mnemonic, "nvrelu.f32");
+                assert_eq!(rd, Register::X10);
+                assert_eq!(rs1, Register::X11);
+                assert_eq!(rs2, Register::X12);
+                assert_eq!(rs3, Register::X13);
+            }
+            _ => panic!("expected NType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_nvsigpwl_f32() {
+        let tokens = crate::lexer::tokenize("NVSIGPWL.F32 t0, s2, s2, s3").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::NType {
+                mnemonic,
+                rd,
+                rs1,
+                rs2,
+                rs3,
+            }) => {
+                assert_eq!(mnemonic, "nvsigpwl.f32");
+                assert_eq!(rd, Register::X5);
+                assert_eq!(rs1, Register::X18);
+                assert_eq!(rs2, Register::X18);
+                assert_eq!(rs3, Register::X19);
+            }
+            _ => panic!("expected NType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_nvclampu8_f32() {
+        let tokens = crate::lexer::tokenize("NVCLAMPU8.F32 t0, a0, a1, a2").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::NType {
+                mnemonic,
+                rd,
+                rs1,
+                rs2,
+                rs3,
+            }) => {
+                assert_eq!(mnemonic, "nvclampu8.f32");
+                assert_eq!(rd, Register::X5);
+                assert_eq!(rs1, Register::X10);
+                assert_eq!(rs2, Register::X11);
+                assert_eq!(rs3, Register::X12);
+            }
+            _ => panic!("expected NType"),
         }
     }
 }
