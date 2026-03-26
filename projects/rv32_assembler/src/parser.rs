@@ -117,26 +117,16 @@ impl Parser {
     }
 
     fn parse_i_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
-        // Special handling for float load instruction
-        if mnemonic == "flw" {
-            // Format: flw rd, offset(rs1)
-            // Tokens: [Mnemonic, FloatRegister, Comma, Integer, LeftParen, Register, RightParen]
-            if tokens.len() != 7 {
-                return Err(AssemblerError::WrongOperandCount(
-                    mnemonic.clone(),
-                    2,
-                    tokens.len() - 1,
-                ));
-            }
-
-            let rd = Self::expect_float_register(&tokens[1])?;
+        // Special handling for jalr memory form: jalr rd, imm(rs1)
+        if mnemonic == "jalr" && tokens.len() == 7 {
+            let rd = Self::expect_register(&tokens[1])?;
             Self::expect_comma(&tokens[2])?;
             let imm = Self::expect_integer(&tokens[3])?;
             Self::expect_lparen(&tokens[4])?;
             let rs1 = Self::expect_register(&tokens[5])?;
             Self::expect_rparen(&tokens[6])?;
 
-            return Ok(Instruction::FIType {
+            return Ok(Instruction::IType {
                 mnemonic,
                 rd,
                 rs1,
@@ -315,7 +305,7 @@ impl Parser {
     }
 
     fn parse_f_i_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
-        if tokens.len() != 6 {
+        if tokens.len() != 7 {
             return Err(AssemblerError::WrongOperandCount(
                 mnemonic.clone(),
                 2,
@@ -363,7 +353,7 @@ impl Parser {
     }
 
     fn parse_f_c_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
-        if tokens.len() != 5 {
+        if tokens.len() != 6 {
             return Err(AssemblerError::WrongOperandCount(
                 mnemonic.clone(),
                 3,
@@ -564,7 +554,7 @@ mod tests {
         let instr = Parser::parse_instruction(&tokens).unwrap();
 
         match instr {
-            Instruction::RType { mnemonic, rd, rs1, rs2 } => {
+            Some(Instruction::RType { mnemonic, rd, rs1, rs2 }) => {
                 assert_eq!(mnemonic, "add");
                 assert_eq!(rd, Register::X1);
                 assert_eq!(rs1, Register::X2);
@@ -580,7 +570,7 @@ mod tests {
         let instr = Parser::parse_instruction(&tokens).unwrap();
 
         match instr {
-            Instruction::IType { mnemonic, rd, rs1, imm } => {
+            Some(Instruction::IType { mnemonic, rd, rs1, imm }) => {
                 assert_eq!(mnemonic, "addi");
                 assert_eq!(rd, Register::X1);
                 assert_eq!(rs1, Register::X0);
@@ -596,7 +586,7 @@ mod tests {
         let instr = Parser::parse_instruction(&tokens).unwrap();
 
         match instr {
-            Instruction::IType { mnemonic, rd, rs1, imm } => {
+            Some(Instruction::IType { mnemonic, rd, rs1, imm }) => {
                 assert_eq!(mnemonic, "lw");
                 assert_eq!(rd, Register::X1);
                 assert_eq!(rs1, Register::X2);
@@ -612,13 +602,61 @@ mod tests {
         let instr = Parser::parse_instruction(&tokens).unwrap();
 
         match instr {
-            Instruction::FRType { mnemonic, rd, rs1, rs2 } => {
+            Some(Instruction::FRType { mnemonic, rd, rs1, rs2 }) => {
                 assert_eq!(mnemonic, "fadd.s");
                 assert_eq!(rd, FloatRegister::F1);
                 assert_eq!(rs1, FloatRegister::F2);
                 assert_eq!(rs2, FloatRegister::F3);
             }
             _ => panic!("expected FRType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_jalr_memory_form() {
+        let tokens = crate::lexer::tokenize("jalr ra, 0(t0)").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::IType { mnemonic, rd, rs1, imm }) => {
+                assert_eq!(mnemonic, "jalr");
+                assert_eq!(rd, Register::X1);
+                assert_eq!(rs1, Register::X5);
+                assert_eq!(imm, 0);
+            }
+            _ => panic!("expected IType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_flw_offset_form() {
+        let tokens = crate::lexer::tokenize("flw f1, 0(t0)").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::FIType { mnemonic, rd, rs1, imm }) => {
+                assert_eq!(mnemonic, "flw");
+                assert_eq!(rd, FloatRegister::F1);
+                assert_eq!(rs1, Register::X5);
+                assert_eq!(imm, 0);
+            }
+            _ => panic!("expected FIType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_feq_s() {
+        let tokens = crate::lexer::tokenize("feq.s x11, f1, f2").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::FCType { mnemonic, rd, rs1, rs2 }) => {
+                assert_eq!(mnemonic, "feq.s");
+                assert_eq!(rd, Register::X11);
+                assert_eq!(rs1, FloatRegister::F1);
+                assert_eq!(rs2, FloatRegister::F2);
+            }
+            _ => panic!("expected FCType"),
         }
     }
 }

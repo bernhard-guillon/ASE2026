@@ -5,7 +5,7 @@ if(NOT DEFINED RUST_ASSEMBLER OR NOT DEFINED GNU_ASSEMBLER OR NOT DEFINED INPUT_
     message(FATAL_ERROR "Missing required parameters")
 endif()
 
-# Assemble with Rust assembler
+# Assemble with Rust assembler (ELF object output)
 execute_process(
     COMMAND ${RUST_ASSEMBLER} ${INPUT_ASM} -o ${RUST_OUTPUT}
     RESULT_VARIABLE RUST_RESULT
@@ -29,6 +29,19 @@ if(NOT GNU_RESULT EQUAL 0)
     message(FATAL_ERROR "✗ GNU assembler failed for ${TEST_NAME}:\n${GNU_STDERR}")
 endif()
 
+# Extract .text section from Rust object file
+set(RUST_TEXT_OUTPUT "${RUST_OUTPUT}.text.bin")
+execute_process(
+    COMMAND ${OBJ_COPY} -O binary -j .text ${RUST_OUTPUT} ${RUST_TEXT_OUTPUT}
+    RESULT_VARIABLE RUST_OBJCOPY_RESULT
+    OUTPUT_VARIABLE RUST_OBJCOPY_STDOUT
+    ERROR_VARIABLE RUST_OBJCOPY_STDERR
+)
+
+if(NOT RUST_OBJCOPY_RESULT EQUAL 0)
+    message(FATAL_ERROR "✗ objcopy failed on Rust output for ${TEST_NAME}:\n${RUST_OBJCOPY_STDERR}")
+endif()
+
 # Extract .text section from GNU object file
 execute_process(
     COMMAND ${OBJ_COPY} -O binary -j .text ${GNU_OBJECT} ${GNU_OUTPUT}
@@ -50,8 +63,12 @@ if(NOT EXISTS "${GNU_OUTPUT}")
     message(FATAL_ERROR "✗ GNU assembler did not produce output file: ${GNU_OUTPUT}")
 endif()
 
+if(NOT EXISTS "${RUST_TEXT_OUTPUT}")
+    message(FATAL_ERROR "✗ Rust .text extraction did not produce output file: ${RUST_TEXT_OUTPUT}")
+endif()
+
 # Get file sizes
-file(SIZE "${RUST_OUTPUT}" RUST_SIZE)
+file(SIZE "${RUST_TEXT_OUTPUT}" RUST_SIZE)
 file(SIZE "${GNU_OUTPUT}" GNU_SIZE)
 
 if(NOT RUST_SIZE EQUAL GNU_SIZE)
@@ -59,7 +76,7 @@ if(NOT RUST_SIZE EQUAL GNU_SIZE)
 endif()
 
 # Read and compare binary contents
-file(READ "${RUST_OUTPUT}" RUST_CONTENT HEX)
+file(READ "${RUST_TEXT_OUTPUT}" RUST_CONTENT HEX)
 file(READ "${GNU_OUTPUT}" GNU_CONTENT HEX)
 
 if(NOT RUST_CONTENT STREQUAL GNU_CONTENT)

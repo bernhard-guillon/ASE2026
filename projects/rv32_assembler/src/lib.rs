@@ -29,6 +29,67 @@ pub fn assemble_instruction(line: &str) -> Result<Option<[u8; 4]>> {
     }
 }
 
+fn token_to_register(token: &Token) -> Option<instruction::Register> {
+    match token {
+        Token::Register(name) | Token::Mnemonic(name) => instruction::Register::from_name(name),
+        _ => None,
+    }
+}
+
+fn token_to_section_name(token: &Token) -> Option<String> {
+    match token {
+        Token::Directive(name) => Some(name.clone()),
+        Token::Mnemonic(name) => Some(format!(".{}", name)),
+        _ => None,
+    }
+}
+
+fn parse_integer_list(tokens: &[Token]) -> Result<Vec<i64>> {
+    if tokens.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let mut values = Vec::new();
+    let mut expect_value = true;
+
+    for token in tokens {
+        if expect_value {
+            if let Token::Integer(v) = token {
+                values.push(*v);
+                expect_value = false;
+            } else {
+                return Err(AssemblerError::InvalidOperand(format!(
+                    "expected integer, got {}",
+                    token
+                )));
+            }
+        } else if !matches!(token, Token::Comma) {
+            return Err(AssemblerError::InvalidOperand(format!(
+                "expected comma, got {}",
+                token
+            )));
+        } else {
+            expect_value = true;
+        }
+    }
+
+    if expect_value {
+        return Err(AssemblerError::ParserError(
+            "trailing comma in data directive".to_string(),
+        ));
+    }
+
+    Ok(values)
+}
+
+fn alignment_padding(current: usize, align: usize) -> usize {
+    if align <= 1 {
+        0
+    } else {
+        (align - (current % align)) % align
+    }
+}
+
 /// Assemble multiple lines of assembly code to ELF32 object file.
 /// Returns ELF binary with proper relocations for linker.
 pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
@@ -85,14 +146,8 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
                 if !section_offsets.contains_key(&current_section) {
                     section_offsets.insert(current_section.clone(), section_byte_offset);
                 }
-                if tokens.len() > 1 {
-                    if let Some(Token::Directive(section_name)) = tokens.get(1) {
-                        // Directive tokens already have the dot
-                        current_section = section_name.clone();
-                    } else if let Some(Token::Mnemonic(section_name)) = tokens.get(1) {
-                        // Handle case where section name is parsed as mnemonic
-                        current_section = format!(".{}", section_name);
-                    }
+                if let Some(section_name) = tokens.get(1).and_then(token_to_section_name) {
+                    current_section = section_name;
                 }
                 section_byte_offset = 0;
             } else if matches!(directive.as_str(), ".text" | ".data" | ".rodata" | ".bss") {
@@ -117,6 +172,31 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
                         let size = content.len() + 1;
                         section_byte_offset += size;
                     }
+                }
+            } else if directive == ".ascii" || directive == ".asciz" {
+                if let Some(Token::String(content)) = tokens.get(1) {
+                    section_byte_offset += content.len();
+                    if directive == ".asciz" {
+                        section_byte_offset += 1;
+                    }
+                }
+            } else if directive == ".byte" {
+                let values = parse_integer_list(&tokens[1..])?;
+                section_byte_offset += values.len();
+            } else if directive == ".half" {
+                let values = parse_integer_list(&tokens[1..])?;
+                section_byte_offset += values.len() * 2;
+            } else if directive == ".word" {
+                let values = parse_integer_list(&tokens[1..])?;
+                section_byte_offset += values.len() * 4;
+            } else if directive == ".align" {
+                if let Some(Token::Integer(pow2)) = tokens.get(1) {
+                    let align = if *pow2 <= 0 {
+                        1usize
+                    } else {
+                        1usize << (*pow2 as usize)
+                    };
+                    section_byte_offset += alignment_padding(section_byte_offset, align);
                 }
             }
             continue;
@@ -161,14 +241,8 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
         if let Some(Token::Directive(directive)) = tokens.first() {
             if directive == ".section" {
                 // .section takes an argument (next token should be a directive or mnemonic)
-                if tokens.len() > 1 {
-                    if let Some(Token::Directive(section_name)) = tokens.get(1) {
-                        // Directive tokens already have the dot
-                        current_section = section_name.clone();
-                    } else if let Some(Token::Mnemonic(section_name)) = tokens.get(1) {
-                        // Handle case where section name is parsed as mnemonic
-                        current_section = format!(".{}", section_name);
-                    }
+                if let Some(section_name) = tokens.get(1).and_then(token_to_section_name) {
+                    current_section = section_name;
                 }
             } else if matches!(directive.as_str(), ".text" | ".data" | ".rodata" | ".bss") {
                 // Bare section directives (e.g., `.data` instead of `.section .data`)
@@ -180,6 +254,49 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
                         let mut string_bytes = content.as_bytes().to_vec();
                         string_bytes.push(0); // null terminator
                         elf.append_to_section(&current_section, &string_bytes)?;
+                    }
+                }
+            } else if directive == ".ascii" || directive == ".asciz" {
+                if let Some(Token::String(content)) = tokens.get(1) {
+                    let mut bytes = content.as_bytes().to_vec();
+                    if directive == ".asciz" {
+                        bytes.push(0);
+                    }
+                    elf.append_to_section(&current_section, &bytes)?;
+                }
+            } else if directive == ".byte" {
+                let values = parse_integer_list(&tokens[1..])?;
+                let mut out = Vec::with_capacity(values.len());
+                for v in values {
+                    out.push((v as i8) as u8);
+                }
+                elf.append_to_section(&current_section, &out)?;
+            } else if directive == ".half" {
+                let values = parse_integer_list(&tokens[1..])?;
+                let mut out = Vec::with_capacity(values.len() * 2);
+                for v in values {
+                    out.extend_from_slice(&(v as i16).to_le_bytes());
+                }
+                elf.append_to_section(&current_section, &out)?;
+            } else if directive == ".word" {
+                let values = parse_integer_list(&tokens[1..])?;
+                let mut out = Vec::with_capacity(values.len() * 4);
+                for v in values {
+                    out.extend_from_slice(&(v as i32).to_le_bytes());
+                }
+                elf.append_to_section(&current_section, &out)?;
+            } else if directive == ".align" {
+                if let Some(Token::Integer(pow2)) = tokens.get(1) {
+                    let align = if *pow2 <= 0 {
+                        1usize
+                    } else {
+                        1usize << (*pow2 as usize)
+                    };
+                    let current_size = elf.get_section_size(&current_section);
+                    let pad = alignment_padding(current_size, align);
+                    if pad > 0 {
+                        let zeros = vec![0u8; pad];
+                        elf.append_to_section(&current_section, &zeros)?;
                     }
                 }
             }
@@ -229,9 +346,15 @@ fn simulate_line_size(tokens: &[Token]) -> Result<usize> {
         if mnemonic == "li" && tokens.len() == 4 {
             // Check if imm fits in 12 bits
             if let Token::Integer(imm) = &tokens[3] {
-                if *imm >= -2048 && *imm <= 2047 {
+                let imm32 = *imm as i32 as i64;
+                if imm32 >= -2048 && imm32 <= 2047 {
                     return Ok(4);  // Single addi
                 } else {
+                    let upper_signed = (imm32 + 0x800) >> 12;
+                    let lower_signed = imm32 - (upper_signed << 12);
+                    if lower_signed == 0 {
+                        return Ok(4); // Single lui
+                    }
                     return Ok(8);  // lui + addi
                 }
             }
@@ -243,6 +366,34 @@ fn simulate_line_size(tokens: &[Token]) -> Result<usize> {
             return Ok(4);  // Branch/jump with label resolution
         } else {
             return Ok(4);  // Regular instruction
+        }
+    } else if let Some(Token::Directive(directive)) = tokens.first() {
+        match directive.as_str() {
+            ".string" => {
+                if let Some(Token::String(s)) = tokens.get(1) {
+                    return Ok(s.len() + 1);
+                }
+            }
+            ".ascii" => {
+                if let Some(Token::String(s)) = tokens.get(1) {
+                    return Ok(s.len());
+                }
+            }
+            ".asciz" => {
+                if let Some(Token::String(s)) = tokens.get(1) {
+                    return Ok(s.len() + 1);
+                }
+            }
+            ".byte" => {
+                return Ok(parse_integer_list(&tokens[1..])?.len());
+            }
+            ".half" => {
+                return Ok(parse_integer_list(&tokens[1..])?.len() * 2);
+            }
+            ".word" => {
+                return Ok(parse_integer_list(&tokens[1..])?.len() * 4);
+            }
+            _ => {}
         }
     }
     
@@ -284,42 +435,43 @@ fn expand_li(rd: instruction::Register, imm: i64) -> Result<Vec<[u8; 4]>> {
     
     let mut result = Vec::new();
     
-    if imm >= -2048 && imm <= 2047 {
+    // GNU-compatible RV32 behavior: treat literals as 32-bit values.
+    let imm32 = imm as i32 as i64;
+
+    if imm32 >= -2048 && imm32 <= 2047 {
         // Fits in 12 bits, single addi
         let instr = Instruction::IType {
             mnemonic: "addi".to_string(),
             rd,
             rs1: instruction::Register::X0,
-            imm,
+            imm: imm32,
         };
         result.push(Encoder::encode(&instr)?);
     } else {
         // Need lui + addi
-        // Split imm into upper 20 bits and lower 12 bits (sign-extended)
-        let upper = ((imm >> 12) + ((imm & 0x800) >> 11)) & 0xFFFFF;  // lui immediate
-        let lower = (imm & 0xFFF) as i64;
-        let lower_signed = if lower & 0x800 != 0 {
-            lower as i32 as i64  // Sign-extend 12 bits
-        } else {
-            lower
-        };
+        // Split into HI20/LO12 with proper rounding so LO12 is signed 12-bit.
+        let upper_signed = (imm32 + 0x800) >> 12;
+        let upper_field = upper_signed & 0xFFFFF;
+        let lower_signed = imm32 - (upper_signed << 12);
         
         // Emit lui
         let lui_instr = Instruction::UType {
             mnemonic: "lui".to_string(),
             rd,
-            imm: upper as i64,
+            imm: upper_field,
         };
         result.push(Encoder::encode(&lui_instr)?);
         
-        // Emit addi
-        let addi_instr = Instruction::IType {
-            mnemonic: "addi".to_string(),
-            rd,
-            rs1: rd,
-            imm: lower_signed,
-        };
-        result.push(Encoder::encode(&addi_instr)?);
+        // Emit addi only when needed.
+        if lower_signed != 0 {
+            let addi_instr = Instruction::IType {
+                mnemonic: "addi".to_string(),
+                rd,
+                rs1: rd,
+                imm: lower_signed,
+            };
+            result.push(Encoder::encode(&addi_instr)?);
+        }
     }
     
     Ok(result)
@@ -341,21 +493,19 @@ fn assemble_line_with_labels(
     if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
         if mnemonic == "li" && tokens.len() == 4 {
             // li rd, imm - may expand to lui + addi
-            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Integer(imm)) =
-                (&tokens[1], &tokens[2], &tokens[3])
+            if let (Token::Comma, Token::Integer(imm)) =
+                (&tokens[2], &tokens[3])
             {
-                use instruction::Register;
-                if let Some(rd) = Register::from_name(rd_name) {
+                if let Some(rd) = token_to_register(&tokens[1]) {
                     return expand_li(rd, *imm);
                 }
             }
         } else if mnemonic == "la" && tokens.len() == 4 {
             // la rd, symbol - expands to auipc + addi with label resolution
-            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(symbol)) =
-                (&tokens[1], &tokens[2], &tokens[3])
+            if let (Token::Comma, Token::Mnemonic(symbol)) =
+                (&tokens[2], &tokens[3])
             {
-                use instruction::Register;
-                if let Some(rd) = Register::from_name(rd_name) {
+                if let Some(rd) = token_to_register(&tokens[1]) {
                     // Resolve label
                     if let Some(_label_offset) = label_map.get(symbol) {
                         // For object file compatibility, emit 0 as a placeholder when the symbol is in a different section
@@ -385,11 +535,8 @@ fn assemble_line_with_labels(
             }
         } else if mnemonic == "mv" && tokens.len() == 4 {
             // mv rd, rs - pseudo for addi rd, rs, 0
-            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(rs_name)) =
-                (&tokens[1], &tokens[2], &tokens[3])
-            {
-                use instruction::Register;
-                if let (Some(rd), Some(rs)) = (Register::from_name(rd_name), Register::from_name(rs_name)) {
+            if let Token::Comma = &tokens[2] {
+                if let (Some(rd), Some(rs)) = (token_to_register(&tokens[1]), token_to_register(&tokens[3])) {
                     let instr = instruction::Instruction::IType {
                         mnemonic: "addi".to_string(),
                         rd,
@@ -418,12 +565,10 @@ fn assemble_line_with_labels(
         if ["beq", "bne", "blt", "bltu", "bge", "bgeu"].contains(&mnemonic.as_str()) {
             // These might have a label as the third operand
             if tokens.len() >= 6 {
-                if let (Token::Mnemonic(rs1_name), Token::Comma, Token::Mnemonic(rs2_name), 
-                        Token::Comma, Token::Mnemonic(label_name)) =
-                    (&tokens[1], &tokens[2], &tokens[3], &tokens[4], &tokens[5])
+                if let (Token::Comma, Token::Comma, Token::Mnemonic(label_name)) =
+                    (&tokens[2], &tokens[4], &tokens[5])
                 {
-                    use instruction::Register;
-                    if let (Some(rs1), Some(rs2)) = (Register::from_name(rs1_name), Register::from_name(rs2_name)) {
+                    if let (Some(rs1), Some(rs2)) = (token_to_register(&tokens[1]), token_to_register(&tokens[3])) {
                         if let Some(&label_offset) = label_map.get(label_name) {
                             let imm = label_offset as i64 - current_byte_offset as i64;
                             let instruction = instruction::Instruction::BType {
@@ -445,11 +590,10 @@ fn assemble_line_with_labels(
     if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
         if mnemonic == "jal" {
             if tokens.len() == 4 {
-                if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(label_name)) =
-                    (&tokens[1], &tokens[2], &tokens[3])
+                if let (Token::Comma, Token::Mnemonic(label_name)) =
+                    (&tokens[2], &tokens[3])
                 {
-                    use instruction::Register;
-                    if let Some(rd) = Register::from_name(rd_name) {
+                    if let Some(rd) = token_to_register(&tokens[1]) {
                         if let Some(&label_offset) = label_map.get(label_name) {
                             let imm = label_offset as i64 - current_byte_offset as i64;
                             let instruction = instruction::Instruction::JType {
@@ -493,22 +637,54 @@ fn assemble_line_with_relocations(
     if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
         if mnemonic == "li" && tokens.len() == 4 {
             // li rd, imm - may expand to lui + addi
-            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Integer(imm)) =
-                (&tokens[1], &tokens[2], &tokens[3])
-            {
-                use instruction::Register;
-                if let Some(rd) = Register::from_name(rd_name) {
+            if let (Token::Comma, Token::Integer(imm)) = (&tokens[2], &tokens[3]) {
+                if let Some(rd) = token_to_register(&tokens[1]) {
                     let instructions = expand_li(rd, *imm)?;
                     return Ok((instructions, relocations));
                 }
             }
+        } else if mnemonic == "j" && tokens.len() == 2 {
+            // j label - pseudo for jal x0, label
+            if let Token::Mnemonic(label_name) = &tokens[1] {
+                if let Some((_, label_offset)) = label_map.get(label_name) {
+                    let imm = *label_offset as i64 - current_byte_offset as i64;
+                    let instr = instruction::Instruction::JType {
+                        mnemonic: "jal".to_string(),
+                        rd: instruction::Register::X0,
+                        imm,
+                    };
+                    let encoded = Encoder::encode(&instr)?;
+                    return Ok((vec![encoded], relocations));
+                }
+            }
+        } else if mnemonic == "mv" && tokens.len() == 4 {
+            // mv rd, rs - pseudo for addi rd, rs, 0
+            if let Token::Comma = &tokens[2] {
+                if let (Some(rd), Some(rs)) = (token_to_register(&tokens[1]), token_to_register(&tokens[3])) {
+                    let instr = instruction::Instruction::IType {
+                        mnemonic: "addi".to_string(),
+                        rd,
+                        rs1: rs,
+                        imm: 0,
+                    };
+                    let encoded = Encoder::encode(&instr)?;
+                    return Ok((vec![encoded], relocations));
+                }
+            }
+        } else if mnemonic == "ret" && tokens.len() == 1 {
+            // ret - pseudo for jalr x0, x1, 0
+            let instr = instruction::Instruction::IType {
+                mnemonic: "jalr".to_string(),
+                rd: instruction::Register::X0,
+                rs1: instruction::Register::X1,
+                imm: 0,
+            };
+            let encoded = Encoder::encode(&instr)?;
+            return Ok((vec![encoded], relocations));
         } else if mnemonic == "la" && tokens.len() == 4 {
             // la rd, symbol - expands to auipc + addi with relocations
-            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(symbol)) =
-                (&tokens[1], &tokens[2], &tokens[3])
-            {
-                use instruction::Register;
-                if let Some(rd) = Register::from_name(rd_name) {
+            if let (Token::Comma, Token::Mnemonic(symbol)) = (&tokens[2], &tokens[3]) {
+                if let Some(rd) = token_to_register(&tokens[1]) {
                     // Emit with placeholder offsets (0)
                     let instructions = expand_la_with_offset(rd, 0)?;
                     
@@ -540,11 +716,8 @@ fn assemble_line_with_relocations(
             }
         } else if mnemonic == "mv" && tokens.len() == 4 {
             // mv rd, rs - pseudo for addi rd, rs, 0
-            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(rs_name)) =
-                (&tokens[1], &tokens[2], &tokens[3])
-            {
-                use instruction::Register;
-                if let (Some(rd), Some(rs)) = (Register::from_name(rd_name), Register::from_name(rs_name)) {
+            if let Token::Comma = &tokens[2] {
+                if let (Some(rd), Some(rs)) = (token_to_register(&tokens[1]), token_to_register(&tokens[3])) {
                     let instr = instruction::Instruction::IType {
                         mnemonic: "addi".to_string(),
                         rd,
@@ -573,12 +746,10 @@ fn assemble_line_with_relocations(
         if ["beq", "bne", "blt", "bltu", "bge", "bgeu"].contains(&mnemonic.as_str()) {
             // These might have a label as the third operand
             if tokens.len() >= 6 {
-                if let (Token::Mnemonic(rs1_name), Token::Comma, Token::Mnemonic(rs2_name), 
-                        Token::Comma, Token::Mnemonic(label_name)) =
-                    (&tokens[1], &tokens[2], &tokens[3], &tokens[4], &tokens[5])
+                if let (Token::Comma, Token::Comma, Token::Mnemonic(label_name)) =
+                    (&tokens[2], &tokens[4], &tokens[5])
                 {
-                    use instruction::Register;
-                    if let (Some(rs1), Some(rs2)) = (Register::from_name(rs1_name), Register::from_name(rs2_name)) {
+                    if let (Some(rs1), Some(rs2)) = (token_to_register(&tokens[1]), token_to_register(&tokens[3])) {
                         if let Some((_, label_offset)) = label_map.get(label_name) {
                             let imm = *label_offset as i64 - current_byte_offset as i64;
                             let instruction = instruction::Instruction::BType {
@@ -600,11 +771,10 @@ fn assemble_line_with_relocations(
     if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
         if mnemonic == "jal" {
             if tokens.len() == 4 {
-                if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(label_name)) =
-                    (&tokens[1], &tokens[2], &tokens[3])
+                if let (Token::Comma, Token::Mnemonic(label_name)) =
+                    (&tokens[2], &tokens[3])
                 {
-                    use instruction::Register;
-                    if let Some(rd) = Register::from_name(rd_name) {
+                    if let Some(rd) = token_to_register(&tokens[1]) {
                         if let Some((_, label_offset)) = label_map.get(label_name) {
                             let imm = *label_offset as i64 - current_byte_offset as i64;
                             let instruction = instruction::Instruction::JType {
@@ -674,7 +844,7 @@ mod tests {
         let result = assemble_instruction("addi x1, x0, 42");
         assert!(result.is_ok());
 
-        let bytes = result.unwrap();
+        let bytes = result.unwrap().expect("expected an instruction");
         // Verify it's 4 bytes
         assert_eq!(bytes.len(), 4);
     }
@@ -691,7 +861,31 @@ mod tests {
 
         let result = assemble_program(program);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().len(), 8); // 2 instructions
+        // ELF output, not raw .text bytes
+        assert!(!result.unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_data_directives_and_li_large_imm() {
+        let program = r#"
+            .section .text
+            .globl _start
+        _start:
+            li t0, 0xDEADBEEF
+            li t1, 65535
+            jalr ra, 0(t0)
+
+            .section .data
+            bytes: .byte 0x41, 0x42
+            halfv: .half 0x1234
+            wordv: .word 0x12345678
+            msg1: .ascii "A"
+            msg2: .asciz "B"
+            .align 2
+            msg3: .string "C"
+        "#;
+
+        let bytes = assemble_program(program).expect("assemble_program failed");
+        assert!(!bytes.is_empty());
     }
 }
-

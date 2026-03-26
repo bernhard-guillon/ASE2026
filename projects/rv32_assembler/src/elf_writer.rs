@@ -217,14 +217,26 @@ impl ElfWriter {
         const ELF_HEADER_SIZE: usize = 52;
         let mut file_offset = ELF_HEADER_SIZE;
 
-        // Calculate section offsets and allocatable sections
-        let mut section_offsets: BTreeMap<String, (usize, usize)> = BTreeMap::new();  // name -> (offset, size)
-        for (name, section) in &self.sections {
+        // Collect emitted allocatable sections in deterministic order.
+        let mut emitted_sections: Vec<(&String, &SectionData)> = Vec::new();
+        let mut emitted_section_indices: BTreeMap<String, usize> = BTreeMap::new();
+        let mut original_to_emitted: BTreeMap<usize, usize> = BTreeMap::new();
+        for (orig_idx, (name, section)) in self.sections.iter().enumerate() {
             if section.data.len() > 0 || name == ".bss" {
-                section_offsets.insert(name.clone(), (file_offset, section.data.len()));
-                if section.data.len() > 0 {
-                    file_offset += section.data.len();
-                }
+                let emitted_idx = 1 + emitted_sections.len();
+                emitted_sections.push((name, section));
+                emitted_section_indices.insert(name.clone(), emitted_idx);
+                original_to_emitted.insert(orig_idx, emitted_idx);
+            }
+        }
+
+        // Calculate section offsets (NOBITS sections do not consume file bytes).
+        let mut section_offsets: BTreeMap<String, (usize, usize)> = BTreeMap::new(); // name -> (offset, size)
+        for (name, section) in &emitted_sections {
+            let size = section.data.len();
+            section_offsets.insert((*name).clone(), (file_offset, size));
+            if section.section_type != SHT_NOBITS && size > 0 {
+                file_offset += size;
             }
         }
 
@@ -243,21 +255,29 @@ impl ElfWriter {
         let shstrtab_offset = file_offset;
         file_offset += shstrtab_data.len();
 
-        // Relocation table offsets
-        let mut reloc_offsets: BTreeMap<String, (usize, usize)> = BTreeMap::new();
+        // Relocation table offsets and ordered entries.
+        let mut reloc_entries: Vec<(String, String, usize, usize)> = Vec::new();
         for (section_name, relocs) in &self.relocations {
-            if !relocs.is_empty() {
+            if !relocs.is_empty() && emitted_section_indices.contains_key(section_name) {
                 let rel_section_name = format!(".rel{}", section_name);
                 let reloc_size = relocs.len() * 8;
-                reloc_offsets.insert(rel_section_name, (file_offset, reloc_size));
+                reloc_entries.push((
+                    rel_section_name,
+                    section_name.clone(),
+                    file_offset,
+                    reloc_size,
+                ));
                 file_offset += reloc_size;
             }
         }
 
+        let symtab_index = 1 + emitted_sections.len();
+        let strtab_index = symtab_index + 1;
+        let shstrtab_index = strtab_index + 1;
+
         // Section header table offset
         let e_shoff = file_offset;
-        let num_sections = 1 + section_offsets.len() + 3 + reloc_offsets.len();  // null + allocatable sections + symtab/strtab/shstrtab + reloc sections
-        let section_headers_size = num_sections * 40;
+        let num_sections = 1 + emitted_sections.len() + 3 + reloc_entries.len(); // null + allocatable sections + symtab/strtab/shstrtab + reloc sections
 
         // PASS 2: Write file
         
@@ -282,36 +302,44 @@ impl ElfWriter {
         output.extend_from_slice(&u16::to_le_bytes(0));  // e_phnum
         output.extend_from_slice(&u16::to_le_bytes(40));  // e_shentsize
         output.extend_from_slice(&u16::to_le_bytes(num_sections as u16));  // e_shnum
-        output.extend_from_slice(&u16::to_le_bytes(7));  // e_shstrndx (.shstrtab is section 7)
+        output.extend_from_slice(&u16::to_le_bytes(shstrtab_index as u16));  // e_shstrndx
 
-        // Write section data in order
-        for (name, section) in &self.sections {
-            if section.data.len() > 0 {
+        // Write allocatable section payloads in the same order used for offsets.
+        for (_name, section) in &emitted_sections {
+            if section.section_type != SHT_NOBITS && !section.data.is_empty() {
                 output.extend_from_slice(&section.data);
             }
         }
 
-        // Write symbol table
-        for symbol in &self.symbols {
+        // Write symbol table with local symbols first (required by ELF).
+        let mut local_symbols: Vec<usize> = Vec::new();
+        let mut global_symbols: Vec<usize> = Vec::new();
+        for old_idx in 1..self.symbols.len() {
+            if self.symbols[old_idx].is_global {
+                global_symbols.push(old_idx);
+            } else {
+                local_symbols.push(old_idx);
+            }
+        }
+        let mut symbol_order: Vec<usize> = Vec::with_capacity(self.symbols.len());
+        symbol_order.push(0); // null symbol
+        symbol_order.extend(local_symbols.iter().copied());
+        symbol_order.extend(global_symbols.iter().copied());
+
+        let mut old_to_new_symbol: Vec<usize> = vec![0; self.symbols.len()];
+        for (new_idx, old_idx) in symbol_order.iter().enumerate() {
+            old_to_new_symbol[*old_idx] = new_idx;
+        }
+
+        for old_idx in &symbol_order {
+            let symbol = &self.symbols[*old_idx];
             let st_name = self.string_table.offset_map.get(&symbol.name).copied().unwrap_or(0);
             let st_value = symbol.offset as u32;
             let st_size = 0;
             let st_info = ((if symbol.is_global { STB_GLOBAL } else { STB_LOCAL }) << 4) | symbol.st_type;
             let st_other = STV_DEFAULT;
             let st_shndx = if let Some(sect_idx) = symbol.section_idx {
-                // Find position in allocatable sections
-                let mut idx = 1;
-                for (name, _) in &self.sections {
-                    if let Some(sect_idx_to_check) = self.sections.keys().position(|x| x == name) {
-                        if sect_idx_to_check == sect_idx {
-                            break;
-                        }
-                        if self.sections[name].data.len() > 0 || name == ".bss" {
-                            idx += 1;
-                        }
-                    }
-                }
-                idx as u16
+                original_to_emitted.get(&sect_idx).copied().unwrap_or(0) as u16
             } else {
                 0
             };
@@ -331,12 +359,18 @@ impl ElfWriter {
         output.extend_from_slice(&shstrtab_data);
 
         // Write relocations
-        for (section_name, relocs) in &self.relocations {
-            for reloc in relocs {
+        for (_rel_name, target_section, _offset, _size) in &reloc_entries {
+            if let Some(relocs) = self.relocations.get(target_section) {
+                for reloc in relocs {
+                    let sym_idx = old_to_new_symbol
+                        .get(reloc.symbol_idx)
+                        .copied()
+                        .ok_or_else(|| AssemblerError::EncoderError("relocation symbol index out of bounds".to_string()))?;
                 let r_offset = reloc.offset as u32;
-                let r_info = ((reloc.symbol_idx as u32) << 8) | (reloc.reloc_type as u32);
+                    let r_info = ((sym_idx as u32) << 8) | (reloc.reloc_type as u32);
                 output.extend_from_slice(&u32::to_le_bytes(r_offset));
                 output.extend_from_slice(&u32::to_le_bytes(r_info));
+            }
             }
         }
 
@@ -347,23 +381,26 @@ impl ElfWriter {
         }
 
         // Section headers for allocatable sections (1+)
-        let mut section_idx = 1;
-        for (name, section) in &self.sections {
-            if section.data.len() > 0 || name == ".bss" {
-                let (offset, size) = section_offsets.get(name).unwrap();
-                self.write_section_header(
-                    &mut output,
-                    name,
-                    section.section_type,
-                    section.flags,
-                    *offset,
-                    *size,
-                )?;
-                section_idx += 1;
-            }
+        for (name, section) in &emitted_sections {
+            let (offset, size) = section_offsets
+                .get(*name)
+                .copied()
+                .ok_or_else(|| AssemblerError::EncoderError(format!("missing offset for section {}", name)))?;
+            self.write_section_header(
+                &mut output,
+                name,
+                section.section_type,
+                section.flags,
+                offset,
+                size,
+                0,
+                0,
+                4,
+                0,
+            )?;
         }
 
-        // Section 5+: .symtab
+        // .symtab
         {
             let sh_name = self.section_string_table.offset_map.get(".symtab").copied().unwrap_or(0);
             output.extend_from_slice(&u32::to_le_bytes(sh_name as u32));
@@ -372,13 +409,13 @@ impl ElfWriter {
             output.extend_from_slice(&u32::to_le_bytes(0));
             output.extend_from_slice(&u32::to_le_bytes(symtab_offset as u32));
             output.extend_from_slice(&u32::to_le_bytes(symtab_size as u32));
-            output.extend_from_slice(&u32::to_le_bytes(6));  // link to .strtab
-            output.extend_from_slice(&u32::to_le_bytes(0));
-            output.extend_from_slice(&u32::to_le_bytes(0));
+            output.extend_from_slice(&u32::to_le_bytes(strtab_index as u32));  // link to .strtab
+            output.extend_from_slice(&u32::to_le_bytes((1 + local_symbols.len()) as u32)); // first global symbol index
+            output.extend_from_slice(&u32::to_le_bytes(4));
             output.extend_from_slice(&u32::to_le_bytes(16));  // entry size
         }
 
-        // Section: .strtab
+        // .strtab
         {
             let sh_name = self.section_string_table.offset_map.get(".strtab").copied().unwrap_or(0);
             output.extend_from_slice(&u32::to_le_bytes(sh_name as u32));
@@ -393,7 +430,7 @@ impl ElfWriter {
             output.extend_from_slice(&u32::to_le_bytes(0));
         }
 
-        // Section: .shstrtab
+        // .shstrtab
         {
             let sh_name = self.section_string_table.offset_map.get(".shstrtab").copied().unwrap_or(0);
             output.extend_from_slice(&u32::to_le_bytes(sh_name as u32));
@@ -409,18 +446,9 @@ impl ElfWriter {
         }
 
         // Relocation sections
-        for (rel_section_name, (offset, size)) in &reloc_offsets {
-            let target_section = rel_section_name.trim_start_matches(".rel");
+        for (rel_section_name, target_section, offset, size) in &reloc_entries {
             let sh_name = self.section_string_table.offset_map.get(rel_section_name).copied().unwrap_or(0);
-            
-            // Find sh_info (index of target section)
-            let sh_info = match target_section {
-                ".text" => 1,
-                ".data" => 2,
-                ".rodata" => 3,
-                ".bss" => 4,
-                _ => 0,
-            };
+            let sh_info = emitted_section_indices.get(target_section).copied().unwrap_or(0);
 
             output.extend_from_slice(&u32::to_le_bytes(sh_name as u32));
             output.extend_from_slice(&u32::to_le_bytes(SHT_REL));
@@ -428,9 +456,9 @@ impl ElfWriter {
             output.extend_from_slice(&u32::to_le_bytes(0));
             output.extend_from_slice(&u32::to_le_bytes(*offset as u32));
             output.extend_from_slice(&u32::to_le_bytes(*size as u32));
-            output.extend_from_slice(&u32::to_le_bytes(5));  // link to .symtab
-            output.extend_from_slice(&u32::to_le_bytes(sh_info));
-            output.extend_from_slice(&u32::to_le_bytes(0));
+            output.extend_from_slice(&u32::to_le_bytes(symtab_index as u32));  // link to .symtab
+            output.extend_from_slice(&u32::to_le_bytes(sh_info as u32));       // target section index
+            output.extend_from_slice(&u32::to_le_bytes(4));
             output.extend_from_slice(&u32::to_le_bytes(8));  // entry size
         }
 
@@ -445,6 +473,10 @@ impl ElfWriter {
         sh_flags: u32,
         sh_offset: usize,
         sh_size: usize,
+        sh_link: u32,
+        sh_info: u32,
+        sh_addralign: u32,
+        sh_entsize: u32,
     ) -> Result<()> {
         let sh_name = self.section_string_table.offset_map.get(name).copied().unwrap_or(0);
         headers.extend_from_slice(&u32::to_le_bytes(sh_name as u32));
@@ -453,10 +485,10 @@ impl ElfWriter {
         headers.extend_from_slice(&u32::to_le_bytes(0));  // sh_addr
         headers.extend_from_slice(&u32::to_le_bytes(sh_offset as u32));
         headers.extend_from_slice(&u32::to_le_bytes(sh_size as u32));
-        headers.extend_from_slice(&u32::to_le_bytes(0));  // sh_link
-        headers.extend_from_slice(&u32::to_le_bytes(0));  // sh_info
-        headers.extend_from_slice(&u32::to_le_bytes(0));  // sh_addralign
-        headers.extend_from_slice(&u32::to_le_bytes(0));  // sh_entsize
+        headers.extend_from_slice(&u32::to_le_bytes(sh_link));
+        headers.extend_from_slice(&u32::to_le_bytes(sh_info));
+        headers.extend_from_slice(&u32::to_le_bytes(sh_addralign));
+        headers.extend_from_slice(&u32::to_le_bytes(sh_entsize));
         Ok(())
     }
 }

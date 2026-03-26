@@ -150,7 +150,11 @@ impl Encoder {
         };
 
         // I-type encoding: [imm12:20 | rs1:5 | funct3:3 | rd:5 | opcode:7]
-        Ok((imm_bits << 20) | ((rs1 & 0x1f) << 15) | ((funct3 & 0x7) << 12) | ((rd & 0x1f) << 7) | (opcode & 0x7f))
+        Ok(((imm_bits & 0xFFF) << 20)
+            | ((rs1 & 0x1f) << 15)
+            | ((funct3 & 0x7) << 12)
+            | ((rd & 0x1f) << 7)
+            | (opcode & 0x7f))
     }
 
     fn encode_s_type(mnemonic: &str, rs1: u32, rs2: u32, imm: i64) -> Result<u32> {
@@ -191,23 +195,33 @@ impl Encoder {
         let imm_10_5 = (imm_val >> 5) & 0x3f;
         let imm_12 = (imm_val >> 12) & 1;
 
-        let rd = (imm_4_1 << 8) | (imm_11 << 7);
-        let funct7 = (imm_12 << 6) | imm_10_5;
-
-        Ok(Self::encode_instruction(
-            OPCODE_BRANCH, rd, funct3, rs1, rs2, funct7, 0,
-        ))
+        Ok(((imm_12 & 0x1) << 31)
+            | ((imm_10_5 & 0x3f) << 25)
+            | ((rs2 & 0x1f) << 20)
+            | ((rs1 & 0x1f) << 15)
+            | ((funct3 & 0x7) << 12)
+            | ((imm_4_1 & 0xf) << 8)
+            | ((imm_11 & 0x1) << 7)
+            | OPCODE_BRANCH)
     }
 
     fn encode_u_type(mnemonic: &str, rd: u32, imm: i64) -> Result<u32> {
-        let imm20 = Self::check_imm_range(imm, 20)?;
+        // U-type immediate is a raw 20-bit field (not sign-checked as I/B/J immediates).
+        let imm20 = if (0..=0xFFFFF).contains(&imm) {
+            imm as u32
+        } else {
+            return Err(AssemblerError::InvalidImmediate(
+                imm,
+                "u20".to_string(),
+            ));
+        };
         let opcode = match mnemonic {
             "lui" => OPCODE_LUI,
             "auipc" => OPCODE_AUIPC,
             _ => return Err(AssemblerError::UnknownInstruction(mnemonic.to_string())),
         };
 
-        Ok(Self::encode_instruction(opcode, rd, 0, imm20 as u32, 0, 0, 0))
+        Ok(((imm20 & 0xFFFFF) << 12) | ((rd & 0x1f) << 7) | (opcode & 0x7f))
     }
 
     fn encode_j_type(mnemonic: &str, rd: u32, imm: i64) -> Result<u32> {
@@ -223,19 +237,21 @@ impl Encoder {
         let imm_11 = (imm_val >> 11) & 1;
         let imm_19_12 = (imm_val >> 12) & 0xff;
 
-        let imm_enc = (imm_20 << 20) | (imm_19_12 << 12) | (imm_11 << 11) | (imm_10_1 << 1);
-
-        Ok(Self::encode_instruction(
-            OPCODE_JAL, rd, 0, imm_enc as u32, 0, 0, 0,
-        ))
+        Ok(((imm_20 & 0x1) << 31)
+            | ((imm_19_12 & 0xff) << 12)
+            | ((imm_11 & 0x1) << 20)
+            | ((imm_10_1 & 0x3ff) << 21)
+            | ((rd & 0x1f) << 7)
+            | OPCODE_JAL)
     }
 
     fn encode_f_r_type(mnemonic: &str, rd: u32, rs1: u32, rs2: u32) -> Result<u32> {
         let (funct7, funct3) = match mnemonic {
-            "fadd.s" => (0b0000000, 0b000),
-            "fsub.s" => (0b0000100, 0b000),
-            "fmul.s" => (0b0001000, 0b000),
-            "fdiv.s" => (0b0001100, 0b000),
+            // For arithmetic FP ops without explicit rm suffix, GNU emits rm=111 (dynamic).
+            "fadd.s" => (0b0000000, 0b111),
+            "fsub.s" => (0b0000100, 0b111),
+            "fmul.s" => (0b0001000, 0b111),
+            "fdiv.s" => (0b0001100, 0b111),
             "fmin.s" => (0b0010100, 0b000),
             "fmax.s" => (0b0010100, 0b001),
             _ => return Err(AssemblerError::UnknownInstruction(mnemonic.to_string())),
@@ -252,9 +268,11 @@ impl Encoder {
         }
 
         let imm12 = Self::check_imm_range(imm, 12)?;
-        Ok(Self::encode_instruction(
-            OPCODE_FP_LOAD, rd, 0b010, rs1, imm12, 0, 0,
-        ))
+        Ok(((imm12 & 0xFFF) << 20)
+            | ((rs1 & 0x1f) << 15)
+            | (0b010 << 12)
+            | ((rd & 0x1f) << 7)
+            | OPCODE_FP_LOAD)
     }
 
     fn encode_f_s_type(mnemonic: &str, rs1: u32, rs2: u32, imm: i64) -> Result<u32> {
@@ -272,7 +290,7 @@ impl Encoder {
     }
 
     fn encode_f_c_type(mnemonic: &str, rd: u32, rs1: u32, rs2: u32) -> Result<u32> {
-        let (funct7, _funct3) = match mnemonic {
+        let (funct7, funct3) = match mnemonic {
             "feq.s" => (0b1010000, 0b010),
             "flt.s" => (0b1010000, 0b001),
             "fle.s" => (0b1010000, 0b000),
@@ -280,7 +298,7 @@ impl Encoder {
         };
 
         Ok(Self::encode_instruction(
-            OPCODE_FP, rd, 0b000, rs1, rs2, funct7, 0,
+            OPCODE_FP, rd, funct3, rs1, rs2, funct7, 0,
         ))
     }
 
@@ -291,7 +309,7 @@ impl Encoder {
 
         // fcvt.w.s: funct7=1100000, rs2=00000
         Ok(Self::encode_instruction(
-            OPCODE_FP, rd, 0b000, rs1, 0b00000, 0b1100000, 0,
+            OPCODE_FP, rd, 0b111, rs1, 0b00000, 0b1100000, 0,
         ))
     }
 
@@ -302,7 +320,7 @@ impl Encoder {
 
         // fcvt.s.w: funct7=1101000, rs2=00000
         Ok(Self::encode_instruction(
-            OPCODE_FP, rd, 0b000, rs1, 0b00000, 0b1101000, 0,
+            OPCODE_FP, rd, 0b111, rs1, 0b00000, 0b1101000, 0,
         ))
     }
 
@@ -406,7 +424,7 @@ mod tests {
         let word = u32::from_le_bytes(bytes);
         let opcode = word & 0x7f;
         let rd = (word >> 7) & 0x1f;
-        assert_eq!(opcode, 0b0010011);
+        assert_eq!(opcode, 0b0110011);
         assert_eq!(rd, 1); // x1
     }
 
