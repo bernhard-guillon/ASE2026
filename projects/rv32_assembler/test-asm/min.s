@@ -1,0 +1,2 @@
+addi x1, x0, 42
+add x2, x1, x1

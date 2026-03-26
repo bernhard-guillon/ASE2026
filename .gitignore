@@ -13,6 +13,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+emulator_build/
 
 # IDE
 .vscode/
@@ -31,3 +32,10 @@ projects/character-recognition/src/debug_chars/
 # OS
 .DS_Store
 Thumbs.db
+
+# Rust/Cargo build outputs
+projects/rv32_assembler/target/
+
+# Generated/binary test artifacts
+projects/rv32_assembler/test-asm/*.o
+test_lex
