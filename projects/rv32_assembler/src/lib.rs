@@ -52,7 +52,7 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
         }
     }
     
-    // First pass: collect labels and their byte offsets by simulating assembly
+    // First pass: collect labels and their EXACT byte offsets by simulating assembly
     let mut label_map = std::collections::HashMap::new();
     let mut byte_offset = 0;
     
@@ -78,28 +78,9 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
             _ => {}
         }
         
-        // Calculate the size of this line (simulate assembly without encoding)
-        if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
-            if mnemonic == "li" && tokens.len() == 4 {
-                // Check if imm fits in 12 bits
-                if let Token::Integer(imm) = &tokens[3] {
-                    if *imm >= -2048 && *imm <= 2047 {
-                        byte_offset += 4;  // Single addi
-                    } else {
-                        byte_offset += 8;  // lui + addi
-                    }
-                } else {
-                    byte_offset += 8;  // Conservative: assume 2 instructions
-                }
-            } else if mnemonic == "la" && tokens.len() == 4 {
-                // la is skipped if label not found - count as 0 bytes for now
-                // (if label is found, it will be 8 bytes, but we can't know that in first pass)
-                // Actually, let's be conservative and count as 8 bytes like before
-                byte_offset += 8;
-            } else {
-                byte_offset += 4;  // regular instruction
-            }
-        }
+        // Calculate EXACT size by simulating the assembly
+        let size = simulate_line_size(&tokens)?;
+        byte_offset += size;
     }
     
     // Second pass: assemble with label resolution
@@ -126,6 +107,36 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
     }
     
     Ok(bytes)
+}
+
+/// Simulate assembly of a line to determine its size without actually encoding
+fn simulate_line_size(tokens: &[Token]) -> Result<usize> {
+    if tokens.is_empty() {
+        return Ok(0);
+    }
+    
+    if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
+        if mnemonic == "li" && tokens.len() == 4 {
+            // Check if imm fits in 12 bits
+            if let Token::Integer(imm) = &tokens[3] {
+                if *imm >= -2048 && *imm <= 2047 {
+                    return Ok(4);  // Single addi
+                } else {
+                    return Ok(8);  // lui + addi
+                }
+            }
+            return Ok(8);  // Conservative
+        } else if mnemonic == "la" && tokens.len() == 4 {
+            // la is always skipped (unknown labels in data section)
+            return Ok(0);
+        } else if ["beq", "bne", "blt", "bltu", "bge", "bgeu", "jal"].contains(&mnemonic.as_str()) {
+            return Ok(4);  // Branch/jump with label resolution
+        } else {
+            return Ok(4);  // Regular instruction
+        }
+    }
+    
+    Ok(0)
 }
 
 /// Expand la (load address) pseudo-instruction
