@@ -384,6 +384,10 @@ if(RISCV_TOOLCHAIN_FOUND)
         set(NEURAL_ASM "${CMAKE_CURRENT_BINARY_DIR}/neural.s")
         set(NEURAL_OBJ "${CMAKE_CURRENT_BINARY_DIR}/neural.o")
         set(NEURAL_ELF "${CMAKE_CURRENT_BINARY_DIR}/neural.elf")
+        set(NEURAL_OPSX77_ASM "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.s")
+        set(NEURAL_OPSX77_OBJ "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.o")
+        set(NEURAL_OPSX77_ELF "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.elf")
+        set(NEURAL_OPSX77_BIN "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.bin")
         set(NEURAL_MODEL_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
         set(NEURAL_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_interactive.py")
 
@@ -412,6 +416,36 @@ if(RISCV_TOOLCHAIN_FOUND)
         )
 
         add_custom_target(neural_elf ALL DEPENDS ${NEURAL_ELF})
+
+        if(RV32AS_EXECUTABLE)
+            add_custom_command(
+                OUTPUT ${NEURAL_OPSX77_ASM}
+                COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops -o ${NEURAL_OPSX77_ASM} -b ${NEURAL_OPSX77_BIN} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                COMMENT "Generating neural-ai-opsx77.s from model JSON"
+                VERBATIM
+            )
+
+            add_custom_command(
+                OUTPUT ${NEURAL_OPSX77_OBJ}
+                COMMAND ${RV32AS_EXECUTABLE} ${NEURAL_OPSX77_ASM} -march rv32if -mabi ilp32f -o ${NEURAL_OPSX77_OBJ}
+                DEPENDS ${NEURAL_OPSX77_ASM} rv32as_build
+                COMMENT "Assembling neural-ai-opsx77.o with rv32as"
+                VERBATIM
+            )
+
+            add_custom_command(
+                OUTPUT ${NEURAL_OPSX77_ELF}
+                COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${NEURAL_OPSX77_ELF} ${NEURAL_OPSX77_OBJ}
+                DEPENDS ${NEURAL_OPSX77_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+                COMMENT "Linking neural-ai-opsx77.elf"
+                VERBATIM
+            )
+
+            add_custom_target(neural_opsx77_elf ALL DEPENDS ${NEURAL_OPSX77_ELF})
+        else()
+            message(WARNING "rv32as not found - neural_opsx77_elf target disabled")
+        endif()
     else()
         message(WARNING "Python not found - neural_elf target disabled")
     endif()
@@ -439,6 +473,16 @@ add_test(
 set_tests_properties(python/verilator/differential_validation PROPERTIES
     LABELS "verilator;differential;validation"
     TIMEOUT 120
+)
+
+add_test(
+    NAME python/verilator/neural_opsx77
+    COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_verilator_neural_opsx77.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+set_tests_properties(python/verilator/neural_opsx77 PROPERTIES
+    LABELS "verilator;neural;opsx77;validation"
+    TIMEOUT 180
 )
 
 # ============================================================================
