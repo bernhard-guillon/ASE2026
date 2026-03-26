@@ -30,9 +30,12 @@ target_link_libraries(cpu memory instruction)
 # Instruction decoder module
 add_library(instruction Instruction.cpp)
 
+# Neural ops module (Phase B foundation)
+add_library(neural_ops NeuralOps.cpp)
+
 # Emulator module
 add_library(emulator Emulator.cpp)
-target_link_libraries(emulator cpu memory instruction)
+target_link_libraries(emulator cpu memory instruction neural_ops)
 
 # Unit test include directory (tests moved to utest/ subdirectory)
 set(UNIT_TEST_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -97,6 +100,11 @@ add_executable(test_fp_instructions utest/test_fp_instructions.cpp)
 target_include_directories(test_fp_instructions PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_fp_instructions emulator cpu memory instruction gtest_main)
 
+# Neural ops unit tests (Phase B foundation)
+add_executable(test_neural_ops utest/test_neural_ops.cpp)
+target_include_directories(test_neural_ops PRIVATE ${UNIT_TEST_INCLUDE_DIR})
+target_link_libraries(test_neural_ops neural_ops gtest_main)
+
 # RISC-V memory layout test runner
 add_executable(run_memory_layout_test blackbox_tests/neural_network/run_memory_layout_test.cpp)
 target_link_libraries(run_memory_layout_test emulator cpu memory instruction)
@@ -118,6 +126,7 @@ gtest_discover_tests(test_memory_syscalls)
 gtest_discover_tests(test_instruction_edges)
 gtest_discover_tests(test_framebuffer)
 gtest_discover_tests(test_elf_loader)
+gtest_discover_tests(test_neural_ops)
 
 # Register integration tests
 add_test(NAME test_model_loading COMMAND test_model_loading)
