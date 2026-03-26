@@ -1,0 +1,292 @@
+Start testing: Mar 26 13:05 CET
+----------------------------------------------------------
+29/112 Testing: python/assembler/dropin_parity_scaffold
+29/112 Test: python/assembler/dropin_parity_scaffold
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_assembler_dropin_parity_scaffold.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/assembler/dropin_parity_scaffold" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+blackbox_tests/test_assembler_dropin_parity_scaffold.py::test_dropin_assembler_text_parity_scaffold SKIPPED [100%]
+
+=============================== warnings summary ===============================
+blackbox_tests/test_assembler_dropin_parity_scaffold.py:58
+  /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/test_assembler_dropin_parity_scaffold.py:58: PytestUnknownMarkWarning: Unknown pytest.mark.blackbox - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.blackbox
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 skipped, 1 warning in 0.72s =========================
+<end of output>
+Test time =   2.14 sec
+----------------------------------------------------------
+Test Passed.
+"python/assembler/dropin_parity_scaffold" end time: Mar 26 13:05 CET
+"python/assembler/dropin_parity_scaffold" time elapsed: 00:00:02
+----------------------------------------------------------
+
+82/112 Testing: parity/basic/arithmetic
+82/112 Test: parity/basic/arithmetic
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/arithmetic/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_arithmetic_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_arithmetic_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_arithmetic_test_gnu.o" "-DTEST_NAME=arithmetic/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/arithmetic" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: arithmetic/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/arithmetic" end time: Mar 26 13:05 CET
+"parity/basic/arithmetic" time elapsed: 00:00:00
+----------------------------------------------------------
+
+83/112 Testing: parity/basic/comparisons
+83/112 Test: parity/basic/comparisons
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/comparisons/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_comparisons_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_comparisons_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_comparisons_test_gnu.o" "-DTEST_NAME=comparisons/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/comparisons" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: comparisons/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/comparisons" end time: Mar 26 13:05 CET
+"parity/basic/comparisons" time elapsed: 00:00:00
+----------------------------------------------------------
+
+84/112 Testing: parity/basic/fibonacci
+84/112 Test: parity/basic/fibonacci
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/fibonacci/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_fibonacci_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_fibonacci_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_fibonacci_test_gnu.o" "-DTEST_NAME=fibonacci/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/fibonacci" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: fibonacci/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/fibonacci" end time: Mar 26 13:05 CET
+"parity/basic/fibonacci" time elapsed: 00:00:00
+----------------------------------------------------------
+
+85/112 Testing: parity/basic/hello
+85/112 Test: parity/basic/hello
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/hello/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_hello_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_hello_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_hello_test_gnu.o" "-DTEST_NAME=hello/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/hello" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: hello/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/hello" end time: Mar 26 13:05 CET
+"parity/basic/hello" time elapsed: 00:00:00
+----------------------------------------------------------
+
+86/112 Testing: parity/basic/immediates
+86/112 Test: parity/basic/immediates
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/immediates/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_immediates_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_immediates_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_immediates_test_gnu.o" "-DTEST_NAME=immediates/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/immediates" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: immediates/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/immediates" end time: Mar 26 13:05 CET
+"parity/basic/immediates" time elapsed: 00:00:00
+----------------------------------------------------------
+
+87/112 Testing: parity/basic/loops
+87/112 Test: parity/basic/loops
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/loops/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_loops_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_loops_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_loops_test_gnu.o" "-DTEST_NAME=loops/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/loops" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: loops/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/loops" end time: Mar 26 13:05 CET
+"parity/basic/loops" time elapsed: 00:00:00
+----------------------------------------------------------
+
+88/112 Testing: parity/basic/memory
+88/112 Test: parity/basic/memory
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/memory/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_memory_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_memory_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_memory_test_gnu.o" "-DTEST_NAME=memory/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/memory" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:17 (message):
+  ✗ Rust assembler failed for memory/test:
+
+  Assembly error: Invalid immediate value: 912092 (out of range for i20)
+
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/memory" end time: Mar 26 13:05 CET
+"parity/basic/memory" time elapsed: 00:00:00
+----------------------------------------------------------
+
+89/112 Testing: parity/basic/shifts
+89/112 Test: parity/basic/shifts
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/shifts/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_shifts_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_shifts_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_shifts_test_gnu.o" "-DTEST_NAME=shifts/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/shifts" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: shifts/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/shifts" end time: Mar 26 13:05 CET
+"parity/basic/shifts" time elapsed: 00:00:00
+----------------------------------------------------------
+
+90/112 Testing: parity/basic/stack
+90/112 Test: parity/basic/stack
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/stack/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_stack_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_stack_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_stack_test_gnu.o" "-DTEST_NAME=stack/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/stack" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:58 (message):
+  ✗ PARITY MISMATCH: stack/test - size difference
+
+    Rust: 148 bytes
+    GNU: 144 bytes
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/stack" end time: Mar 26 13:05 CET
+"parity/basic/stack" time elapsed: 00:00:00
+----------------------------------------------------------
+
+91/112 Testing: parity/branches/conditional
+91/112 Test: parity/branches/conditional
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/branches/conditional/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_conditional_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_conditional_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_conditional_test_gnu.o" "-DTEST_NAME=conditional/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/branches/conditional" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: conditional/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/branches/conditional" end time: Mar 26 13:05 CET
+"parity/branches/conditional" time elapsed: 00:00:00
+----------------------------------------------------------
+
+92/112 Testing: parity/branches/forward_jumps
+92/112 Test: parity/branches/forward_jumps
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/branches/forward_jumps/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_forward_jumps_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_forward_jumps_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_forward_jumps_test_gnu.o" "-DTEST_NAME=forward_jumps/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/branches/forward_jumps" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: forward_jumps/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/branches/forward_jumps" end time: Mar 26 13:05 CET
+"parity/branches/forward_jumps" time elapsed: 00:00:00
+----------------------------------------------------------
+
+93/112 Testing: parity/branches/negative_offsets
+93/112 Test: parity/branches/negative_offsets
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/branches/negative_offsets/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_negative_offsets_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_negative_offsets_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_negative_offsets_test_gnu.o" "-DTEST_NAME=negative_offsets/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/branches/negative_offsets" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: negative_offsets/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/branches/negative_offsets" end time: Mar 26 13:05 CET
+"parity/branches/negative_offsets" time elapsed: 00:00:00
+----------------------------------------------------------
+
+94/112 Testing: parity/edge_cases/jalr_lsb
+94/112 Test: parity/edge_cases/jalr_lsb
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/edge_cases/jalr_lsb/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_jalr_lsb_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_jalr_lsb_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_jalr_lsb_test_gnu.o" "-DTEST_NAME=jalr_lsb/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/edge_cases/jalr_lsb" start time: Mar 26 13:05 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:17 (message):
+  ✗ Rust assembler failed for jalr_lsb/test:
+
+  Assembly error: Wrong number of operands for jalr: expected 3, got 6
+
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/edge_cases/jalr_lsb" end time: Mar 26 13:05 CET
+"parity/edge_cases/jalr_lsb" time elapsed: 00:00:00
+----------------------------------------------------------
+
