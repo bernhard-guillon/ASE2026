@@ -65,7 +65,7 @@ add_library(memory Memory.cpp)
 
 # CPU module
 add_library(cpu CPU.cpp)
-target_link_libraries(cpu memory instruction)
+target_link_libraries(cpu memory instruction neural_ops)
 
 # Instruction decoder module
 add_library(instruction Instruction.cpp)
@@ -318,6 +318,21 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_assembler_dropin_parity_scaffold.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+
+    # Neural instruction assembler blackbox tests (requires rv32as)
+    if(RV32AS_EXECUTABLE)
+        add_test(
+            NAME python/assembler/neural_instr_encoding
+            COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_neural_instr_assembler.py -v
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        set_tests_properties(python/assembler/neural_instr_encoding PROPERTIES
+            LABELS "assembler;neural;blackbox"
+            ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE}"
+        )
+    else()
+        message(WARNING "rv32as not available - python/assembler/neural_instr_encoding test disabled")
+    endif()
     
 else()
     message(WARNING "Python3 not found - Python tests will be skipped")
@@ -374,6 +389,10 @@ if(RISCV_TOOLCHAIN_FOUND)
         set(NEURAL_ASM "${CMAKE_CURRENT_BINARY_DIR}/neural.s")
         set(NEURAL_OBJ "${CMAKE_CURRENT_BINARY_DIR}/neural.o")
         set(NEURAL_ELF "${CMAKE_CURRENT_BINARY_DIR}/neural.elf")
+        set(NEURAL_OPSX77_ASM "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.s")
+        set(NEURAL_OPSX77_OBJ "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.o")
+        set(NEURAL_OPSX77_ELF "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.elf")
+        set(NEURAL_OPSX77_BIN "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.bin")
         set(NEURAL_MODEL_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
         set(NEURAL_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_interactive.py")
 
@@ -402,6 +421,36 @@ if(RISCV_TOOLCHAIN_FOUND)
         )
 
         add_custom_target(neural_elf ALL DEPENDS ${NEURAL_ELF})
+
+        if(RV32AS_EXECUTABLE)
+            add_custom_command(
+                OUTPUT ${NEURAL_OPSX77_ASM}
+                COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops -o ${NEURAL_OPSX77_ASM} -b ${NEURAL_OPSX77_BIN} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                COMMENT "Generating neural-ai-opsx77.s from model JSON"
+                VERBATIM
+            )
+
+            add_custom_command(
+                OUTPUT ${NEURAL_OPSX77_OBJ}
+                COMMAND ${RV32AS_EXECUTABLE} ${NEURAL_OPSX77_ASM} -march rv32if -mabi ilp32f -o ${NEURAL_OPSX77_OBJ}
+                DEPENDS ${NEURAL_OPSX77_ASM} rv32as_build
+                COMMENT "Assembling neural-ai-opsx77.o with rv32as"
+                VERBATIM
+            )
+
+            add_custom_command(
+                OUTPUT ${NEURAL_OPSX77_ELF}
+                COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${NEURAL_OPSX77_ELF} ${NEURAL_OPSX77_OBJ}
+                DEPENDS ${NEURAL_OPSX77_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+                COMMENT "Linking neural-ai-opsx77.elf"
+                VERBATIM
+            )
+
+            add_custom_target(neural_opsx77_elf ALL DEPENDS ${NEURAL_OPSX77_ELF})
+        else()
+            message(WARNING "rv32as not found - neural_opsx77_elf target disabled")
+        endif()
     else()
         message(WARNING "Python not found - neural_elf target disabled")
     endif()
@@ -410,16 +459,44 @@ if(RISCV_TOOLCHAIN_FOUND)
     add_blackbox_all_target()
 endif()
 
-# Neural Character Generation Validation Test
-add_test(
-    NAME python/neural_char_gen/validation_256
-    COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_neural_256_chars.py
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
-set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
-    LABELS "neural;validation;blackbox"
-    TIMEOUT 300
-)
+# Neural Character Generation Validation Test (requires Python + rv32as)
+if(PYTHON_EXECUTABLE AND RV32AS_EXECUTABLE)
+    add_test(
+        NAME python/neural_char_gen/validation_256
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_neural_256_chars.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
+        LABELS "neural;validation;blackbox"
+        TIMEOUT 600
+        ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE};EMULATOR_BACKEND=cpp"
+    )
+elseif(NOT RV32AS_EXECUTABLE)
+    message(WARNING "rv32as not available - python/neural_char_gen/validation_256 test disabled")
+endif()
+
+# Ensure rv32as binary exists before tests that depend on it.
+if(RV32AS_EXECUTABLE)
+    add_test(
+        NAME python/fixture/build_rv32as
+        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target rv32as_build
+    )
+    set_tests_properties(python/fixture/build_rv32as PROPERTIES
+        LABELS "assembler;fixture"
+        FIXTURES_SETUP rv32as_ready
+    )
+
+    if(TEST python/assembler/neural_instr_encoding)
+        set_tests_properties(python/assembler/neural_instr_encoding PROPERTIES
+            FIXTURES_REQUIRED rv32as_ready
+        )
+    endif()
+    if(TEST python/neural_char_gen/validation_256)
+        set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
+            FIXTURES_REQUIRED rv32as_ready
+        )
+    endif()
+endif()
 
 add_test(
     NAME python/verilator/differential_validation
@@ -429,6 +506,16 @@ add_test(
 set_tests_properties(python/verilator/differential_validation PROPERTIES
     LABELS "verilator;differential;validation"
     TIMEOUT 120
+)
+
+add_test(
+    NAME python/verilator/neural_opsx77
+    COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_verilator_neural_opsx77.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+set_tests_properties(python/verilator/neural_opsx77 PROPERTIES
+    LABELS "verilator;neural;opsx77;validation"
+    TIMEOUT 180
 )
 
 # ============================================================================

@@ -11,6 +11,7 @@ enum class InstructionFormat {
     B_TYPE,  // Branch operations
     U_TYPE,  // Upper immediate operations
     J_TYPE,  // Jump operations
+    N_TYPE,  // Neural custom operations
     UNKNOWN
 };
 
@@ -24,6 +25,7 @@ enum class Opcode : uint8_t {
     STORE_FP  = 0b0100111,  // F extension: FSW
     OP        = 0b0110011,
     OP_FP     = 0b1010011,  // F extension: FADD.S, FMUL.S, etc.
+    CUSTOM0   = 0b1110111,  // Neural custom extension
     LUI       = 0b0110111,
     BRANCH    = 0b1100011,
     JALR      = 0b1100111,
@@ -43,13 +45,15 @@ struct Instruction {
     uint8_t rs2;            // Source register 2 (bits 20-24)
     uint8_t funct3;         // Function code 3 bits (bits 12-14)
     uint8_t funct7;         // Function code 7 bits (bits 25-31)
+    uint8_t rs3;            // Neural/custom source register 3
+    uint8_t neural_op;      // Neural operation id (bits 31:27 for CUSTOM0)
     
     // Immediate values (sign-extended)
     int32_t imm;            // Decoded immediate value
     
     Instruction() : raw(0), format(InstructionFormat::UNKNOWN), 
                     opcode(Opcode::UNKNOWN), rd(0), rs1(0), rs2(0),
-                    funct3(0), funct7(0), imm(0) {}
+                    funct3(0), funct7(0), rs3(0), neural_op(0), imm(0) {}
 };
 
 class InstructionDecoder {

@@ -36,6 +36,12 @@ class NeuralCharGenTest:
         self.emulator_bin = resolve_emulator_runner(self.emulator_dir)
         self.tests_passed = 0
         self.tests_failed = 0
+
+    def _rv32as_path(self) -> Path:
+        override = os.environ.get("EMULATOR_NEW_ASSEMBLER")
+        if override:
+            return Path(override)
+        return self.emulator_dir / "build" / "rv32as"
     
     def test(self, name, fn):
         """Run a test and track results."""
@@ -71,6 +77,7 @@ class NeuralCharGenTest:
                 
                 result = subprocess.run(
                     ["python3", "model_compiler_interactive.py",
+                     "--use-neural-ops",
                      "-o", str(output_asm),
                      str(self.model_path)],
                     cwd=self.emulator_dir,
@@ -105,10 +112,11 @@ class NeuralCharGenTest:
                     return False
                 
                 # Assemble
+                rv32as = self._rv32as_path()
                 result2 = subprocess.run(
-                    ["riscv64-elf-as", "-march=rv32if", "-mabi=ilp32f",
+                    [str(rv32as), str(output_asm), "-march", "rv32if", "-mabi", "ilp32f",
                      "-o", str(output_obj),
-                     str(output_asm)],
+                    ],
                     cwd=self.emulator_dir,
                     capture_output=True,
                     timeout=30
@@ -131,6 +139,7 @@ class NeuralCharGenTest:
                 # Generate assembly
                 r1 = subprocess.run(
                     ["python3", "model_compiler_interactive.py",
+                     "--use-neural-ops",
                      "-o", str(output_asm),
                      str(self.model_path)],
                     cwd=self.emulator_dir,
@@ -139,10 +148,11 @@ class NeuralCharGenTest:
                 )
                 
                 # Assemble
+                rv32as = self._rv32as_path()
                 r2 = subprocess.run(
-                    ["riscv64-elf-as", "-march=rv32if", "-mabi=ilp32f",
+                    [str(rv32as), str(output_asm), "-march", "rv32if", "-mabi", "ilp32f",
                      "-o", str(output_obj),
-                     str(output_asm)],
+                    ],
                     cwd=self.emulator_dir,
                     capture_output=True,
                     timeout=30
@@ -177,6 +187,7 @@ class NeuralCharGenTest:
                 # Generate assembly
                 r1 = subprocess.run(
                     ["python3", "model_compiler_interactive.py",
+                     "--use-neural-ops",
                      "-o", str(output_asm),
                      str(self.model_path)],
                     cwd=self.emulator_dir,
@@ -185,10 +196,11 @@ class NeuralCharGenTest:
                 )
                 
                 # Assemble
+                rv32as = self._rv32as_path()
                 r2 = subprocess.run(
-                    ["riscv64-elf-as", "-march=rv32if", "-mabi=ilp32f",
+                    [str(rv32as), str(output_asm), "-march", "rv32if", "-mabi", "ilp32f",
                      "-o", str(output_obj),
-                     str(output_asm)],
+                    ],
                     cwd=self.emulator_dir,
                     capture_output=True,
                     timeout=30

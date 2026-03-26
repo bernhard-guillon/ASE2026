@@ -61,7 +61,15 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>> {
             }
             '.' => {
                 let directive = parse_directive(&mut chars)?;
-                tokens.push(directive);
+                // Allow local labels like `.Lfoo:` in addition to directives.
+                if let Some(&':') = chars.peek() {
+                    chars.next(); // consume ':'
+                    if let Token::Directive(name) = directive {
+                        tokens.push(Token::Label(name));
+                    }
+                } else {
+                    tokens.push(directive);
+                }
             }
             '-' | '+' | '0'..='9' => {
                 tokens.push(parse_integer(&mut chars)?);
@@ -265,7 +273,7 @@ fn parse_identifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<
     let mut name = String::new();
 
     while let Some(&ch) = chars.peek() {
-        if ch.is_ascii_alphanumeric() || ch == '_' {
+        if ch.is_ascii_alphanumeric() || ch == '_' || ch == '.' || ch == '$' {
             name.push(chars.next().unwrap());
         } else {
             break;
@@ -280,7 +288,7 @@ fn parse_directive(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<T
     name.push(chars.next().unwrap()); // consume '.'
 
     while let Some(&ch) = chars.peek() {
-        if ch.is_ascii_alphanumeric() || ch == '_' {
+        if ch.is_ascii_alphanumeric() || ch == '_' || ch == '.' || ch == '$' {
             name.push(chars.next().unwrap());
         } else {
             break;
@@ -365,5 +373,18 @@ mod tests {
         assert_eq!(tokens[4], Token::LeftParen);
         assert_eq!(tokens[5], Token::Register("x2".to_string()));
         assert_eq!(tokens[6], Token::RightParen);
+    }
+
+    #[test]
+    fn test_tokenize_local_dot_label() {
+        let tokens = tokenize(".Lclear_done:").unwrap();
+        assert_eq!(tokens.len(), 1);
+        assert_eq!(tokens[0], Token::Label(".lclear_done".to_string()));
+    }
+
+    #[test]
+    fn test_tokenize_custom_mnemonic_with_dot() {
+        let tokens = tokenize("NMATVEC.F32 t1, t0").unwrap();
+        assert_eq!(tokens[0], Token::Mnemonic("NMATVEC.F32".to_string()));
     }
 }

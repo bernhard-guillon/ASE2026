@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include "Instruction.h"
 #include "Memory.h"
+#include "NeuralOps.h"
 
 class CPU {
 public:
@@ -68,6 +69,7 @@ private:
     void executeFPLoad(const Instruction& instr, Memory& memory);
     void executeFPStore(const Instruction& instr, Memory& memory);
     void executeFPArithmetic(const Instruction& instr);
+    void executeNeural(const Instruction& instr, Memory& memory);
     
     // Helper for arithmetic right shift
     uint32_t arithmeticRightShift(uint32_t value, uint32_t shift) const;

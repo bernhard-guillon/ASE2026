@@ -1,7 +1,8 @@
 use std::fs;
+use std::path::Path;
 use std::process;
 
-use rv32_assembler::assemble_program;
+use rv32_assembler::assemble_program_with_base;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -50,7 +51,8 @@ fn main() {
     };
 
     // Assemble
-    match assemble_program(&source) {
+    let input_dir = Path::new(input_file).parent();
+    match assemble_program_with_base(&source, input_dir) {
         Ok(bytes) => {
             // Write output file
             if let Err(e) = fs::write(&output_file, &bytes) {

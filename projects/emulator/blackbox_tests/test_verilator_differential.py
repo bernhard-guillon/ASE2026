@@ -65,6 +65,7 @@ class DifferentialValidator:
 
     def _resolve_neural_elf(self):
         for candidate in (
+            self.build_dir / "neural-ai-opsx77.elf",
             self.build_dir / "neural_chargen.elf",
             self.build_dir / "neural.elf",
             self.emulator_dir / "neural.elf",
@@ -153,10 +154,11 @@ class DifferentialValidator:
             ("static-z", self.static_elf, 122, 500000),
         ]
         if self.neural_elf is not None:
+            neural_cycles = 5000000 if self.neural_elf.name == "neural-ai-opsx77.elf" else 5000000
             fb_cases.extend(
                 [
-                    ("neural-A", self.neural_elf, 65, 5000000),
-                    ("neural-z", self.neural_elf, 122, 5000000),
+                    ("neural-A", self.neural_elf, 65, neural_cycles),
+                    ("neural-z", self.neural_elf, 122, neural_cycles),
                 ]
             )
 
@@ -187,7 +189,8 @@ class DifferentialValidator:
     def run_perf_sanity(self):
         perf_cases = [("static-A", self.static_elf, 65, 500000)]
         if self.neural_elf is not None:
-            perf_cases.append(("neural-A", self.neural_elf, 65, 2000000))
+            neural_cycles = 5000000 if self.neural_elf.name == "neural-ai-opsx77.elf" else 2000000
+            perf_cases.append(("neural-A", self.neural_elf, 65, neural_cycles))
 
         print(f"performance sanity: {len(perf_cases)} case(s)")
         for name, elf, char_code, cycles in perf_cases:

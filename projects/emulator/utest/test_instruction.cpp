@@ -270,3 +270,29 @@ TEST_F(InstructionDecoderTest, ITypeMaxNegativeImm) {
     
     EXPECT_EQ(instr.imm, -2048);
 }
+
+TEST_F(InstructionDecoderTest, DecodeNeuralCustom0_NMATVEC) {
+    // opid=0, rd=x6, rs1=x5, rs2=0, rs3=0, opcode=0x77
+    uint32_t instruction = (0u << 27) | (0u << 22) | (0u << 17) | (5u << 12) | (6u << 7) | 0x77u;
+    Instruction instr = InstructionDecoder::decode(instruction);
+    EXPECT_EQ(instr.opcode, Opcode::CUSTOM0);
+    EXPECT_EQ(instr.format, InstructionFormat::N_TYPE);
+    EXPECT_EQ(instr.neural_op, 0);
+    EXPECT_EQ(instr.rd, 6);
+    EXPECT_EQ(instr.rs1, 5);
+    EXPECT_EQ(instr.rs2, 0);
+    EXPECT_EQ(instr.rs3, 0);
+}
+
+TEST_F(InstructionDecoderTest, DecodeNeuralCustom0_NVRELU) {
+    // opid=1, rd=x10, rs1=x11, rs2=x12, rs3=x13, opcode=0x77
+    uint32_t instruction = (1u << 27) | (13u << 22) | (12u << 17) | (11u << 12) | (10u << 7) | 0x77u;
+    Instruction instr = InstructionDecoder::decode(instruction);
+    EXPECT_EQ(instr.opcode, Opcode::CUSTOM0);
+    EXPECT_EQ(instr.format, InstructionFormat::N_TYPE);
+    EXPECT_EQ(instr.neural_op, 1);
+    EXPECT_EQ(instr.rd, 10);
+    EXPECT_EQ(instr.rs1, 11);
+    EXPECT_EQ(instr.rs2, 12);
+    EXPECT_EQ(instr.rs3, 13);
+}

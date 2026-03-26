@@ -232,6 +232,15 @@ pub enum Instruction {
         rd: FloatRegister,
         rs1: Register,
     },
+    // Neural custom extension (assembler-side encoding only)
+    // Encoded with custom opcode and packed register fields.
+    NType {
+        mnemonic: String,
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+        rs3: Register,
+    },
 }
 
 #[cfg(test)]

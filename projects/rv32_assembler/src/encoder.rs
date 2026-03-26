@@ -19,6 +19,7 @@ const OPCODE_SYSTEM: u32 = 0b1110011;  // ECALL, EBREAK
 const OPCODE_FP_LOAD: u32 = 0b0000111; // FLW
 const OPCODE_FP_STORE: u32 = 0b0100111; // FSW
 const OPCODE_FP: u32 = 0b1010011;      // Floating-point operations
+const OPCODE_CUSTOM0: u32 = 0b1110111; // Neural custom extension (0x77)
 
 impl Encoder {
     pub fn encode(instruction: &Instruction) -> Result<[u8; 4]> {
@@ -83,6 +84,19 @@ impl Encoder {
             Instruction::FMoveRevType { mnemonic, rd, rs1 } => {
                 Self::encode_f_move_rev_type(mnemonic, rd.number(), rs1.number())?
             }
+            Instruction::NType {
+                mnemonic,
+                rd,
+                rs1,
+                rs2,
+                rs3,
+            } => Self::encode_n_type(
+                mnemonic,
+                rd.number(),
+                rs1.number(),
+                rs2.number(),
+                rs3.number(),
+            )?,
         };
 
         // Convert to little-endian bytes
@@ -303,13 +317,16 @@ impl Encoder {
     }
 
     fn encode_f_cvt_type(mnemonic: &str, rd: u32, rs1: u32) -> Result<u32> {
-        if mnemonic != "fcvt.w.s" {
-            return Err(AssemblerError::UnknownInstruction(mnemonic.to_string()));
-        }
+        let rs2 = match mnemonic {
+            // fcvt.w.s: funct7=1100000, rs2=00000 (signed int result)
+            "fcvt.w.s" => 0b00000,
+            // fcvt.wu.s: funct7=1100000, rs2=00001 (unsigned int result)
+            "fcvt.wu.s" => 0b00001,
+            _ => return Err(AssemblerError::UnknownInstruction(mnemonic.to_string())),
+        };
 
-        // fcvt.w.s: funct7=1100000, rs2=00000
         Ok(Self::encode_instruction(
-            OPCODE_FP, rd, 0b111, rs1, 0b00000, 0b1100000, 0,
+            OPCODE_FP, rd, 0b111, rs1, rs2, 0b1100000, 0,
         ))
     }
 
@@ -344,6 +361,33 @@ impl Encoder {
         Ok(Self::encode_instruction(
             OPCODE_FP, rd, 0b000, rs1, 0b00000, 0b1111000, 0,
         ))
+    }
+
+    fn encode_n_type(mnemonic: &str, rd: u32, rs1: u32, rs2: u32, rs3: u32) -> Result<u32> {
+        // Custom compact neural format:
+        // [31:27]=opid [26:22]=rs3 [21:17]=rs2 [16:12]=rs1 [11:7]=rd [6:0]=opcode(0x77)
+        //
+        // nmatvec.f32 uses only rd/rs1. rs2/rs3 must be zero for canonical encoding.
+        let opid = match mnemonic {
+            "nmatvec.f32" => 0u32,
+            "nvrelu.f32" => 1u32,
+            "nvsigpwl.f32" => 2u32,
+            "nvclampu8.f32" => 3u32,
+            _ => return Err(AssemblerError::UnknownInstruction(mnemonic.to_string())),
+        };
+
+        let (packed_rs2, packed_rs3) = if mnemonic == "nmatvec.f32" {
+            (0u32, 0u32)
+        } else {
+            (rs2, rs3)
+        };
+
+        Ok(((opid & 0x1f) << 27)
+            | ((packed_rs3 & 0x1f) << 22)
+            | ((packed_rs2 & 0x1f) << 17)
+            | ((rs1 & 0x1f) << 12)
+            | ((rd & 0x1f) << 7)
+            | OPCODE_CUSTOM0)
     }
 
     // Encode 32-bit instruction word with fields
@@ -385,7 +429,7 @@ impl Encoder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instruction::{Instruction, Register};
+    use crate::instruction::{FloatRegister, Instruction, Register};
 
     #[test]
     fn test_encode_addi() {
@@ -435,5 +479,78 @@ mod tests {
         assert!(Encoder::check_imm_range(-2048, 12).is_ok());
         assert!(Encoder::check_imm_range(2048, 12).is_err());
         assert!(Encoder::check_imm_range(-2049, 12).is_err());
+    }
+
+    #[test]
+    fn test_encode_fcvt_wu_s() {
+        let instr = Instruction::FCvtType {
+            mnemonic: "fcvt.wu.s".to_string(),
+            rd: Register::X30,   // t5
+            rs1: FloatRegister::F10, // fa0
+        };
+
+        let bytes = Encoder::encode(&instr).unwrap();
+        let word = u32::from_le_bytes(bytes);
+        assert_eq!(word & 0x7f, 0b1010011);
+        assert_eq!((word >> 20) & 0x1f, 1); // rs2=1 for unsigned conversion
+    }
+
+    #[test]
+    fn test_encode_nmatvec_opcode_and_funct7() {
+        let instr = Instruction::NType {
+            mnemonic: "nmatvec.f32".to_string(),
+            rd: Register::X6,
+            rs1: Register::X5,
+            rs2: Register::X0,
+            rs3: Register::X0,
+        };
+        let bytes = Encoder::encode(&instr).unwrap();
+        let word = u32::from_le_bytes(bytes);
+        assert_eq!(word & 0x7f, 0x77);
+        assert_eq!((word >> 27) & 0x1f, 0);
+        assert_eq!((word >> 12) & 0x1f, 5);
+        assert_eq!((word >> 17) & 0x1f, 0);
+        assert_eq!((word >> 22) & 0x1f, 0);
+    }
+
+    #[test]
+    fn test_encode_nvrelu_register_fields() {
+        let instr = Instruction::NType {
+            mnemonic: "nvrelu.f32".to_string(),
+            rd: Register::X10,
+            rs1: Register::X11,
+            rs2: Register::X12,
+            rs3: Register::X13,
+        };
+        let bytes = Encoder::encode(&instr).unwrap();
+        let word = u32::from_le_bytes(bytes);
+        assert_eq!(word & 0x7f, 0x77);
+        assert_eq!((word >> 27) & 0x1f, 1);
+        assert_eq!((word >> 12) & 0x1f, 11);
+        assert_eq!((word >> 7) & 0x1f, 10);
+        assert_eq!((word >> 17) & 0x1f, 12);
+        assert_eq!((word >> 22) & 0x1f, 13);
+    }
+
+    #[test]
+    fn test_encode_nvsigpwl_and_nvclamp_opids() {
+        let sig = Instruction::NType {
+            mnemonic: "nvsigpwl.f32".to_string(),
+            rd: Register::X1,
+            rs1: Register::X2,
+            rs2: Register::X3,
+            rs3: Register::X4,
+        };
+        let clamp = Instruction::NType {
+            mnemonic: "nvclampu8.f32".to_string(),
+            rd: Register::X1,
+            rs1: Register::X2,
+            rs2: Register::X3,
+            rs3: Register::X4,
+        };
+        let sig_word = u32::from_le_bytes(Encoder::encode(&sig).unwrap());
+        let clamp_word = u32::from_le_bytes(Encoder::encode(&clamp).unwrap());
+        assert_eq!((sig_word >> 27) & 0x1f, 2);
+        assert_eq!((clamp_word >> 27) & 0x1f, 3);
     }
 }
