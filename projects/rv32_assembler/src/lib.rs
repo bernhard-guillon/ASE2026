@@ -1,18 +1,20 @@
 //! RV32 Assembler Library - Phase D.1 Foundation
 //!
 //! Scope: RV32I + RV32F instruction encoding with directives and pseudo-instructions.
-//! Outputs raw 32-bit instruction words in little-endian order.
+//! Outputs ELF32 object files with relocation support.
 
 pub mod error;
 pub mod instruction;
 pub mod lexer;
 pub mod parser;
 pub mod encoder;
+pub mod elf_writer;
 
 pub use error::{AssemblerError, Result};
 pub use parser::Parser;
 pub use encoder::Encoder;
 pub use lexer::Token;
+pub use elf_writer::ElfWriter;
 
 /// Assemble a single line of RISC-V assembly.
 /// Returns the encoded 32-bit instruction as 4 bytes (little-endian).
@@ -27,8 +29,8 @@ pub fn assemble_instruction(line: &str) -> Result<Option<[u8; 4]>> {
     }
 }
 
-/// Assemble multiple lines of assembly code.
-/// Returns bytes in order, expanding pseudo-instructions and resolving labels.
+/// Assemble multiple lines of assembly code to ELF32 object file.
+/// Returns ELF binary with proper relocations for linker.
 pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
     // Parse all lines first
     let mut lines: Vec<&str> = Vec::new();
@@ -52,55 +54,48 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
         }
     }
     
-    // First pass: collect labels from ALL sections with their EXACT byte offsets
+    // Initialize ELF writer
+    let mut elf = ElfWriter::new();
+    elf.add_section(".text", 1, 0x6);  // SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR
+    elf.add_section(".data", 1, 0x3);  // SHT_PROGBITS, SHF_ALLOC | SHF_WRITE
+    elf.add_section(".rodata", 1, 0x2);  // SHT_PROGBITS, SHF_ALLOC
+    elf.add_section(".bss", 8, 0x3);   // SHT_NOBITS, SHF_ALLOC | SHF_WRITE
+
+    // First pass: collect labels and identify sections
     let mut label_map = std::collections::HashMap::new();
-    let mut section_sizes = std::collections::HashMap::new();
+    let mut section_offsets = std::collections::HashMap::new();
     let mut current_section = ".text".to_string();
     let mut section_byte_offset = 0;
-    
-    // Initialize section sizes
-    section_sizes.insert(".text".to_string(), 0);
+    let mut globl_symbols = std::collections::HashSet::new();
     
     for line in &lines {
         let tokens = match lexer::tokenize(line) {
             Ok(t) => t,
-            Err(_) => continue,  // Skip lines with parse errors on first pass
+            Err(_) => continue,
         };
         
         if tokens.is_empty() {
             continue;
         }
         
-        // Check for section directives
+        // Check for directives
         if let Some(Token::Directive(directive)) = tokens.first() {
             if directive.starts_with("section ") {
-                let section_name = directive.trim_start_matches("section ").to_string();
-                current_section = section_name.clone();
-                section_byte_offset = 0;  // Reset offset for new section
-                
-                // Initialize section size if not seen before
-                if !section_sizes.contains_key(&current_section) {
-                    section_sizes.insert(current_section.clone(), 0);
+                if !section_offsets.contains_key(&current_section) {
+                    section_offsets.insert(current_section.clone(), section_byte_offset);
                 }
+                current_section = directive.trim_start_matches("section ").to_string();
+                section_byte_offset = 0;
+            } else if directive.starts_with("globl ") {
+                let symbol_name = directive.trim_start_matches("globl ").to_string();
+                globl_symbols.insert(symbol_name);
             }
             continue;
         }
         
         // Check for labels
         if let Some(Token::Label(label_name)) = tokens.first() {
-            // Compute absolute offset: sum of all previous sections' sizes + current offset
-            let mut absolute_offset = 0;
-            // Use sorted section order for deterministic computation
-            let mut sections: Vec<_> = section_sizes.keys().collect();
-            sections.sort();
-            for section_name in sections {
-                if section_name == &current_section {
-                    absolute_offset += section_byte_offset;
-                    break;
-                }
-                absolute_offset += section_sizes[section_name];
-            }
-            label_map.insert(label_name.clone(), absolute_offset);
+            label_map.insert(label_name.clone(), (current_section.clone(), section_byte_offset));
             continue;
         }
         
@@ -110,38 +105,40 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
             _ => {}
         }
         
-        // Calculate EXACT size by simulating the assembly
+        // Calculate size
         let size = simulate_line_size(&tokens)?;
         section_byte_offset += size;
-        
-        // Update section size
-        if let Some(sect_size) = section_sizes.get_mut(&current_section) {
-            *sect_size = section_byte_offset;
-        }
     }
     
-    // Second pass: assemble .text section only with label resolution
-    let mut bytes = Vec::new();
+    if !section_offsets.contains_key(&current_section) {
+        section_offsets.insert(current_section.clone(), section_byte_offset);
+    }
+    
+    // Add symbols to ELF
+    for (label_name, (section_name, offset)) in &label_map {
+        let is_global = globl_symbols.contains(label_name);
+        elf.add_symbol(label_name, Some(section_name), *offset, is_global, 0)?;
+    }
+    
+    // Second pass: assemble sections and collect relocations
     let mut current_section = ".text".to_string();
+    let mut relocation_records: std::collections::HashMap<String, Vec<(usize, String, u8)>> = std::collections::HashMap::new();
     
     for line in &lines {
-        let tokens = lexer::tokenize(line)?;
+        let tokens = match lexer::tokenize(line) {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
         
         if tokens.is_empty() {
             continue;
         }
         
-        // Handle section directives
+        // Handle directives
         if let Some(Token::Directive(directive)) = tokens.first() {
             if directive.starts_with("section ") {
-                let section_name = directive.trim_start_matches("section ").to_string();
-                current_section = section_name;
+                current_section = directive.trim_start_matches("section ").to_string();
             }
-            continue;
-        }
-        
-        // Only assemble .text section
-        if current_section != ".text" {
             continue;
         }
         
@@ -151,14 +148,31 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
             _ => {}
         }
         
-        // Assemble line with label map available
-        let words = assemble_line_with_labels(line, &label_map, bytes.len())?;
+        // Assemble line
+        let (words, relocs) = assemble_line_with_relocations(line, &label_map, elf.get_section_size(&current_section))?;
+        
+        // Add words to section
         for word in words {
-            bytes.extend_from_slice(&word);
+            elf.append_to_section(&current_section, &word)?;
+        }
+        
+        // Collect relocations
+        for (offset, symbol_name, reloc_type) in relocs {
+            relocation_records.entry(current_section.clone()).or_insert_with(Vec::new).push((offset, symbol_name, reloc_type));
         }
     }
     
-    Ok(bytes)
+    // Add relocations to ELF
+    for (section_name, relocs) in relocation_records {
+        for (offset, symbol_name, reloc_type) in relocs {
+            if let Some(symbol_idx) = elf.get_symbol_index(&symbol_name) {
+                elf.add_relocation(&section_name, offset, symbol_idx, reloc_type)?;
+            }
+        }
+    }
+    
+    // Write ELF file
+    elf.write()
 }
 
 /// Simulate assembly of a line to determine its size without actually encoding
@@ -299,8 +313,11 @@ fn assemble_line_with_labels(
                 use instruction::Register;
                 if let Some(rd) = Register::from_name(rd_name) {
                     // Resolve label
-                    if let Some(&label_offset) = label_map.get(symbol) {
-                        let offset = label_offset as i64 - current_byte_offset as i64;
+                    if let Some(_label_offset) = label_map.get(symbol) {
+                        // For object file compatibility, emit 0 as a placeholder when the symbol is in a different section
+                        // The linker will fix up the actual offset using relocations
+                        // This matches GNU assembler behavior for object files (pre-linking)
+                        let offset = 0;
                         return expand_la_with_offset(rd, offset);
                     }
                     // If label not found, skip the instruction (return None like the parser does)
@@ -411,6 +428,161 @@ fn assemble_line_with_labels(
         Ok(vec![encoded])
     } else {
         Ok(Vec::new())
+    }
+}
+
+/// Assemble a line with relocation tracking
+/// Returns (instructions, relocations) where relocations are (offset, symbol_name, reloc_type)
+fn assemble_line_with_relocations(
+    line: &str,
+    label_map: &std::collections::HashMap<String, (String, usize)>,
+    current_byte_offset: usize,
+) -> Result<(Vec<[u8; 4]>, Vec<(usize, String, u8)>)> {
+    let tokens = lexer::tokenize(line)?;
+    let mut relocations = Vec::new();
+    
+    if tokens.is_empty() {
+        return Ok((Vec::new(), relocations));
+    }
+
+    // Check if this is a li pseudo-instruction
+    if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
+        if mnemonic == "li" && tokens.len() == 4 {
+            // li rd, imm - may expand to lui + addi
+            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Integer(imm)) =
+                (&tokens[1], &tokens[2], &tokens[3])
+            {
+                use instruction::Register;
+                if let Some(rd) = Register::from_name(rd_name) {
+                    let instructions = expand_li(rd, *imm)?;
+                    return Ok((instructions, relocations));
+                }
+            }
+        } else if mnemonic == "la" && tokens.len() == 4 {
+            // la rd, symbol - expands to auipc + addi with relocations
+            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(symbol)) =
+                (&tokens[1], &tokens[2], &tokens[3])
+            {
+                use instruction::Register;
+                if let Some(rd) = Register::from_name(rd_name) {
+                    // Emit with placeholder offsets (0)
+                    let instructions = expand_la_with_offset(rd, 0)?;
+                    
+                    // Record relocations for the linker
+                    // Relocation at offset current_byte_offset for auipc (HI20)
+                    relocations.push((current_byte_offset, symbol.clone(), elf_writer::R_RISCV_PCREL_HI20));
+                    relocations.push((current_byte_offset, "".to_string(), elf_writer::R_RISCV_RELAX));
+                    
+                    // Relocation at offset current_byte_offset + 4 for addi (LO12I)
+                    relocations.push((current_byte_offset + 4, symbol.clone(), elf_writer::R_RISCV_PCREL_LO12_I));
+                    relocations.push((current_byte_offset + 4, "".to_string(), elf_writer::R_RISCV_RELAX));
+                    
+                    return Ok((instructions, relocations));
+                }
+            }
+        } else if mnemonic == "j" && tokens.len() == 2 {
+            // j label - pseudo for jal x0, label
+            if let Token::Mnemonic(label_name) = &tokens[1] {
+                if let Some((_, label_offset)) = label_map.get(label_name) {
+                    let imm = *label_offset as i64 - current_byte_offset as i64;
+                    let instr = instruction::Instruction::JType {
+                        mnemonic: "jal".to_string(),
+                        rd: instruction::Register::X0,
+                        imm,
+                    };
+                    let encoded = Encoder::encode(&instr)?;
+                    return Ok((vec![encoded], relocations));
+                }
+            }
+        } else if mnemonic == "mv" && tokens.len() == 4 {
+            // mv rd, rs - pseudo for addi rd, rs, 0
+            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(rs_name)) =
+                (&tokens[1], &tokens[2], &tokens[3])
+            {
+                use instruction::Register;
+                if let (Some(rd), Some(rs)) = (Register::from_name(rd_name), Register::from_name(rs_name)) {
+                    let instr = instruction::Instruction::IType {
+                        mnemonic: "addi".to_string(),
+                        rd,
+                        rs1: rs,
+                        imm: 0,
+                    };
+                    let encoded = Encoder::encode(&instr)?;
+                    return Ok((vec![encoded], relocations));
+                }
+            }
+        } else if mnemonic == "ret" && tokens.len() == 1 {
+            // ret - pseudo for jalr x0, x1, 0
+            let instr = instruction::Instruction::IType {
+                mnemonic: "jalr".to_string(),
+                rd: instruction::Register::X0,
+                rs1: instruction::Register::X1,
+                imm: 0,
+            };
+            let encoded = Encoder::encode(&instr)?;
+            return Ok((vec![encoded], relocations));
+        }
+    }
+
+    // Handle branch instructions with labels
+    if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
+        if ["beq", "bne", "blt", "bltu", "bge", "bgeu"].contains(&mnemonic.as_str()) {
+            // These might have a label as the third operand
+            if tokens.len() >= 6 {
+                if let (Token::Mnemonic(rs1_name), Token::Comma, Token::Mnemonic(rs2_name), 
+                        Token::Comma, Token::Mnemonic(label_name)) =
+                    (&tokens[1], &tokens[2], &tokens[3], &tokens[4], &tokens[5])
+                {
+                    use instruction::Register;
+                    if let (Some(rs1), Some(rs2)) = (Register::from_name(rs1_name), Register::from_name(rs2_name)) {
+                        if let Some((_, label_offset)) = label_map.get(label_name) {
+                            let imm = *label_offset as i64 - current_byte_offset as i64;
+                            let instruction = instruction::Instruction::BType {
+                                mnemonic: mnemonic.clone(),
+                                rs1,
+                                rs2,
+                                imm,
+                            };
+                            let encoded = Encoder::encode(&instruction)?;
+                            return Ok((vec![encoded], relocations));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Handle jal instruction with labels
+    if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
+        if mnemonic == "jal" {
+            if tokens.len() == 4 {
+                if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(label_name)) =
+                    (&tokens[1], &tokens[2], &tokens[3])
+                {
+                    use instruction::Register;
+                    if let Some(rd) = Register::from_name(rd_name) {
+                        if let Some((_, label_offset)) = label_map.get(label_name) {
+                            let imm = *label_offset as i64 - current_byte_offset as i64;
+                            let instruction = instruction::Instruction::JType {
+                                mnemonic: mnemonic.clone(),
+                                rd,
+                                imm,
+                            };
+                            let encoded = Encoder::encode(&instruction)?;
+                            return Ok((vec![encoded], relocations));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Regular instruction
+    if let Some(instruction) = Parser::parse_instruction(&tokens)? {
+        let encoded = Encoder::encode(&instruction)?;
+        Ok((vec![encoded], relocations))
+    } else {
+        Ok((Vec::new(), relocations))
     }
 }
 
