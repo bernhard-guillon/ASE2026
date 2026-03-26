@@ -66,7 +66,7 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
     let mut section_offsets = std::collections::HashMap::new();
     let mut current_section = ".text".to_string();
     let mut section_byte_offset = 0;
-    let mut globl_symbols = std::collections::HashSet::new();
+    let mut globl_symbols: std::collections::HashSet<String> = std::collections::HashSet::new();
     
     for line in &lines {
         let tokens = match lexer::tokenize(line) {
@@ -78,17 +78,46 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
             continue;
         }
         
-        // Check for directives
+        // Handle directives
         if let Some(Token::Directive(directive)) = tokens.first() {
-            if directive.starts_with("section ") {
+            if directive == ".section" {
+                // .section takes an argument (next token should be a directive or mnemonic)
                 if !section_offsets.contains_key(&current_section) {
                     section_offsets.insert(current_section.clone(), section_byte_offset);
                 }
-                current_section = directive.trim_start_matches("section ").to_string();
+                if tokens.len() > 1 {
+                    if let Some(Token::Directive(section_name)) = tokens.get(1) {
+                        // Directive tokens already have the dot
+                        current_section = section_name.clone();
+                    } else if let Some(Token::Mnemonic(section_name)) = tokens.get(1) {
+                        // Handle case where section name is parsed as mnemonic
+                        current_section = format!(".{}", section_name);
+                    }
+                }
                 section_byte_offset = 0;
-            } else if directive.starts_with("globl ") {
-                let symbol_name = directive.trim_start_matches("globl ").to_string();
-                globl_symbols.insert(symbol_name);
+            } else if matches!(directive.as_str(), ".text" | ".data" | ".rodata" | ".bss") {
+                // Bare section directives (e.g., `.data` instead of `.section .data`)
+                if !section_offsets.contains_key(&current_section) {
+                    section_offsets.insert(current_section.clone(), section_byte_offset);
+                }
+                current_section = directive.clone();
+                section_byte_offset = 0;
+            } else if directive == ".globl" {
+                // .globl takes an argument (next token should be a mnemonic)
+                if tokens.len() > 1 {
+                    if let Some(Token::Mnemonic(symbol_name)) = tokens.get(1) {
+                        globl_symbols.insert(symbol_name.clone());
+                    }
+                }
+            } else if directive == ".string" {
+                // Handle .string directive - grab the following string token
+                if tokens.len() > 1 {
+                    if let Some(Token::String(content)) = tokens.get(1) {
+                        // .string is null-terminated
+                        let size = content.len() + 1;
+                        section_byte_offset += size;
+                    }
+                }
             }
             continue;
         }
@@ -99,13 +128,7 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
             continue;
         }
         
-        // Skip non-instructions
-        match tokens.first() {
-            Some(Token::String(_)) => continue,
-            _ => {}
-        }
-        
-        // Calculate size
+        // Calculate size for actual instructions
         let size = simulate_line_size(&tokens)?;
         section_byte_offset += size;
     }
@@ -136,15 +159,36 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
         
         // Handle directives
         if let Some(Token::Directive(directive)) = tokens.first() {
-            if directive.starts_with("section ") {
-                current_section = directive.trim_start_matches("section ").to_string();
+            if directive == ".section" {
+                // .section takes an argument (next token should be a directive or mnemonic)
+                if tokens.len() > 1 {
+                    if let Some(Token::Directive(section_name)) = tokens.get(1) {
+                        // Directive tokens already have the dot
+                        current_section = section_name.clone();
+                    } else if let Some(Token::Mnemonic(section_name)) = tokens.get(1) {
+                        // Handle case where section name is parsed as mnemonic
+                        current_section = format!(".{}", section_name);
+                    }
+                }
+            } else if matches!(directive.as_str(), ".text" | ".data" | ".rodata" | ".bss") {
+                // Bare section directives (e.g., `.data` instead of `.section .data`)
+                current_section = directive.clone();
+            } else if directive == ".string" {
+                // Handle .string directive - grab the following string token
+                if tokens.len() > 1 {
+                    if let Some(Token::String(content)) = tokens.get(1) {
+                        let mut string_bytes = content.as_bytes().to_vec();
+                        string_bytes.push(0); // null terminator
+                        elf.append_to_section(&current_section, &string_bytes)?;
+                    }
+                }
             }
             continue;
         }
         
-        // Skip labels and other directives
+        // Skip labels
         match tokens.first() {
-            Some(Token::Label(_)) | Some(Token::String(_)) => continue,
+            Some(Token::Label(_)) => continue,
             _ => {}
         }
         
