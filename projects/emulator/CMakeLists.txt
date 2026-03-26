@@ -255,6 +255,20 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_elf_loader_blackbox.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+
+    # Neural ops oracle semantics tests (Phase A foundation)
+    add_test(
+        NAME python/neural_ops/oracle
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_neural_ops_oracle.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    # Drop-in assembler parity scaffold (opt-in via EMULATOR_NEW_ASSEMBLER)
+    add_test(
+        NAME python/assembler/dropin_parity_scaffold
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_assembler_dropin_parity_scaffold.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
     
 else()
     message(WARNING "Python3 not found - Python tests will be skipped")
