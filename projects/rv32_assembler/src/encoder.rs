@@ -303,13 +303,16 @@ impl Encoder {
     }
 
     fn encode_f_cvt_type(mnemonic: &str, rd: u32, rs1: u32) -> Result<u32> {
-        if mnemonic != "fcvt.w.s" {
-            return Err(AssemblerError::UnknownInstruction(mnemonic.to_string()));
-        }
+        let rs2 = match mnemonic {
+            // fcvt.w.s: funct7=1100000, rs2=00000 (signed int result)
+            "fcvt.w.s" => 0b00000,
+            // fcvt.wu.s: funct7=1100000, rs2=00001 (unsigned int result)
+            "fcvt.wu.s" => 0b00001,
+            _ => return Err(AssemblerError::UnknownInstruction(mnemonic.to_string())),
+        };
 
-        // fcvt.w.s: funct7=1100000, rs2=00000
         Ok(Self::encode_instruction(
-            OPCODE_FP, rd, 0b111, rs1, 0b00000, 0b1100000, 0,
+            OPCODE_FP, rd, 0b111, rs1, rs2, 0b1100000, 0,
         ))
     }
 
@@ -385,7 +388,7 @@ impl Encoder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instruction::{Instruction, Register};
+    use crate::instruction::{FloatRegister, Instruction, Register};
 
     #[test]
     fn test_encode_addi() {
@@ -435,5 +438,19 @@ mod tests {
         assert!(Encoder::check_imm_range(-2048, 12).is_ok());
         assert!(Encoder::check_imm_range(2048, 12).is_err());
         assert!(Encoder::check_imm_range(-2049, 12).is_err());
+    }
+
+    #[test]
+    fn test_encode_fcvt_wu_s() {
+        let instr = Instruction::FCvtType {
+            mnemonic: "fcvt.wu.s".to_string(),
+            rd: Register::X30,   // t5
+            rs1: FloatRegister::F10, // fa0
+        };
+
+        let bytes = Encoder::encode(&instr).unwrap();
+        let word = u32::from_le_bytes(bytes);
+        assert_eq!(word & 0x7f, 0b1010011);
+        assert_eq!((word >> 20) & 0x1f, 1); // rs2=1 for unsigned conversion
     }
 }

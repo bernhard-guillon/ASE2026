@@ -90,7 +90,7 @@ impl Parser {
             // RV32F FCVT (int to float)
             "fcvt.s.w" => Self::parse_f_cvt_rev_type(mnemonic, tokens).map(Some),
             // RV32F FCVT (float to int)
-            "fcvt.w.s" => Self::parse_f_cvt_type(mnemonic, tokens).map(Some),
+            "fcvt.w.s" | "fcvt.wu.s" => Self::parse_f_cvt_type(mnemonic, tokens).map(Some),
             // RV32F FMV (float to int reg)
             "fmv.x.w" => Self::parse_f_move_type(mnemonic, tokens).map(Some),
             // RV32F FMV (int to float reg)
@@ -689,6 +689,21 @@ mod tests {
                 assert_eq!(rs1, FloatRegister::F15);
             }
             _ => panic!("expected FMoveType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_fcvt_wu_s() {
+        let tokens = crate::lexer::tokenize("fcvt.wu.s t5, fa0").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::FCvtType { mnemonic, rd, rs1 }) => {
+                assert_eq!(mnemonic, "fcvt.wu.s");
+                assert_eq!(rd, Register::X30);
+                assert_eq!(rs1, FloatRegister::F10);
+            }
+            _ => panic!("expected FCvtType"),
         }
     }
 }

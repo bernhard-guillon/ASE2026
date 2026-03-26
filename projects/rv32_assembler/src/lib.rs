@@ -10,6 +10,8 @@ pub mod parser;
 pub mod encoder;
 pub mod elf_writer;
 
+use std::path::{Path, PathBuf};
+
 pub use error::{AssemblerError, Result};
 pub use parser::Parser;
 pub use encoder::Encoder;
@@ -115,9 +117,26 @@ fn normalize_symbol_token(token: &Token) -> Option<String> {
     }
 }
 
+fn resolve_incbin_path(path: &str, source_base: Option<&Path>) -> PathBuf {
+    let p = Path::new(path);
+    if p.is_absolute() {
+        p.to_path_buf()
+    } else if let Some(base) = source_base {
+        base.join(p)
+    } else {
+        p.to_path_buf()
+    }
+}
+
 /// Assemble multiple lines of assembly code to ELF32 object file.
 /// Returns ELF binary with proper relocations for linker.
 pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
+    assemble_program_with_base(text, None)
+}
+
+/// Assemble multiple lines of assembly code to ELF32 object file.
+/// `source_base` is used to resolve relative paths in directives such as `.incbin`.
+pub fn assemble_program_with_base(text: &str, source_base: Option<&Path>) -> Result<Vec<u8>> {
     // Parse all lines first
     let mut lines: Vec<&str> = Vec::new();
     for line in text.lines() {
@@ -230,6 +249,27 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
                     *section_sizes.entry(current_section.clone()).or_insert(0) +=
                         alignment_padding(current_size, align);
                 }
+            } else if is_directive_name_token(first, "org") {
+                if let Some(Token::Integer(target)) = tokens.get(1) {
+                    let target = if *target < 0 { 0usize } else { *target as usize };
+                    let current_size = *section_sizes.get(&current_section).unwrap_or(&0);
+                    if target > current_size {
+                        *section_sizes.entry(current_section.clone()).or_insert(0) +=
+                            target - current_size;
+                    }
+                }
+            } else if is_directive_name_token(first, "incbin") {
+                if let Some(Token::String(path)) = tokens.get(1) {
+                    let full_path = resolve_incbin_path(path, source_base);
+                    let len = std::fs::metadata(&full_path)
+                        .map_err(|e| AssemblerError::ParserError(format!(
+                            ".incbin failed for {}: {}",
+                            full_path.display(),
+                            e
+                        )))?
+                        .len() as usize;
+                    *section_sizes.entry(current_section.clone()).or_insert(0) += len;
+                }
             }
             continue;
             }
@@ -256,6 +296,8 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
     // Second pass: assemble sections and collect relocations
     let mut current_section = ".text".to_string();
     let mut relocation_records: std::collections::HashMap<String, Vec<(usize, String, u8)>> = std::collections::HashMap::new();
+    let mut synthetic_symbols: Vec<(String, String, usize)> = Vec::new();
+    let mut pcrel_anchor_counter: usize = 0;
     
     for line in &lines {
         let tokens = match lexer::tokenize(line) {
@@ -340,6 +382,27 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
                         elf.append_to_section(&current_section, &zeros)?;
                     }
                 }
+            } else if is_directive_name_token(first, "org") {
+                if let Some(Token::Integer(target)) = tokens.get(1) {
+                    let target = if *target < 0 { 0usize } else { *target as usize };
+                    let current_size = elf.get_section_size(&current_section);
+                    if target > current_size {
+                        let zeros = vec![0u8; target - current_size];
+                        elf.append_to_section(&current_section, &zeros)?;
+                    }
+                }
+            } else if is_directive_name_token(first, "incbin") {
+                if let Some(Token::String(path)) = tokens.get(1) {
+                    let full_path = resolve_incbin_path(path, source_base);
+                    let bytes = std::fs::read(&full_path).map_err(|e| {
+                        AssemblerError::ParserError(format!(
+                            ".incbin failed for {}: {}",
+                            full_path.display(),
+                            e
+                        ))
+                    })?;
+                    elf.append_to_section(&current_section, &bytes)?;
+                }
             }
             continue;
             }
@@ -352,7 +415,14 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
         }
         
         // Assemble line
-        let (words, relocs) = assemble_line_with_relocations(line, &label_map, elf.get_section_size(&current_section))?;
+        let (words, relocs) = assemble_line_with_relocations(
+            line,
+            &label_map,
+            &current_section,
+            elf.get_section_size(&current_section),
+            &mut synthetic_symbols,
+            &mut pcrel_anchor_counter,
+        )?;
         
         // Add words to section
         for word in words {
@@ -365,6 +435,11 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
         }
     }
     
+    // Add synthetic local symbols used to anchor PC-relative LO12 relocations.
+    for (name, section_name, offset) in synthetic_symbols {
+        elf.add_symbol(&name, Some(&section_name), offset, false, 0)?;
+    }
+
     // Add relocations to ELF
     for (section_name, relocs) in relocation_records {
         for (offset, symbol_name, reloc_type) in relocs {
@@ -403,6 +478,9 @@ fn simulate_line_size(tokens: &[Token]) -> Result<usize> {
             return Ok(8);  // Conservative
         } else if mnemonic == "la" && tokens.len() == 4 {
             // la always expands to 8 bytes (auipc + addi)
+            return Ok(8);
+        } else if mnemonic == "call" && tokens.len() == 2 {
+            // call target expands to two instructions (auipc + jalr)
             return Ok(8);
         } else if ["beq", "bne", "blt", "bltu", "bge", "bgeu", "jal"].contains(&mnemonic.as_str()) {
             return Ok(4);  // Branch/jump with label resolution
@@ -563,8 +641,8 @@ fn assemble_line_with_labels(
             }
         } else if mnemonic == "j" && tokens.len() == 2 {
             // j label - pseudo for jal x0, label
-            if let Token::Mnemonic(label_name) = &tokens[1] {
-                if let Some(&label_offset) = label_map.get(label_name) {
+            if let Some(label_name) = tokens.get(1).and_then(normalize_symbol_token) {
+                if let Some(&label_offset) = label_map.get(&label_name) {
                     let imm = label_offset as i64 - current_byte_offset as i64;
                     let instr = instruction::Instruction::JType {
                         mnemonic: "jal".to_string(),
@@ -666,7 +744,10 @@ fn assemble_line_with_labels(
 fn assemble_line_with_relocations(
     line: &str,
     label_map: &std::collections::HashMap<String, (String, usize)>,
+    current_section: &str,
     current_byte_offset: usize,
+    synthetic_symbols: &mut Vec<(String, String, usize)>,
+    pcrel_anchor_counter: &mut usize,
 ) -> Result<(Vec<[u8; 4]>, Vec<(usize, String, u8)>)> {
     let tokens = lexer::tokenize(line)?;
     let mut relocations = Vec::new();
@@ -687,8 +768,8 @@ fn assemble_line_with_relocations(
             }
         } else if mnemonic == "j" && tokens.len() == 2 {
             // j label - pseudo for jal x0, label
-            if let Token::Mnemonic(label_name) = &tokens[1] {
-                if let Some((_, label_offset)) = label_map.get(label_name) {
+            if let Some(label_name) = tokens.get(1).and_then(normalize_symbol_token) {
+                if let Some((_, label_offset)) = label_map.get(&label_name) {
                     let imm = *label_offset as i64 - current_byte_offset as i64;
                     let instr = instruction::Instruction::JType {
                         mnemonic: "jal".to_string(),
@@ -698,6 +779,20 @@ fn assemble_line_with_relocations(
                     let encoded = Encoder::encode(&instr)?;
                     return Ok((vec![encoded], relocations));
                 }
+            }
+        } else if mnemonic == "call" && tokens.len() == 2 {
+            // call symbol - pseudo for jal ra, symbol
+            if let Some(symbol) = tokens.get(1).and_then(normalize_symbol_token) {
+                if let Some((_, label_offset)) = label_map.get(&symbol) {
+                    let imm = *label_offset as i64 - current_byte_offset as i64;
+                    let instructions = expand_call_with_offset(imm)?;
+                    return Ok((instructions, relocations));
+                }
+
+                let instructions = expand_call_with_offset(0)?;
+                relocations.push((current_byte_offset, symbol.clone(), elf_writer::R_RISCV_CALL_PLT));
+                relocations.push((current_byte_offset, "".to_string(), elf_writer::R_RISCV_RELAX));
+                return Ok((instructions, relocations));
             }
         } else if mnemonic == "mv" && tokens.len() == 4 {
             // mv rd, rs - pseudo for addi rd, rs, 0
@@ -728,19 +823,35 @@ fn assemble_line_with_relocations(
             if let Token::Comma = &tokens[2] {
                 if let Some(rd) = token_to_register(&tokens[1]) {
                     if let Some(symbol) = tokens.get(3).and_then(normalize_symbol_token) {
-                    // Emit with placeholder offsets (0)
-                    let instructions = expand_la_with_offset(rd, 0)?;
-                    
-                    // Record relocations for the linker
-                    // Relocation at offset current_byte_offset for auipc (HI20)
-                    relocations.push((current_byte_offset, symbol.clone(), elf_writer::R_RISCV_PCREL_HI20));
-                    relocations.push((current_byte_offset, "".to_string(), elf_writer::R_RISCV_RELAX));
-                    
-                    // Relocation at offset current_byte_offset + 4 for addi (LO12I)
-                    relocations.push((current_byte_offset + 4, symbol.clone(), elf_writer::R_RISCV_PCREL_LO12_I));
-                    relocations.push((current_byte_offset + 4, "".to_string(), elf_writer::R_RISCV_RELAX));
-                    
-                    return Ok((instructions, relocations));
+                        // Emit with placeholder offsets (0)
+                        let instructions = expand_la_with_offset(rd, 0)?;
+
+                        // GNU-style %pcrel_lo references an anchor symbol at the matching AUIPC.
+                        let anchor = format!("__pcrel_{}", *pcrel_anchor_counter);
+                        *pcrel_anchor_counter += 1;
+                        synthetic_symbols.push((
+                            anchor.clone(),
+                            current_section.to_string(),
+                            current_byte_offset,
+                        ));
+
+                        // Relocation at offset current_byte_offset for auipc (HI20)
+                        relocations.push((
+                            current_byte_offset,
+                            symbol.clone(),
+                            elf_writer::R_RISCV_PCREL_HI20,
+                        ));
+                        relocations.push((current_byte_offset, "".to_string(), elf_writer::R_RISCV_RELAX));
+
+                        // Relocation at offset current_byte_offset + 4 for addi (LO12I), tied to anchor.
+                        relocations.push((
+                            current_byte_offset + 4,
+                            anchor,
+                            elf_writer::R_RISCV_PCREL_LO12_I,
+                        ));
+                        relocations.push((current_byte_offset + 4, "".to_string(), elf_writer::R_RISCV_RELAX));
+
+                        return Ok((instructions, relocations));
                     }
                 }
             }
@@ -904,6 +1015,38 @@ fn expand_la_with_offset(rd: instruction::Register, offset: i64) -> Result<Vec<[
     };
     result.push(Encoder::encode(&addi_instr)?);
     
+    Ok(result)
+}
+
+fn expand_call_with_offset(offset: i64) -> Result<Vec<[u8; 4]>> {
+    use instruction::Instruction;
+
+    let mut result = Vec::new();
+
+    // call symbol -> auipc ra, %pcrel_hi(symbol) ; jalr ra, ra, %pcrel_lo(symbol)
+    let upper = ((offset + 0x800) >> 12) & 0xFFFFF;
+    let lower = offset & 0xFFF;
+    let lower_signed = if lower >= 0x800 {
+        lower as i64 - 4096
+    } else {
+        lower as i64
+    };
+
+    let auipc_instr = Instruction::UType {
+        mnemonic: "auipc".to_string(),
+        rd: instruction::Register::X1, // ra
+        imm: upper as i64,
+    };
+    result.push(Encoder::encode(&auipc_instr)?);
+
+    let jalr_instr = Instruction::IType {
+        mnemonic: "jalr".to_string(),
+        rd: instruction::Register::X1,  // ra
+        rs1: instruction::Register::X1, // ra
+        imm: lower_signed,
+    };
+    result.push(Encoder::encode(&jalr_instr)?);
+
     Ok(result)
 }
 

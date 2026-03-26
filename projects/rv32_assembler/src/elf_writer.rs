@@ -43,6 +43,7 @@ const STV_DEFAULT: u8 = 0;
 
 // RISC-V relocation types - exported for use in assembler
 pub const R_RISCV_JAL: u8 = 17;
+pub const R_RISCV_CALL_PLT: u8 = 19;
 pub const R_RISCV_PCREL_HI20: u8 = 23;
 pub const R_RISCV_PCREL_LO12_I: u8 = 24;
 pub const R_RISCV_RELAX: u8 = 51;
