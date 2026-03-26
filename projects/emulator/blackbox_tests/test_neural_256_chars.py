@@ -52,8 +52,18 @@ class NeuralCharTest:
     def _rv32as_path(self) -> Path:
         override = os.environ.get("EMULATOR_NEW_ASSEMBLER")
         if override:
-            return Path(override)
+            path = Path(override)
+            if not path.exists():
+                raise RuntimeError(f"EMULATOR_NEW_ASSEMBLER points to missing path: {path}")
+            return path
         return self.emulator_dir / "build" / "rv32as"
+
+    def _resolve_assembler(self):
+        """Resolve rv32as path and fail fast when unavailable."""
+        rv32as = self._rv32as_path()
+        if not rv32as.exists():
+            raise RuntimeError(f"rv32as assembler not found: {rv32as}")
+        return str(rv32as)
 
     def build_neural_elf(self):
         """Build neural ELF from model JSON for this test run."""
@@ -64,10 +74,8 @@ class NeuralCharTest:
         if not self.linker_script.exists():
             raise FileNotFoundError(f"Linker script not found: {self.linker_script}")
 
-        assembler = self._rv32as_path()
+        assembler = self._resolve_assembler()
         linker = self._find_tool("riscv64-elf-ld", "riscv64-unknown-elf-ld")
-        if not assembler.exists():
-            raise RuntimeError(f"rv32as not found at {assembler}")
         if not linker:
             raise RuntimeError("RISC-V linker not found (riscv64-elf-ld/riscv64-unknown-elf-ld)")
 
@@ -85,7 +93,7 @@ class NeuralCharTest:
             str(self.model_json)
         ]
         assemble_cmd = [
-            str(assembler), str(asm_path), "-march", "rv32if", "-mabi", "ilp32f",
+            assembler, str(asm_path), "-march", "rv32if", "-mabi", "ilp32f",
             "-o", str(obj_path)
         ]
         link_cmd = [
