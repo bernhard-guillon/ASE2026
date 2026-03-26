@@ -327,6 +327,7 @@ if(PYTHON_EXECUTABLE)
     )
     set_tests_properties(python/assembler/neural_instr_encoding PROPERTIES
         LABELS "assembler;neural;blackbox"
+        ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE}"
     )
     
 else()
@@ -462,7 +463,8 @@ add_test(
 )
 set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
     LABELS "neural;validation;blackbox"
-    TIMEOUT 300
+    TIMEOUT 600
+    ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE};EMULATOR_BACKEND=cpp"
 )
 
 add_test(
