@@ -459,17 +459,21 @@ if(RISCV_TOOLCHAIN_FOUND)
     add_blackbox_all_target()
 endif()
 
-# Neural Character Generation Validation Test
-add_test(
-    NAME python/neural_char_gen/validation_256
-    COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_neural_256_chars.py
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
-set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
-    LABELS "neural;validation;blackbox"
-    TIMEOUT 600
-    ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE};EMULATOR_BACKEND=cpp"
-)
+# Neural Character Generation Validation Test (requires Python + rv32as)
+if(PYTHON_EXECUTABLE AND RV32AS_EXECUTABLE)
+    add_test(
+        NAME python/neural_char_gen/validation_256
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_neural_256_chars.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
+        LABELS "neural;validation;blackbox"
+        TIMEOUT 600
+        ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE};EMULATOR_BACKEND=cpp"
+    )
+elseif(NOT RV32AS_EXECUTABLE)
+    message(WARNING "rv32as not available - python/neural_char_gen/validation_256 test disabled")
+endif()
 
 # Ensure rv32as binary exists before tests that depend on it.
 if(RV32AS_EXECUTABLE)
@@ -487,9 +491,11 @@ if(RV32AS_EXECUTABLE)
             FIXTURES_REQUIRED rv32as_ready
         )
     endif()
-    set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
-        FIXTURES_REQUIRED rv32as_ready
-    )
+    if(TEST python/neural_char_gen/validation_256)
+        set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
+            FIXTURES_REQUIRED rv32as_ready
+        )
+    endif()
 endif()
 
 add_test(
