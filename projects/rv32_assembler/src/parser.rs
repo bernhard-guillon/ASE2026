@@ -1,0 +1,547 @@
+//! Parser: convert tokens to instruction representation
+
+use crate::error::{AssemblerError, Result};
+use crate::instruction::{FloatRegister, Instruction, Register};
+use crate::lexer::Token;
+
+pub struct Parser;
+
+impl Parser {
+    pub fn parse_instruction(tokens: &[Token]) -> Result<Instruction> {
+        if tokens.is_empty() {
+            return Err(AssemblerError::ParserError(
+                "empty instruction".to_string(),
+            ));
+        }
+
+        let mnemonic = match &tokens[0] {
+            Token::Mnemonic(m) => m.clone(),
+            _ => {
+                return Err(AssemblerError::ParserError(
+                    "expected mnemonic".to_string(),
+                ))
+            }
+        };
+
+        match mnemonic.as_str() {
+            // RV32I R-type instructions
+            "add" | "sub" | "and" | "or" | "xor" | "sll" | "srl" | "sra" => {
+                Self::parse_r_type(mnemonic, tokens)
+            }
+            // RV32I I-type instructions
+            "addi" | "andi" | "ori" | "xori" | "slli" | "srli" | "srai" | "lw" | "lh"
+            | "lb" | "lwu" | "lhu" | "jalr" => Self::parse_i_type(mnemonic, tokens),
+            // RV32I S-type instructions
+            "sw" | "sh" | "sb" => Self::parse_s_type(mnemonic, tokens),
+            // RV32I B-type instructions
+            "beq" | "bne" | "blt" | "bltu" | "bge" | "bgeu" => {
+                Self::parse_b_type(mnemonic, tokens)
+            }
+            // RV32I U-type instructions
+            "lui" | "auipc" => Self::parse_u_type(mnemonic, tokens),
+            // RV32I J-type instructions
+            "jal" => Self::parse_j_type(mnemonic, tokens),
+            // RV32F FR-type instructions
+            "fadd.s" | "fsub.s" | "fmul.s" | "fdiv.s" => {
+                Self::parse_f_r_type(mnemonic, tokens)
+            }
+            // RV32F FI-type (load)
+            "flw" => Self::parse_f_i_type(mnemonic, tokens),
+            // RV32F FS-type (store)
+            "fsw" => Self::parse_f_s_type(mnemonic, tokens),
+            // RV32F FC-type (compare)
+            "feq.s" | "flt.s" | "fle.s" => Self::parse_f_c_type(mnemonic, tokens),
+            // RV32F FCVT (int to float)
+            "fcvt.s.w" => Self::parse_f_cvt_rev_type(mnemonic, tokens),
+            // RV32F FCVT (float to int)
+            "fcvt.w.s" => Self::parse_f_cvt_type(mnemonic, tokens),
+            // RV32F FMV (float to int reg)
+            "fmv.x.w" => Self::parse_f_move_type(mnemonic, tokens),
+            // RV32F FMV (int to float reg)
+            "fmv.w.x" => Self::parse_f_move_rev_type(mnemonic, tokens),
+            _ => Err(AssemblerError::UnknownInstruction(mnemonic)),
+        }
+    }
+
+    fn parse_r_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        if tokens.len() != 6 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                3,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs1 = Self::expect_register(&tokens[3])?;
+        Self::expect_comma(&tokens[4])?;
+        let rs2 = Self::expect_register(&tokens[5])?;
+
+        Ok(Instruction::RType {
+            mnemonic,
+            rd,
+            rs1,
+            rs2,
+        })
+    }
+
+    fn parse_i_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        // Special handling for load instructions with offset
+        if mnemonic == "lw" || mnemonic == "lh" || mnemonic == "lb" || mnemonic == "lwu" || mnemonic == "lhu" {
+            // Format: lw rd, offset(rs1)
+            // Tokens: [Mnemonic, Register, Comma, Integer, LeftParen, Register, RightParen]
+            if tokens.len() != 7 {
+                return Err(AssemblerError::WrongOperandCount(
+                    mnemonic.clone(),
+                    2,
+                    tokens.len() - 1,
+                ));
+            }
+
+            let rd = Self::expect_register(&tokens[1])?;
+            Self::expect_comma(&tokens[2])?;
+            let imm = Self::expect_integer(&tokens[3])?;
+            Self::expect_lparen(&tokens[4])?;
+            let rs1 = Self::expect_register(&tokens[5])?;
+            Self::expect_rparen(&tokens[6])?;
+
+            return Ok(Instruction::IType {
+                mnemonic,
+                rd,
+                rs1,
+                imm,
+            });
+        }
+
+        // For regular I-type (e.g., addi x1, x0, 42)
+        // Tokens: [Mnemonic, Register, Comma, Register, Comma, Integer]
+        if tokens.len() != 6 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                3,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs1 = Self::expect_register(&tokens[3])?;
+        Self::expect_comma(&tokens[4])?;
+        let imm = Self::expect_integer(&tokens[5])?;
+
+        Ok(Instruction::IType {
+            mnemonic,
+            rd,
+            rs1,
+            imm,
+        })
+    }
+
+    fn parse_s_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        // Format: sw rs2, offset(rs1)
+        // Tokens: [Mnemonic, Register, Comma, Integer, LeftParen, Register, RightParen]
+        if tokens.len() != 7 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                2,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rs2 = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let imm = Self::expect_integer(&tokens[3])?;
+        Self::expect_lparen(&tokens[4])?;
+        let rs1 = Self::expect_register(&tokens[5])?;
+        Self::expect_rparen(&tokens[6])?;
+
+        Ok(Instruction::SType {
+            mnemonic,
+            rs1,
+            rs2,
+            imm,
+        })
+    }
+
+    fn parse_b_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        // Format: beq rs1, rs2, imm
+        // Tokens: [Mnemonic, Register, Comma, Register, Comma, Integer]
+        if tokens.len() != 6 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                3,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rs1 = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs2 = Self::expect_register(&tokens[3])?;
+        Self::expect_comma(&tokens[4])?;
+        let imm = Self::expect_integer(&tokens[5])?;
+
+        Ok(Instruction::BType {
+            mnemonic,
+            rs1,
+            rs2,
+            imm,
+        })
+    }
+
+    fn parse_u_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        // Format: lui rd, imm
+        // Tokens: [Mnemonic, Register, Comma, Integer]
+        if tokens.len() != 4 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                2,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let imm = Self::expect_integer(&tokens[3])?;
+
+        Ok(Instruction::UType {
+            mnemonic,
+            rd,
+            imm,
+        })
+    }
+
+    fn parse_j_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        // Format: jal rd, imm
+        // Tokens: [Mnemonic, Register, Comma, Integer]
+        if tokens.len() != 4 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                2,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let imm = Self::expect_integer(&tokens[3])?;
+
+        Ok(Instruction::JType {
+            mnemonic,
+            rd,
+            imm,
+        })
+    }
+
+    fn parse_f_r_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        if tokens.len() != 6 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                3,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_float_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs1 = Self::expect_float_register(&tokens[3])?;
+        Self::expect_comma(&tokens[4])?;
+        let rs2 = Self::expect_float_register(&tokens[5])?;
+
+        Ok(Instruction::FRType {
+            mnemonic,
+            rd,
+            rs1,
+            rs2,
+        })
+    }
+
+    fn parse_f_i_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        if tokens.len() != 6 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                2,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_float_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let imm = Self::expect_integer(&tokens[3])?;
+        Self::expect_lparen(&tokens[4])?;
+        let rs1 = Self::expect_register(&tokens[5])?;
+        Self::expect_rparen(&tokens[6])?;
+
+        Ok(Instruction::FIType {
+            mnemonic,
+            rd,
+            rs1,
+            imm,
+        })
+    }
+
+    fn parse_f_s_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        if tokens.len() != 6 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                2,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rs2 = Self::expect_float_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let imm = Self::expect_integer(&tokens[3])?;
+        Self::expect_lparen(&tokens[4])?;
+        let rs1 = Self::expect_register(&tokens[5])?;
+        Self::expect_rparen(&tokens[6])?;
+
+        Ok(Instruction::FSType {
+            mnemonic,
+            rs1,
+            rs2,
+            imm,
+        })
+    }
+
+    fn parse_f_c_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        if tokens.len() != 5 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                3,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs1 = Self::expect_float_register(&tokens[3])?;
+        Self::expect_comma(&tokens[4])?;
+        let rs2 = Self::expect_float_register(&tokens[5])?;
+
+        Ok(Instruction::FCType {
+            mnemonic,
+            rd,
+            rs1,
+            rs2,
+        })
+    }
+
+    fn parse_f_cvt_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        if tokens.len() != 4 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                2,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs1 = Self::expect_float_register(&tokens[3])?;
+
+        Ok(Instruction::FCvtType {
+            mnemonic,
+            rd,
+            rs1,
+        })
+    }
+
+    fn parse_f_cvt_rev_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        if tokens.len() != 4 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                2,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_float_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs1 = Self::expect_register(&tokens[3])?;
+
+        Ok(Instruction::FCvtRevType {
+            mnemonic,
+            rd,
+            rs1,
+        })
+    }
+
+    fn parse_f_move_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        if tokens.len() != 4 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                2,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs1 = Self::expect_float_register(&tokens[3])?;
+
+        Ok(Instruction::FMoveType {
+            mnemonic,
+            rd,
+            rs1,
+        })
+    }
+
+    fn parse_f_move_rev_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
+        if tokens.len() != 4 {
+            return Err(AssemblerError::WrongOperandCount(
+                mnemonic.clone(),
+                2,
+                tokens.len() - 1,
+            ));
+        }
+
+        let rd = Self::expect_float_register(&tokens[1])?;
+        Self::expect_comma(&tokens[2])?;
+        let rs1 = Self::expect_register(&tokens[3])?;
+
+        Ok(Instruction::FMoveRevType {
+            mnemonic,
+            rd,
+            rs1,
+        })
+    }
+
+    // Helper methods
+    fn expect_register(token: &Token) -> Result<Register> {
+        match token {
+            Token::Register(name) => {
+                Register::from_name(name).ok_or_else(|| {
+                    AssemblerError::InvalidRegister(name.clone())
+                })
+            }
+            _ => Err(AssemblerError::InvalidOperand(format!(
+                "expected register, got {}",
+                token
+            ))),
+        }
+    }
+
+    fn expect_float_register(token: &Token) -> Result<FloatRegister> {
+        match token {
+            Token::FloatRegister(name) => {
+                FloatRegister::from_name(name).ok_or_else(|| {
+                    AssemblerError::InvalidRegister(name.clone())
+                })
+            }
+            _ => Err(AssemblerError::InvalidOperand(format!(
+                "expected float register, got {}",
+                token
+            ))),
+        }
+    }
+
+    fn expect_integer(token: &Token) -> Result<i64> {
+        match token {
+            Token::Integer(i) => Ok(*i),
+            _ => Err(AssemblerError::InvalidOperand(format!(
+                "expected integer, got {}",
+                token
+            ))),
+        }
+    }
+
+    fn expect_comma(token: &Token) -> Result<()> {
+        match token {
+            Token::Comma => Ok(()),
+            _ => Err(AssemblerError::InvalidOperand(format!(
+                "expected comma, got {}",
+                token
+            ))),
+        }
+    }
+
+    fn expect_lparen(token: &Token) -> Result<()> {
+        match token {
+            Token::LeftParen => Ok(()),
+            _ => Err(AssemblerError::InvalidOperand(format!(
+                "expected '(', got {}",
+                token
+            ))),
+        }
+    }
+
+    fn expect_rparen(token: &Token) -> Result<()> {
+        match token {
+            Token::RightParen => Ok(()),
+            _ => Err(AssemblerError::InvalidOperand(format!(
+                "expected ')', got {}",
+                token
+            ))),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_add() {
+        let tokens = crate::lexer::tokenize("add x1, x2, x3").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Instruction::RType { mnemonic, rd, rs1, rs2 } => {
+                assert_eq!(mnemonic, "add");
+                assert_eq!(rd, Register::X1);
+                assert_eq!(rs1, Register::X2);
+                assert_eq!(rs2, Register::X3);
+            }
+            _ => panic!("expected RType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_addi() {
+        let tokens = crate::lexer::tokenize("addi x1, x0, 42").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Instruction::IType { mnemonic, rd, rs1, imm } => {
+                assert_eq!(mnemonic, "addi");
+                assert_eq!(rd, Register::X1);
+                assert_eq!(rs1, Register::X0);
+                assert_eq!(imm, 42);
+            }
+            _ => panic!("expected IType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_lw() {
+        let tokens = crate::lexer::tokenize("lw x1, 4(x2)").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Instruction::IType { mnemonic, rd, rs1, imm } => {
+                assert_eq!(mnemonic, "lw");
+                assert_eq!(rd, Register::X1);
+                assert_eq!(rs1, Register::X2);
+                assert_eq!(imm, 4);
+            }
+            _ => panic!("expected IType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_fadd_s() {
+        let tokens = crate::lexer::tokenize("fadd.s f1, f2, f3").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Instruction::FRType { mnemonic, rd, rs1, rs2 } => {
+                assert_eq!(mnemonic, "fadd.s");
+                assert_eq!(rd, FloatRegister::F1);
+                assert_eq!(rs1, FloatRegister::F2);
+                assert_eq!(rs2, FloatRegister::F3);
+            }
+            _ => panic!("expected FRType"),
+        }
+    }
+}
