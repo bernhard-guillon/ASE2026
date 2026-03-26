@@ -319,16 +319,20 @@ if(PYTHON_EXECUTABLE)
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
-    # Neural instruction assembler blackbox tests
-    add_test(
-        NAME python/assembler/neural_instr_encoding
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_neural_instr_assembler.py -v
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-    set_tests_properties(python/assembler/neural_instr_encoding PROPERTIES
-        LABELS "assembler;neural;blackbox"
-        ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE}"
-    )
+    # Neural instruction assembler blackbox tests (requires rv32as)
+    if(RV32AS_EXECUTABLE)
+        add_test(
+            NAME python/assembler/neural_instr_encoding
+            COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_neural_instr_assembler.py -v
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        set_tests_properties(python/assembler/neural_instr_encoding PROPERTIES
+            LABELS "assembler;neural;blackbox"
+            ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE}"
+        )
+    else()
+        message(WARNING "rv32as not available - python/assembler/neural_instr_encoding test disabled")
+    endif()
     
 else()
     message(WARNING "Python3 not found - Python tests will be skipped")
@@ -466,6 +470,27 @@ set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
     TIMEOUT 600
     ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE};EMULATOR_BACKEND=cpp"
 )
+
+# Ensure rv32as binary exists before tests that depend on it.
+if(RV32AS_EXECUTABLE)
+    add_test(
+        NAME python/fixture/build_rv32as
+        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target rv32as_build
+    )
+    set_tests_properties(python/fixture/build_rv32as PROPERTIES
+        LABELS "assembler;fixture"
+        FIXTURES_SETUP rv32as_ready
+    )
+
+    if(TEST python/assembler/neural_instr_encoding)
+        set_tests_properties(python/assembler/neural_instr_encoding PROPERTIES
+            FIXTURES_REQUIRED rv32as_ready
+        )
+    endif()
+    set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
+        FIXTURES_REQUIRED rv32as_ready
+    )
+endif()
 
 add_test(
     NAME python/verilator/differential_validation
