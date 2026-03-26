@@ -1,5 +1,0 @@
-if(EXISTS "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/test_memory_syscalls[1]_tests.cmake")
-  include("/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/test_memory_syscalls[1]_tests.cmake")
-else()
-  add_test(test_memory_syscalls_NOT_BUILT test_memory_syscalls_NOT_BUILT)
-endif()

@@ -1,2 +1,0 @@
-/usr/bin/ar qc libemulator.a CMakeFiles/emulator.dir/Emulator.cpp.o
-/usr/bin/ranlib libemulator.a

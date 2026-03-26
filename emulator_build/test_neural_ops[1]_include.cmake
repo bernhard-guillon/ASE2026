@@ -1,5 +1,0 @@
-if(EXISTS "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/test_neural_ops[1]_tests.cmake")
-  include("/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/test_neural_ops[1]_tests.cmake")
-else()
-  add_test(test_neural_ops_NOT_BUILT test_neural_ops_NOT_BUILT)
-endif()

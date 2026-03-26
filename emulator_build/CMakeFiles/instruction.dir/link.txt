@@ -1,2 +1,0 @@
-/usr/bin/ar qc libinstruction.a CMakeFiles/instruction.dir/Instruction.cpp.o
-/usr/bin/ranlib libinstruction.a

@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/_deps/googletest-subbuild/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

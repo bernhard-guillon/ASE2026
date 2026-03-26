@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/emulator_runner.dir/link.d CMakeFiles/emulator_runner.dir/emulator_runner.cpp.o -o emulator_runner  libemulator.a libcpu.a libmemory.a libinstruction.a libneural_ops.a

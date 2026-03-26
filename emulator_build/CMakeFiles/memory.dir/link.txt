@@ -1,2 +1,0 @@
-/usr/bin/ar qc libmemory.a CMakeFiles/memory.dir/Memory.cpp.o
-/usr/bin/ranlib libmemory.a

@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_instruction_edges.dir/link.d CMakeFiles/test_instruction_edges.dir/utest/test_instruction_edges.cpp.o -o test_instruction_edges  libcpu.a libmemory.a libinstruction.a lib/libgtest_main.a lib/libgtest.a
