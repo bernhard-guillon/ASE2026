@@ -7,11 +7,17 @@ use crate::lexer::Token;
 pub struct Parser;
 
 impl Parser {
-    pub fn parse_instruction(tokens: &[Token]) -> Result<Instruction> {
+    pub fn parse_instruction(tokens: &[Token]) -> Result<Option<Instruction>> {
         if tokens.is_empty() {
-            return Err(AssemblerError::ParserError(
-                "empty instruction".to_string(),
-            ));
+            return Ok(None);
+        }
+
+        // Skip directives, labels, and strings (return None to indicate no instruction)
+        match &tokens[0] {
+            Token::Directive(_) | Token::Label(_) | Token::String(_) => {
+                return Ok(None);
+            }
+            _ => {}
         }
 
         let mnemonic = match &tokens[0] {
@@ -23,45 +29,69 @@ impl Parser {
             }
         };
 
+        // Handle pseudo-instructions
         match mnemonic.as_str() {
+            "li" => return Ok(None), // Will be expanded at assemble_line level
+            "la" => return Ok(None), // Skip label addresses without symbol table
+            _ => {}
+        }
+
+        match mnemonic.as_str() {
+            // Special instructions with no operands
+            "ecall" | "ebreak" => {
+                if tokens.len() != 1 {
+                    return Err(AssemblerError::WrongOperandCount(
+                        mnemonic.clone(),
+                        0,
+                        tokens.len() - 1,
+                    ));
+                }
+                Ok(Some(Instruction::IType {
+                    mnemonic,
+                    rd: Register::X0,
+                    rs1: Register::X0,
+                    imm: 0,
+                }))
+            }
             // RV32I R-type instructions
             "add" | "sub" | "and" | "or" | "xor" | "sll" | "srl" | "sra" => {
-                Self::parse_r_type(mnemonic, tokens)
+                Self::parse_r_type(mnemonic, tokens).map(Some)
             }
             // RV32I I-type instructions
             "addi" | "andi" | "ori" | "xori" | "slli" | "srli" | "srai" | "lw" | "lh"
-            | "lb" | "lwu" | "lhu" | "jalr" => Self::parse_i_type(mnemonic, tokens),
+            | "lb" | "lwu" | "lhu" | "jalr" => Self::parse_i_type(mnemonic, tokens).map(Some),
             // RV32I S-type instructions
-            "sw" | "sh" | "sb" => Self::parse_s_type(mnemonic, tokens),
+            "sw" | "sh" | "sb" => Self::parse_s_type(mnemonic, tokens).map(Some),
             // RV32I B-type instructions
             "beq" | "bne" | "blt" | "bltu" | "bge" | "bgeu" => {
-                Self::parse_b_type(mnemonic, tokens)
+                Self::parse_b_type(mnemonic, tokens).map(Some)
             }
             // RV32I U-type instructions
-            "lui" | "auipc" => Self::parse_u_type(mnemonic, tokens),
+            "lui" | "auipc" => Self::parse_u_type(mnemonic, tokens).map(Some),
             // RV32I J-type instructions
-            "jal" => Self::parse_j_type(mnemonic, tokens),
+            "jal" => Self::parse_j_type(mnemonic, tokens).map(Some),
             // RV32F FR-type instructions
             "fadd.s" | "fsub.s" | "fmul.s" | "fdiv.s" => {
-                Self::parse_f_r_type(mnemonic, tokens)
+                Self::parse_f_r_type(mnemonic, tokens).map(Some)
             }
             // RV32F FI-type (load)
-            "flw" => Self::parse_f_i_type(mnemonic, tokens),
+            "flw" => Self::parse_f_i_type(mnemonic, tokens).map(Some),
             // RV32F FS-type (store)
-            "fsw" => Self::parse_f_s_type(mnemonic, tokens),
+            "fsw" => Self::parse_f_s_type(mnemonic, tokens).map(Some),
             // RV32F FC-type (compare)
-            "feq.s" | "flt.s" | "fle.s" => Self::parse_f_c_type(mnemonic, tokens),
+            "feq.s" | "flt.s" | "fle.s" => Self::parse_f_c_type(mnemonic, tokens).map(Some),
             // RV32F FCVT (int to float)
-            "fcvt.s.w" => Self::parse_f_cvt_rev_type(mnemonic, tokens),
+            "fcvt.s.w" => Self::parse_f_cvt_rev_type(mnemonic, tokens).map(Some),
             // RV32F FCVT (float to int)
-            "fcvt.w.s" => Self::parse_f_cvt_type(mnemonic, tokens),
+            "fcvt.w.s" => Self::parse_f_cvt_type(mnemonic, tokens).map(Some),
             // RV32F FMV (float to int reg)
-            "fmv.x.w" => Self::parse_f_move_type(mnemonic, tokens),
+            "fmv.x.w" => Self::parse_f_move_type(mnemonic, tokens).map(Some),
             // RV32F FMV (int to float reg)
-            "fmv.w.x" => Self::parse_f_move_rev_type(mnemonic, tokens),
+            "fmv.w.x" => Self::parse_f_move_rev_type(mnemonic, tokens).map(Some),
             _ => Err(AssemblerError::UnknownInstruction(mnemonic)),
         }
     }
+
 
     fn parse_r_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
         if tokens.len() != 6 {
@@ -415,6 +445,16 @@ impl Parser {
                     AssemblerError::InvalidRegister(name.clone())
                 })
             }
+            Token::Mnemonic(name) => {
+                // Handle pseudo-register names like t0, a0, s0, sp, etc.
+                // These are valid register names but might be tokenized as mnemonics
+                Register::from_name(name).ok_or_else(|| {
+                    AssemblerError::InvalidOperand(format!(
+                        "expected register, got mnemonic({})",
+                        name
+                    ))
+                })
+            }
             _ => Err(AssemblerError::InvalidOperand(format!(
                 "expected register, got {}",
                 token
@@ -427,6 +467,15 @@ impl Parser {
             Token::FloatRegister(name) => {
                 FloatRegister::from_name(name).ok_or_else(|| {
                     AssemblerError::InvalidRegister(name.clone())
+                })
+            }
+            Token::Mnemonic(name) => {
+                // Handle pseudo-register names
+                FloatRegister::from_name(name).ok_or_else(|| {
+                    AssemblerError::InvalidOperand(format!(
+                        "expected float register, got mnemonic({})",
+                        name
+                    ))
                 })
             }
             _ => Err(AssemblerError::InvalidOperand(format!(

@@ -20,6 +20,46 @@ enable_testing()
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/BootloaderBuild.cmake)
 bootloader_build_system_init()
 
+# ============================================================================
+# Phase C: Build Rust assembler (RV32I/F parity baseline)
+# ============================================================================
+
+find_program(CARGO cargo)
+if(CARGO)
+    message(STATUS "Cargo found: ${CARGO}")
+    
+    # Build Rust assembler
+    set(RUST_ASSEMBLER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../rv32_assembler)
+    set(RUST_ASSEMBLER_BIN ${CMAKE_CURRENT_BINARY_DIR}/rv32as)
+    
+    add_custom_command(
+        OUTPUT ${RUST_ASSEMBLER_BIN}
+        COMMAND ${CARGO} build --quiet --release --bin rv32as
+        WORKING_DIRECTORY ${RUST_ASSEMBLER_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy
+            ${RUST_ASSEMBLER_DIR}/target/release/rv32as
+            ${RUST_ASSEMBLER_BIN}
+        DEPENDS
+            ${RUST_ASSEMBLER_DIR}/src/lib.rs
+            ${RUST_ASSEMBLER_DIR}/src/bin/main.rs
+            ${RUST_ASSEMBLER_DIR}/src/lexer.rs
+            ${RUST_ASSEMBLER_DIR}/src/parser.rs
+            ${RUST_ASSEMBLER_DIR}/src/encoder.rs
+            ${RUST_ASSEMBLER_DIR}/src/instruction.rs
+            ${RUST_ASSEMBLER_DIR}/src/error.rs
+            ${RUST_ASSEMBLER_DIR}/Cargo.toml
+        COMMENT "Building Rust assembler (rv32as)"
+        VERBATIM
+    )
+    
+    add_custom_target(rv32as_build ALL DEPENDS ${RUST_ASSEMBLER_BIN})
+    set(RV32AS_EXECUTABLE ${RUST_ASSEMBLER_BIN})
+else()
+    message(WARNING "Cargo not found - Rust assembler will not be built")
+    set(RV32AS_EXECUTABLE "")
+endif()
+
+
 # Memory module
 add_library(memory Memory.cpp)
 
@@ -390,6 +430,35 @@ set_tests_properties(python/verilator/differential_validation PROPERTIES
     LABELS "verilator;differential;validation"
     TIMEOUT 120
 )
+
+# ============================================================================
+# Phase D.1: Parity Testing (Rust assembler vs GNU assembler)
+# ============================================================================
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/PurityTesting.cmake)
+
+if(GNU_ASM_AVAILABLE AND RV32AS_EXECUTABLE)
+    message(STATUS "Setting up parity tests for Phase D.1...")
+    
+    # Add parity tests for all assembly directories
+    file(GLOB_RECURSE ASM_TEST_FILES "${CMAKE_CURRENT_SOURCE_DIR}/blackbox_tests/asm/*/test.s")
+    
+    foreach(ASM_FILE ${ASM_TEST_FILES})
+        get_filename_component(ASM_DIR ${ASM_FILE} DIRECTORY)
+        get_filename_component(DIR_NAME ${ASM_DIR} NAME)
+        get_filename_component(PARENT_DIR ${ASM_DIR} DIRECTORY)
+        get_filename_component(PARENT_NAME ${PARENT_DIR} NAME)
+        
+        set(TEST_NAME "parity/${PARENT_NAME}/${DIR_NAME}")
+        add_parity_test(${TEST_NAME} ${ASM_FILE})
+    endforeach()
+    
+    list(LENGTH ASM_TEST_FILES NUM_PARITY_TESTS)
+    message(STATUS "  ${NUM_PARITY_TESTS} parity tests configured")
+else()
+    message(WARNING "Parity tests disabled (GNU assembler or Rust assembler not available)")
+endif()
+
 
 # ============================================================================
 # HDL (Verilog) Simulation with Verilator

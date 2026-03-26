@@ -8,12 +8,14 @@ pub struct Encoder;
 // RISC-V opcode constants
 const OPCODE_LOAD: u32 = 0b0000011;    // LW, LH, LB, etc.
 const OPCODE_I_ARITH: u32 = 0b0010011; // ADDI, ANDI, etc.
+const OPCODE_R_ARITH: u32 = 0b0110011; // ADD, SUB, AND, OR, XOR, SLL, SRL, SRA
 const OPCODE_STORE: u32 = 0b0100011;   // SW, SH, SB
 const OPCODE_BRANCH: u32 = 0b1100011;  // BEQ, BNE, etc.
 const OPCODE_LUI: u32 = 0b0110111;     // LUI
 const OPCODE_AUIPC: u32 = 0b0010111;   // AUIPC
 const OPCODE_JAL: u32 = 0b1101111;     // JAL
 const OPCODE_JALR: u32 = 0b1100111;    // JALR
+const OPCODE_SYSTEM: u32 = 0b1110011;  // ECALL, EBREAK
 const OPCODE_FP_LOAD: u32 = 0b0000111; // FLW
 const OPCODE_FP_STORE: u32 = 0b0100111; // FSW
 const OPCODE_FP: u32 = 0b1010011;      // Floating-point operations
@@ -88,24 +90,34 @@ impl Encoder {
     }
 
     fn encode_r_type(mnemonic: &str, rd: u32, rs1: u32, rs2: u32) -> Result<u32> {
-        let (funct7, funct3, opcode) = match mnemonic {
-            "add" => (0b0000000, 0b000, OPCODE_I_ARITH),
-            "sub" => (0b0100000, 0b000, OPCODE_I_ARITH),
-            "and" => (0b0000000, 0b111, OPCODE_I_ARITH),
-            "or" => (0b0000000, 0b110, OPCODE_I_ARITH),
-            "xor" => (0b0000000, 0b100, OPCODE_I_ARITH),
-            "sll" => (0b0000000, 0b001, OPCODE_I_ARITH),
-            "srl" => (0b0000000, 0b101, OPCODE_I_ARITH),
-            "sra" => (0b0100000, 0b101, OPCODE_I_ARITH),
+        let (funct7, funct3) = match mnemonic {
+            "add" => (0b0000000, 0b000),
+            "sub" => (0b0100000, 0b000),
+            "and" => (0b0000000, 0b111),
+            "or" => (0b0000000, 0b110),
+            "xor" => (0b0000000, 0b100),
+            "sll" => (0b0000000, 0b001),
+            "srl" => (0b0000000, 0b101),
+            "sra" => (0b0100000, 0b101),
             _ => return Err(AssemblerError::UnknownInstruction(mnemonic.to_string())),
         };
 
-        Ok(Self::encode_instruction(
-            opcode, rd, funct3, rs1, rs2, funct7, 0,
-        ))
+        // R-type encoding: [funct7:7 | rs2:5 | rs1:5 | funct3:3 | rd:5 | opcode:7]
+        Ok(((funct7 & 0x7f) << 25) | ((rs2 & 0x1f) << 20) | ((rs1 & 0x1f) << 15)
+            | ((funct3 & 0x7) << 12) | ((rd & 0x1f) << 7) | (OPCODE_R_ARITH & 0x7f))
     }
 
     fn encode_i_type(mnemonic: &str, rd: u32, rs1: u32, imm: i64) -> Result<u32> {
+        // Special case: ecall and ebreak
+        if mnemonic == "ecall" {
+            // [0:12 | 0:5 | 0:5 | 0:3 | 0:5 | 0x73]
+            return Ok(OPCODE_SYSTEM & 0x7f);
+        }
+        if mnemonic == "ebreak" {
+            // [1:12 | 0:5 | 0:5 | 0:3 | 0:5 | 0x73]
+            return Ok((1 << 20) | (OPCODE_SYSTEM & 0x7f));
+        }
+
         let imm12 = Self::check_imm_range(imm, 12)?;
 
         let (funct3, opcode, funct7_for_shift) = match mnemonic {
@@ -126,15 +138,14 @@ impl Encoder {
         };
 
         // For shifts, imm12 upper 7 bits are funct7
-        let (funct7, imm_bits) = if let Some(f7) = funct7_for_shift {
-            (f7, imm12 & 0x1f) // Only lower 5 bits for shift amount
+        let imm_bits = if let Some(f7) = funct7_for_shift {
+            (f7 << 5) | (imm12 & 0x1f)  // funct7 in bits [11:5], shift amount in bits [4:0]
         } else {
-            (0, imm12)
+            imm12
         };
 
-        Ok(Self::encode_instruction(
-            opcode, rd, funct3, rs1, imm_bits, funct7, 0,
-        ))
+        // I-type encoding: [imm12:20 | rs1:5 | funct3:3 | rd:5 | opcode:7]
+        Ok((imm_bits << 20) | ((rs1 & 0x1f) << 15) | ((funct3 & 0x7) << 12) | ((rd & 0x1f) << 7) | (opcode & 0x7f))
     }
 
     fn encode_s_type(mnemonic: &str, rs1: u32, rs2: u32, imm: i64) -> Result<u32> {
