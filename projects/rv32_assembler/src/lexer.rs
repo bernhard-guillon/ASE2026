@@ -87,12 +87,24 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>> {
                         let freg = parse_float_register(&mut chars)?;
                         tokens.push(freg);
                     } else {
-                        let mnemonic = parse_mnemonic(&mut chars)?;
-                        tokens.push(mnemonic);
+                        let word = parse_mnemonic_word(&mut chars)?;
+                        // Check if it's a label (ends with ':')
+                        if let Some(&':') = chars.peek() {
+                            chars.next(); // consume ':'
+                            tokens.push(Token::Label(word));
+                        } else {
+                            tokens.push(Token::Mnemonic(word));
+                        }
                     }
                 } else {
-                    let mnemonic = parse_mnemonic(&mut chars)?;
-                    tokens.push(mnemonic);
+                    let word = parse_mnemonic_word(&mut chars)?;
+                    // Check if it's a label (ends with ':')
+                    if let Some(&':') = chars.peek() {
+                        chars.next(); // consume ':'
+                        tokens.push(Token::Label(word));
+                    } else {
+                        tokens.push(Token::Mnemonic(word));
+                    }
                 }
             }
             'a'..='z' | 'A'..='Z' | '_' => {
@@ -231,6 +243,11 @@ fn parse_integer(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<Tok
 }
 
 fn parse_mnemonic(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<Token> {
+    let word = parse_mnemonic_word(chars)?;
+    Ok(Token::Mnemonic(word))
+}
+
+fn parse_mnemonic_word(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<String> {
     let mut name = String::new();
 
     while let Some(&ch) = chars.peek() {
@@ -241,7 +258,7 @@ fn parse_mnemonic(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<To
         }
     }
 
-    Ok(Token::Mnemonic(name.to_lowercase()))
+    Ok(name.to_lowercase())
 }
 
 fn parse_identifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<String> {

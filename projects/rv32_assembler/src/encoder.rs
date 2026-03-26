@@ -99,6 +99,8 @@ impl Encoder {
             "sll" => (0b0000000, 0b001),
             "srl" => (0b0000000, 0b101),
             "sra" => (0b0100000, 0b101),
+            "slt" => (0b0000000, 0b010),
+            "sltu" => (0b0000000, 0b011),
             _ => return Err(AssemblerError::UnknownInstruction(mnemonic.to_string())),
         };
 
@@ -128,11 +130,14 @@ impl Encoder {
             "slli" => (0b001, OPCODE_I_ARITH, Some(0b0000000)),
             "srli" => (0b101, OPCODE_I_ARITH, Some(0b0000000)),
             "srai" => (0b101, OPCODE_I_ARITH, Some(0b0100000)),
+            "slti" => (0b010, OPCODE_I_ARITH, None),
+            "sltiu" => (0b011, OPCODE_I_ARITH, None),
             "lw" => (0b010, OPCODE_LOAD, None),
             "lh" => (0b001, OPCODE_LOAD, None),
             "lb" => (0b000, OPCODE_LOAD, None),
             "lwu" => (0b110, OPCODE_LOAD, None),
             "lhu" => (0b101, OPCODE_LOAD, None),
+            "lbu" => (0b100, OPCODE_LOAD, None),
             "jalr" => (0b000, OPCODE_JALR, None),
             _ => return Err(AssemblerError::UnknownInstruction(mnemonic.to_string())),
         };

@@ -28,80 +28,101 @@ pub fn assemble_instruction(line: &str) -> Result<Option<[u8; 4]>> {
 }
 
 /// Assemble multiple lines of assembly code.
-/// Returns bytes in order, expanding pseudo-instructions as needed.
+/// Returns bytes in order, expanding pseudo-instructions and resolving labels.
 pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-
+    // Parse all lines first
+    let mut lines: Vec<&str> = Vec::new();
     for line in text.lines() {
         let trimmed = line.trim();
-
+        
         // Skip empty lines and comments
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-
+        
         // Trim comments from end of line
         let line_without_comment = if let Some(comment_pos) = trimmed.find('#') {
             trimmed[..comment_pos].trim()
         } else {
             trimmed
         };
-
-        if line_without_comment.is_empty() {
+        
+        if !line_without_comment.is_empty() {
+            lines.push(line_without_comment);
+        }
+    }
+    
+    // First pass: collect labels and their byte offsets by simulating assembly
+    let mut label_map = std::collections::HashMap::new();
+    let mut byte_offset = 0;
+    
+    for line in &lines {
+        let tokens = match lexer::tokenize(line) {
+            Ok(t) => t,
+            Err(_) => continue,  // Skip lines with parse errors on first pass
+        };
+        
+        if tokens.is_empty() {
             continue;
         }
-
-        // Assemble line - may produce multiple instructions
-        let words = assemble_line(line_without_comment)?;
+        
+        // Check for labels
+        if let Some(Token::Label(label_name)) = tokens.first() {
+            label_map.insert(label_name.clone(), byte_offset);
+            continue;
+        }
+        
+        // Skip directives and non-instructions
+        match tokens.first() {
+            Some(Token::Directive(_)) | Some(Token::String(_)) => continue,
+            _ => {}
+        }
+        
+        // Calculate the size of this line (simulate assembly without encoding)
+        if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
+            if mnemonic == "li" && tokens.len() == 4 {
+                // Check if imm fits in 12 bits
+                if let Token::Integer(imm) = &tokens[3] {
+                    if *imm >= -2048 && *imm <= 2047 {
+                        byte_offset += 4;  // Single addi
+                    } else {
+                        byte_offset += 8;  // lui + addi
+                    }
+                } else {
+                    byte_offset += 8;  // Conservative: assume 2 instructions
+                }
+            } else if mnemonic == "la" && tokens.len() == 4 {
+                byte_offset += 8;  // la always expands to 2 instructions (auipc + addi)
+            } else {
+                byte_offset += 4;  // regular instruction
+            }
+        }
+    }
+    
+    // Second pass: assemble with label resolution
+    let mut bytes = Vec::new();
+    
+    for line in &lines {
+        let tokens = lexer::tokenize(line)?;
+        
+        if tokens.is_empty() {
+            continue;
+        }
+        
+        // Skip labels and directives
+        match tokens.first() {
+            Some(Token::Label(_)) | Some(Token::Directive(_)) | Some(Token::String(_)) => continue,
+            _ => {}
+        }
+        
+        // Assemble line with label map available
+        let words = assemble_line_with_labels(line, &label_map, bytes.len())?;
         for word in words {
             bytes.extend_from_slice(&word);
         }
     }
-
-    Ok(bytes)
-}
-
-/// Assemble a line of code, returning zero or more 32-bit instructions
-fn assemble_line(line: &str) -> Result<Vec<[u8; 4]>> {
-    let tokens = lexer::tokenize(line)?;
     
-    if tokens.is_empty() {
-        return Ok(Vec::new());
-    }
-
-    // Check if this is a li pseudo-instruction
-    if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
-        if mnemonic == "li" && tokens.len() == 4 {
-            // li rd, imm - may expand to lui + addi
-            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Integer(imm)) =
-                (&tokens[1], &tokens[2], &tokens[3])
-            {
-                use instruction::Register;
-                if let Some(rd) = Register::from_name(rd_name) {
-                    return expand_li(rd, *imm);
-                }
-            }
-        } else if mnemonic == "la" && tokens.len() == 4 {
-            // la rd, symbol - expands to auipc + addi
-            // Without symbol resolution, we can't compute the offset, so we emit auipc + addi with imm=0
-            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(_symbol)) =
-                (&tokens[1], &tokens[2], &tokens[3])
-            {
-                use instruction::Register;
-                if let Some(rd) = Register::from_name(rd_name) {
-                    return expand_la(rd);
-                }
-            }
-        }
-    }
-
-    // Regular instruction
-    if let Some(instruction) = Parser::parse_instruction(&tokens)? {
-        let encoded = Encoder::encode(&instruction)?;
-        Ok(vec![encoded])
-    } else {
-        Ok(Vec::new())
-    }
+    Ok(bytes)
 }
 
 /// Expand la (load address) pseudo-instruction
@@ -176,6 +197,144 @@ fn expand_li(rd: instruction::Register, imm: i64) -> Result<Vec<[u8; 4]>> {
         };
         result.push(Encoder::encode(&addi_instr)?);
     }
+    
+    Ok(result)
+}
+
+/// Assemble a line with label resolution
+fn assemble_line_with_labels(
+    line: &str,
+    label_map: &std::collections::HashMap<String, usize>,
+    current_byte_offset: usize,
+) -> Result<Vec<[u8; 4]>> {
+    let tokens = lexer::tokenize(line)?;
+    
+    if tokens.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // Check if this is a li pseudo-instruction
+    if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
+        if mnemonic == "li" && tokens.len() == 4 {
+            // li rd, imm - may expand to lui + addi
+            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Integer(imm)) =
+                (&tokens[1], &tokens[2], &tokens[3])
+            {
+                use instruction::Register;
+                if let Some(rd) = Register::from_name(rd_name) {
+                    return expand_li(rd, *imm);
+                }
+            }
+        } else if mnemonic == "la" && tokens.len() == 4 {
+            // la rd, symbol - expands to auipc + addi with label resolution
+            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(symbol)) =
+                (&tokens[1], &tokens[2], &tokens[3])
+            {
+                use instruction::Register;
+                if let Some(rd) = Register::from_name(rd_name) {
+                    // Resolve label
+                    if let Some(&label_offset) = label_map.get(symbol) {
+                        let offset = label_offset as i64 - current_byte_offset as i64;
+                        return expand_la_with_offset(rd, offset);
+                    }
+                    // If label not found, emit with 0 offset (error will be caught elsewhere)
+                    return expand_la(rd);
+                }
+            }
+        }
+    }
+
+    // Handle branch instructions with labels
+    if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
+        if ["beq", "bne", "blt", "bltu", "bge", "bgeu"].contains(&mnemonic.as_str()) {
+            // These might have a label as the third operand
+            if tokens.len() >= 6 {
+                if let (Token::Mnemonic(rs1_name), Token::Comma, Token::Mnemonic(rs2_name), 
+                        Token::Comma, Token::Mnemonic(label_name)) =
+                    (&tokens[1], &tokens[2], &tokens[3], &tokens[4], &tokens[5])
+                {
+                    use instruction::Register;
+                    if let (Some(rs1), Some(rs2)) = (Register::from_name(rs1_name), Register::from_name(rs2_name)) {
+                        if let Some(&label_offset) = label_map.get(label_name) {
+                            let imm = label_offset as i64 - current_byte_offset as i64;
+                            let instruction = instruction::Instruction::BType {
+                                mnemonic: mnemonic.clone(),
+                                rs1,
+                                rs2,
+                                imm,
+                            };
+                            let encoded = Encoder::encode(&instruction)?;
+                            return Ok(vec![encoded]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Handle jal instruction with labels
+    if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
+        if mnemonic == "jal" {
+            if tokens.len() == 4 {
+                if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(label_name)) =
+                    (&tokens[1], &tokens[2], &tokens[3])
+                {
+                    use instruction::Register;
+                    if let Some(rd) = Register::from_name(rd_name) {
+                        if let Some(&label_offset) = label_map.get(label_name) {
+                            let imm = label_offset as i64 - current_byte_offset as i64;
+                            let instruction = instruction::Instruction::JType {
+                                mnemonic: mnemonic.clone(),
+                                rd,
+                                imm,
+                            };
+                            let encoded = Encoder::encode(&instruction)?;
+                            return Ok(vec![encoded]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Regular instruction
+    if let Some(instruction) = Parser::parse_instruction(&tokens)? {
+        let encoded = Encoder::encode(&instruction)?;
+        Ok(vec![encoded])
+    } else {
+        Ok(Vec::new())
+    }
+}
+
+/// Expand la (load address) with resolved offset
+fn expand_la_with_offset(rd: instruction::Register, offset: i64) -> Result<Vec<[u8; 4]>> {
+    use instruction::Instruction;
+    
+    let mut result = Vec::new();
+    
+    // Split offset into upper 20-bit and lower 12-bit components (PC-relative)
+    // auipc rd, upper
+    // addi rd, rd, lower
+    let upper = ((offset + 0x800) >> 12) & 0xFFFFF;  // Round up if lower is negative
+    let lower = offset & 0xFFF;
+    let lower_signed = if lower >= 0x800 { lower as i64 - 4096 } else { lower as i64 };
+    
+    // Emit auipc
+    let auipc_instr = Instruction::UType {
+        mnemonic: "auipc".to_string(),
+        rd,
+        imm: upper as i64,
+    };
+    result.push(Encoder::encode(&auipc_instr)?);
+    
+    // Emit addi
+    let addi_instr = Instruction::IType {
+        mnemonic: "addi".to_string(),
+        rd,
+        rs1: rd,
+        imm: lower_signed,
+    };
+    result.push(Encoder::encode(&addi_instr)?);
     
     Ok(result)
 }

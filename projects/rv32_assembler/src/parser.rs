@@ -54,12 +54,12 @@ impl Parser {
                 }))
             }
             // RV32I R-type instructions
-            "add" | "sub" | "and" | "or" | "xor" | "sll" | "srl" | "sra" => {
+            "add" | "sub" | "and" | "or" | "xor" | "sll" | "srl" | "sra" | "slt" | "sltu" => {
                 Self::parse_r_type(mnemonic, tokens).map(Some)
             }
             // RV32I I-type instructions
-            "addi" | "andi" | "ori" | "xori" | "slli" | "srli" | "srai" | "lw" | "lh"
-            | "lb" | "lwu" | "lhu" | "jalr" => Self::parse_i_type(mnemonic, tokens).map(Some),
+            "addi" | "andi" | "ori" | "xori" | "slli" | "srli" | "srai" | "slti" | "sltiu" | "lw" | "lh"
+            | "lb" | "lwu" | "lhu" | "lbu" | "jalr" => Self::parse_i_type(mnemonic, tokens).map(Some),
             // RV32I S-type instructions
             "sw" | "sh" | "sb" => Self::parse_s_type(mnemonic, tokens).map(Some),
             // RV32I B-type instructions
