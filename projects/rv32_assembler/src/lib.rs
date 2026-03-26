@@ -16,6 +16,18 @@ pub use encoder::Encoder;
 pub use lexer::Token;
 pub use elf_writer::ElfWriter;
 
+fn is_directive_name_token(token: &Token, name: &str) -> bool {
+    token_directive_name(token).map(|s| s == name).unwrap_or(false)
+}
+
+fn token_directive_name(token: &Token) -> Option<&str> {
+    match token {
+        Token::Directive(s) => Some(s.trim_start_matches('.')),
+        Token::Mnemonic(s) => s.strip_prefix('.'),
+        _ => None,
+    }
+}
+
 /// Assemble a single line of RISC-V assembly.
 /// Returns the encoded 32-bit instruction as 4 bytes (little-endian).
 /// Returns None if the line is a directive, label, or other non-instruction.
@@ -90,6 +102,19 @@ fn alignment_padding(current: usize, align: usize) -> usize {
     }
 }
 
+fn normalize_label_name(label: &str) -> String {
+    label.strip_prefix('.').unwrap_or(label).to_string()
+}
+
+fn normalize_symbol_token(token: &Token) -> Option<String> {
+    match token {
+        Token::Mnemonic(s) => Some(normalize_label_name(s)),
+        Token::Directive(s) => Some(normalize_label_name(s)),
+        Token::Label(s) => Some(normalize_label_name(s)),
+        _ => None,
+    }
+}
+
 /// Assemble multiple lines of assembly code to ELF32 object file.
 /// Returns ELF binary with proper relocations for linker.
 pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
@@ -124,9 +149,9 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
 
     // First pass: collect labels and identify sections
     let mut label_map = std::collections::HashMap::new();
-    let mut section_offsets = std::collections::HashMap::new();
+    let mut section_sizes: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
     let mut current_section = ".text".to_string();
-    let mut section_byte_offset = 0;
+    section_sizes.insert(current_section.clone(), 0);
     let mut globl_symbols: std::collections::HashSet<String> = std::collections::HashSet::new();
     
     for line in &lines {
@@ -140,81 +165,86 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
         }
         
         // Handle directives
-        if let Some(Token::Directive(directive)) = tokens.first() {
-            if directive == ".section" {
+        if let Some(first) = tokens.first() {
+            if token_directive_name(first).is_none() {
+                // Not a directive line.
+            } else {
+            if is_directive_name_token(first, "section") {
                 // .section takes an argument (next token should be a directive or mnemonic)
-                if !section_offsets.contains_key(&current_section) {
-                    section_offsets.insert(current_section.clone(), section_byte_offset);
-                }
                 if let Some(section_name) = tokens.get(1).and_then(token_to_section_name) {
                     current_section = section_name;
                 }
-                section_byte_offset = 0;
-            } else if matches!(directive.as_str(), ".text" | ".data" | ".rodata" | ".bss") {
+                section_sizes.entry(current_section.clone()).or_insert(0);
+            } else if is_directive_name_token(first, "text")
+                || is_directive_name_token(first, "data")
+                || is_directive_name_token(first, "rodata")
+                || is_directive_name_token(first, "bss")
+            {
                 // Bare section directives (e.g., `.data` instead of `.section .data`)
-                if !section_offsets.contains_key(&current_section) {
-                    section_offsets.insert(current_section.clone(), section_byte_offset);
-                }
-                current_section = directive.clone();
-                section_byte_offset = 0;
-            } else if directive == ".globl" {
+                current_section = match first {
+                    Token::Directive(s) => s.clone(),
+                    Token::Mnemonic(s) => format!(".{}", s),
+                    _ => current_section,
+                };
+                section_sizes.entry(current_section.clone()).or_insert(0);
+            } else if is_directive_name_token(first, "globl") || is_directive_name_token(first, "global") {
                 // .globl takes an argument (next token should be a mnemonic)
                 if tokens.len() > 1 {
-                    if let Some(Token::Mnemonic(symbol_name)) = tokens.get(1) {
+                    if let Some(symbol_name) = tokens.get(1).and_then(normalize_symbol_token) {
                         globl_symbols.insert(symbol_name.clone());
                     }
                 }
-            } else if directive == ".string" {
+            } else if is_directive_name_token(first, "string") {
                 // Handle .string directive - grab the following string token
                 if tokens.len() > 1 {
                     if let Some(Token::String(content)) = tokens.get(1) {
                         // .string is null-terminated
                         let size = content.len() + 1;
-                        section_byte_offset += size;
+                        *section_sizes.entry(current_section.clone()).or_insert(0) += size;
                     }
                 }
-            } else if directive == ".ascii" || directive == ".asciz" {
+            } else if is_directive_name_token(first, "ascii") || is_directive_name_token(first, "asciz") {
                 if let Some(Token::String(content)) = tokens.get(1) {
-                    section_byte_offset += content.len();
-                    if directive == ".asciz" {
-                        section_byte_offset += 1;
+                    *section_sizes.entry(current_section.clone()).or_insert(0) += content.len();
+                    if is_directive_name_token(first, "asciz") {
+                        *section_sizes.entry(current_section.clone()).or_insert(0) += 1;
                     }
                 }
-            } else if directive == ".byte" {
+            } else if is_directive_name_token(first, "byte") {
                 let values = parse_integer_list(&tokens[1..])?;
-                section_byte_offset += values.len();
-            } else if directive == ".half" {
+                *section_sizes.entry(current_section.clone()).or_insert(0) += values.len();
+            } else if is_directive_name_token(first, "half") {
                 let values = parse_integer_list(&tokens[1..])?;
-                section_byte_offset += values.len() * 2;
-            } else if directive == ".word" {
+                *section_sizes.entry(current_section.clone()).or_insert(0) += values.len() * 2;
+            } else if is_directive_name_token(first, "word") {
                 let values = parse_integer_list(&tokens[1..])?;
-                section_byte_offset += values.len() * 4;
-            } else if directive == ".align" {
+                *section_sizes.entry(current_section.clone()).or_insert(0) += values.len() * 4;
+            } else if is_directive_name_token(first, "align") {
                 if let Some(Token::Integer(pow2)) = tokens.get(1) {
                     let align = if *pow2 <= 0 {
                         1usize
                     } else {
                         1usize << (*pow2 as usize)
                     };
-                    section_byte_offset += alignment_padding(section_byte_offset, align);
+                    let current_size = *section_sizes.get(&current_section).unwrap_or(&0);
+                    *section_sizes.entry(current_section.clone()).or_insert(0) +=
+                        alignment_padding(current_size, align);
                 }
             }
             continue;
+            }
         }
         
         // Check for labels
         if let Some(Token::Label(label_name)) = tokens.first() {
-            label_map.insert(label_name.clone(), (current_section.clone(), section_byte_offset));
+            let section_byte_offset = *section_sizes.get(&current_section).unwrap_or(&0);
+            label_map.insert(normalize_label_name(label_name), (current_section.clone(), section_byte_offset));
             continue;
         }
         
         // Calculate size for actual instructions
         let size = simulate_line_size(&tokens)?;
-        section_byte_offset += size;
-    }
-    
-    if !section_offsets.contains_key(&current_section) {
-        section_offsets.insert(current_section.clone(), section_byte_offset);
+        *section_sizes.entry(current_section.clone()).or_insert(0) += size;
     }
     
     // Add symbols to ELF
@@ -238,16 +268,27 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
         }
         
         // Handle directives
-        if let Some(Token::Directive(directive)) = tokens.first() {
-            if directive == ".section" {
+        if let Some(first) = tokens.first() {
+            if token_directive_name(first).is_none() {
+                // Not a directive line.
+            } else {
+            if is_directive_name_token(first, "section") {
                 // .section takes an argument (next token should be a directive or mnemonic)
                 if let Some(section_name) = tokens.get(1).and_then(token_to_section_name) {
                     current_section = section_name;
                 }
-            } else if matches!(directive.as_str(), ".text" | ".data" | ".rodata" | ".bss") {
+            } else if is_directive_name_token(first, "text")
+                || is_directive_name_token(first, "data")
+                || is_directive_name_token(first, "rodata")
+                || is_directive_name_token(first, "bss")
+            {
                 // Bare section directives (e.g., `.data` instead of `.section .data`)
-                current_section = directive.clone();
-            } else if directive == ".string" {
+                current_section = match first {
+                    Token::Directive(s) => s.clone(),
+                    Token::Mnemonic(s) => format!(".{}", s),
+                    _ => current_section,
+                };
+            } else if is_directive_name_token(first, "string") {
                 // Handle .string directive - grab the following string token
                 if tokens.len() > 1 {
                     if let Some(Token::String(content)) = tokens.get(1) {
@@ -256,36 +297,36 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
                         elf.append_to_section(&current_section, &string_bytes)?;
                     }
                 }
-            } else if directive == ".ascii" || directive == ".asciz" {
+            } else if is_directive_name_token(first, "ascii") || is_directive_name_token(first, "asciz") {
                 if let Some(Token::String(content)) = tokens.get(1) {
                     let mut bytes = content.as_bytes().to_vec();
-                    if directive == ".asciz" {
+                    if is_directive_name_token(first, "asciz") {
                         bytes.push(0);
                     }
                     elf.append_to_section(&current_section, &bytes)?;
                 }
-            } else if directive == ".byte" {
+            } else if is_directive_name_token(first, "byte") {
                 let values = parse_integer_list(&tokens[1..])?;
                 let mut out = Vec::with_capacity(values.len());
                 for v in values {
                     out.push((v as i8) as u8);
                 }
                 elf.append_to_section(&current_section, &out)?;
-            } else if directive == ".half" {
+            } else if is_directive_name_token(first, "half") {
                 let values = parse_integer_list(&tokens[1..])?;
                 let mut out = Vec::with_capacity(values.len() * 2);
                 for v in values {
                     out.extend_from_slice(&(v as i16).to_le_bytes());
                 }
                 elf.append_to_section(&current_section, &out)?;
-            } else if directive == ".word" {
+            } else if is_directive_name_token(first, "word") {
                 let values = parse_integer_list(&tokens[1..])?;
                 let mut out = Vec::with_capacity(values.len() * 4);
                 for v in values {
                     out.extend_from_slice(&(v as i32).to_le_bytes());
                 }
                 elf.append_to_section(&current_section, &out)?;
-            } else if directive == ".align" {
+            } else if is_directive_name_token(first, "align") {
                 if let Some(Token::Integer(pow2)) = tokens.get(1) {
                     let align = if *pow2 <= 0 {
                         1usize
@@ -301,6 +342,7 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
                 }
             }
             continue;
+            }
         }
         
         // Skip labels
@@ -683,8 +725,9 @@ fn assemble_line_with_relocations(
             return Ok((vec![encoded], relocations));
         } else if mnemonic == "la" && tokens.len() == 4 {
             // la rd, symbol - expands to auipc + addi with relocations
-            if let (Token::Comma, Token::Mnemonic(symbol)) = (&tokens[2], &tokens[3]) {
+            if let Token::Comma = &tokens[2] {
                 if let Some(rd) = token_to_register(&tokens[1]) {
+                    if let Some(symbol) = tokens.get(3).and_then(normalize_symbol_token) {
                     // Emit with placeholder offsets (0)
                     let instructions = expand_la_with_offset(rd, 0)?;
                     
@@ -698,12 +741,41 @@ fn assemble_line_with_relocations(
                     relocations.push((current_byte_offset + 4, "".to_string(), elf_writer::R_RISCV_RELAX));
                     
                     return Ok((instructions, relocations));
+                    }
+                }
+            }
+        } else if mnemonic == "jal" && tokens.len() == 4 {
+            // jal rd, symbol - emit placeholder immediate and relocation for linker.
+            if let Token::Comma = &tokens[2] {
+                if let Some(rd) = token_to_register(&tokens[1]) {
+                    if let Some(symbol) = tokens.get(3).and_then(normalize_symbol_token) {
+                        // Keep label-local resolution where possible for exact parity in intra-file jumps.
+                        if let Some((_, label_offset)) = label_map.get(&symbol) {
+                            let imm = *label_offset as i64 - current_byte_offset as i64;
+                            let instruction = instruction::Instruction::JType {
+                                mnemonic: "jal".to_string(),
+                                rd,
+                                imm,
+                            };
+                            let encoded = Encoder::encode(&instruction)?;
+                            return Ok((vec![encoded], relocations));
+                        }
+
+                        let instruction = instruction::Instruction::JType {
+                            mnemonic: "jal".to_string(),
+                            rd,
+                            imm: 0,
+                        };
+                        let encoded = Encoder::encode(&instruction)?;
+                        relocations.push((current_byte_offset, symbol, elf_writer::R_RISCV_JAL));
+                        return Ok((vec![encoded], relocations));
+                    }
                 }
             }
         } else if mnemonic == "j" && tokens.len() == 2 {
             // j label - pseudo for jal x0, label
-            if let Token::Mnemonic(label_name) = &tokens[1] {
-                if let Some((_, label_offset)) = label_map.get(label_name) {
+            if let Some(label_name) = tokens.get(1).and_then(normalize_symbol_token) {
+                if let Some((_, label_offset)) = label_map.get(&label_name) {
                     let imm = *label_offset as i64 - current_byte_offset as i64;
                     let instr = instruction::Instruction::JType {
                         mnemonic: "jal".to_string(),
@@ -746,11 +818,11 @@ fn assemble_line_with_relocations(
         if ["beq", "bne", "blt", "bltu", "bge", "bgeu"].contains(&mnemonic.as_str()) {
             // These might have a label as the third operand
             if tokens.len() >= 6 {
-                if let (Token::Comma, Token::Comma, Token::Mnemonic(label_name)) =
-                    (&tokens[2], &tokens[4], &tokens[5])
+                if let (Token::Comma, Token::Comma) = (&tokens[2], &tokens[4])
                 {
                     if let (Some(rs1), Some(rs2)) = (token_to_register(&tokens[1]), token_to_register(&tokens[3])) {
-                        if let Some((_, label_offset)) = label_map.get(label_name) {
+                        if let Some(label_name) = tokens.get(5).and_then(normalize_symbol_token) {
+                        if let Some((_, label_offset)) = label_map.get(&label_name) {
                             let imm = *label_offset as i64 - current_byte_offset as i64;
                             let instruction = instruction::Instruction::BType {
                                 mnemonic: mnemonic.clone(),
@@ -760,6 +832,7 @@ fn assemble_line_with_relocations(
                             };
                             let encoded = Encoder::encode(&instruction)?;
                             return Ok((vec![encoded], relocations));
+                        }
                         }
                     }
                 }
@@ -771,11 +844,11 @@ fn assemble_line_with_relocations(
     if let Some(Token::Mnemonic(mnemonic)) = tokens.first() {
         if mnemonic == "jal" {
             if tokens.len() == 4 {
-                if let (Token::Comma, Token::Mnemonic(label_name)) =
-                    (&tokens[2], &tokens[3])
+                if let Token::Comma = &tokens[2]
                 {
                     if let Some(rd) = token_to_register(&tokens[1]) {
-                        if let Some((_, label_offset)) = label_map.get(label_name) {
+                        if let Some(label_name) = tokens.get(3).and_then(normalize_symbol_token) {
+                        if let Some((_, label_offset)) = label_map.get(&label_name) {
                             let imm = *label_offset as i64 - current_byte_offset as i64;
                             let instruction = instruction::Instruction::JType {
                                 mnemonic: mnemonic.clone(),
@@ -784,6 +857,7 @@ fn assemble_line_with_relocations(
                             };
                             let encoded = Encoder::encode(&instruction)?;
                             return Ok((vec![encoded], relocations));
+                        }
                         }
                     }
                 }

@@ -20,13 +20,20 @@ impl Parser {
             _ => {}
         }
 
-        let mnemonic = match &tokens[0] {
+        let raw_mnemonic = match &tokens[0] {
             Token::Mnemonic(m) => m.clone(),
             _ => {
                 return Err(AssemblerError::ParserError(
                     "expected mnemonic".to_string(),
                 ))
             }
+        };
+
+        // Accept GNU aliases for move instructions.
+        let mnemonic = match raw_mnemonic.as_str() {
+            "fmv.s.x" => "fmv.w.x".to_string(),
+            "fmv.x.s" => "fmv.x.w".to_string(),
+            _ => raw_mnemonic,
         };
 
         // Handle pseudo-instructions
@@ -657,6 +664,31 @@ mod tests {
                 assert_eq!(rs2, FloatRegister::F2);
             }
             _ => panic!("expected FCType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_fmv_aliases() {
+        let tokens = crate::lexer::tokenize("fmv.s.x fa0, x0").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+        match instr {
+            Some(Instruction::FMoveRevType { mnemonic, rd, rs1 }) => {
+                assert_eq!(mnemonic, "fmv.w.x");
+                assert_eq!(rd, FloatRegister::F10);
+                assert_eq!(rs1, Register::X0);
+            }
+            _ => panic!("expected FMoveRevType"),
+        }
+
+        let tokens = crate::lexer::tokenize("fmv.x.s a0, fa5").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+        match instr {
+            Some(Instruction::FMoveType { mnemonic, rd, rs1 }) => {
+                assert_eq!(mnemonic, "fmv.x.w");
+                assert_eq!(rd, Register::X10);
+                assert_eq!(rs1, FloatRegister::F15);
+            }
+            _ => panic!("expected FMoveType"),
         }
     }
 }

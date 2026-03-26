@@ -439,6 +439,16 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/PurityTesting.cmake)
 
 if(GNU_ASM_AVAILABLE AND RV32AS_EXECUTABLE)
     message(STATUS "Setting up parity tests for Phase D.1...")
+
+    # Explicitly build rv32as before any parity test runs.
+    add_test(
+        NAME parity/fixture/build_rv32as
+        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target rv32as_build
+    )
+    set_tests_properties(parity/fixture/build_rv32as PROPERTIES
+        LABELS "parity;phase_d1"
+        FIXTURES_SETUP rv32as_built
+    )
     
     # Add parity tests for all assembly directories
     file(GLOB_RECURSE ASM_TEST_FILES "${CMAKE_CURRENT_SOURCE_DIR}/blackbox_tests/asm/*/test.s")
@@ -455,6 +465,45 @@ if(GNU_ASM_AVAILABLE AND RV32AS_EXECUTABLE)
     
     list(LENGTH ASM_TEST_FILES NUM_PARITY_TESTS)
     message(STATUS "  ${NUM_PARITY_TESTS} parity tests configured")
+
+    # Add parity tests for C corpus via GCC -> assembly -> (rv32as vs GNU as)
+    if(RISCV_GCC AND PYTHON_EXECUTABLE)
+        file(GLOB_RECURSE C_PARITY_FILES "${CMAKE_CURRENT_SOURCE_DIR}/blackbox_tests/c/**/test.c")
+        foreach(C_FILE ${C_PARITY_FILES})
+            get_filename_component(C_DIR ${C_FILE} DIRECTORY)
+            get_filename_component(DIR_NAME ${C_DIR} NAME)
+            get_filename_component(PARENT_DIR ${C_DIR} DIRECTORY)
+            get_filename_component(PARENT_NAME ${PARENT_DIR} NAME)
+
+            # Defaults
+            set(C_MARCH "rv32i")
+            set(C_MABI "ilp32")
+
+            set(C_CONFIG "${C_DIR}/config.txt")
+            if(EXISTS ${C_CONFIG})
+                file(STRINGS ${C_CONFIG} CONFIG_LINES)
+                foreach(LINE ${CONFIG_LINES})
+                    if(LINE MATCHES "^march=(.*)$")
+                        set(C_MARCH "${CMAKE_MATCH_1}")
+                    elseif(LINE MATCHES "^mabi=(.*)$")
+                        set(C_MABI "${CMAKE_MATCH_1}")
+                    endif()
+                endforeach()
+            endif()
+
+            # Keep baseline ABI heuristic for F-extension tests.
+            if(C_MABI STREQUAL "ilp32" AND C_MARCH MATCHES ".*f.*")
+                set(C_MABI "ilp32f")
+            endif()
+
+            set(C_PARITY_TEST_NAME "parity/c/${PARENT_NAME}/${DIR_NAME}")
+            add_c_parity_test(${C_PARITY_TEST_NAME} ${C_FILE} ${C_MARCH} ${C_MABI})
+        endforeach()
+        list(LENGTH C_PARITY_FILES NUM_C_PARITY_TESTS)
+        message(STATUS "  ${NUM_C_PARITY_TESTS} C parity tests configured")
+    else()
+        message(WARNING "C parity tests disabled (missing RISCV_GCC or Python)")
+    endif()
 else()
     message(WARNING "Parity tests disabled (GNU assembler or Rust assembler not available)")
 endif()

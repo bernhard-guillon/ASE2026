@@ -95,14 +95,38 @@ impl FloatRegister {
 
     pub fn from_name(name: &str) -> Option<Self> {
         match name {
-            "f0" => Some(FloatRegister::F0), "f1" => Some(FloatRegister::F1), "f2" => Some(FloatRegister::F2), "f3" => Some(FloatRegister::F3),
-            "f4" => Some(FloatRegister::F4), "f5" => Some(FloatRegister::F5), "f6" => Some(FloatRegister::F6), "f7" => Some(FloatRegister::F7),
-            "f8" => Some(FloatRegister::F8), "f9" => Some(FloatRegister::F9), "f10" => Some(FloatRegister::F10), "f11" => Some(FloatRegister::F11),
-            "f12" => Some(FloatRegister::F12), "f13" => Some(FloatRegister::F13), "f14" => Some(FloatRegister::F14), "f15" => Some(FloatRegister::F15),
-            "f16" => Some(FloatRegister::F16), "f17" => Some(FloatRegister::F17), "f18" => Some(FloatRegister::F18), "f19" => Some(FloatRegister::F19),
-            "f20" => Some(FloatRegister::F20), "f21" => Some(FloatRegister::F21), "f22" => Some(FloatRegister::F22), "f23" => Some(FloatRegister::F23),
-            "f24" => Some(FloatRegister::F24), "f25" => Some(FloatRegister::F25), "f26" => Some(FloatRegister::F26), "f27" => Some(FloatRegister::F27),
-            "f28" => Some(FloatRegister::F28), "f29" => Some(FloatRegister::F29), "f30" => Some(FloatRegister::F30), "f31" => Some(FloatRegister::F31),
+            "f0" | "ft0" => Some(FloatRegister::F0),
+            "f1" | "ft1" => Some(FloatRegister::F1),
+            "f2" | "ft2" => Some(FloatRegister::F2),
+            "f3" | "ft3" => Some(FloatRegister::F3),
+            "f4" | "ft4" => Some(FloatRegister::F4),
+            "f5" | "ft5" => Some(FloatRegister::F5),
+            "f6" | "ft6" => Some(FloatRegister::F6),
+            "f7" | "ft7" => Some(FloatRegister::F7),
+            "f8" | "fs0" => Some(FloatRegister::F8),
+            "f9" | "fs1" => Some(FloatRegister::F9),
+            "f10" | "fa0" => Some(FloatRegister::F10),
+            "f11" | "fa1" => Some(FloatRegister::F11),
+            "f12" | "fa2" => Some(FloatRegister::F12),
+            "f13" | "fa3" => Some(FloatRegister::F13),
+            "f14" | "fa4" => Some(FloatRegister::F14),
+            "f15" | "fa5" => Some(FloatRegister::F15),
+            "f16" | "fa6" => Some(FloatRegister::F16),
+            "f17" | "fa7" => Some(FloatRegister::F17),
+            "f18" | "fs2" => Some(FloatRegister::F18),
+            "f19" | "fs3" => Some(FloatRegister::F19),
+            "f20" | "fs4" => Some(FloatRegister::F20),
+            "f21" | "fs5" => Some(FloatRegister::F21),
+            "f22" | "fs6" => Some(FloatRegister::F22),
+            "f23" | "fs7" => Some(FloatRegister::F23),
+            "f24" | "fs8" => Some(FloatRegister::F24),
+            "f25" | "fs9" => Some(FloatRegister::F25),
+            "f26" | "fs10" => Some(FloatRegister::F26),
+            "f27" | "fs11" => Some(FloatRegister::F27),
+            "f28" | "ft8" => Some(FloatRegister::F28),
+            "f29" | "ft9" => Some(FloatRegister::F29),
+            "f30" | "ft10" => Some(FloatRegister::F30),
+            "f31" | "ft11" => Some(FloatRegister::F31),
             _ => None,
         }
     }
@@ -227,6 +251,8 @@ mod tests {
     fn test_float_register_parsing() {
         assert_eq!(FloatRegister::from_name("f0"), Some(FloatRegister::F0));
         assert_eq!(FloatRegister::from_name("f31"), Some(FloatRegister::F31));
+        assert_eq!(FloatRegister::from_name("fa0"), Some(FloatRegister::F10));
+        assert_eq!(FloatRegister::from_name("ft11"), Some(FloatRegister::F31));
         assert_eq!(FloatRegister::from_name("x0"), None);
     }
 
