@@ -92,7 +92,10 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
                     byte_offset += 8;  // Conservative: assume 2 instructions
                 }
             } else if mnemonic == "la" && tokens.len() == 4 {
-                byte_offset += 8;  // la always expands to 2 instructions (auipc + addi)
+                // la is skipped if label not found - count as 0 bytes for now
+                // (if label is found, it will be 8 bytes, but we can't know that in first pass)
+                // Actually, let's be conservative and count as 8 bytes like before
+                byte_offset += 8;
             } else {
                 byte_offset += 4;  // regular instruction
             }
@@ -237,8 +240,9 @@ fn assemble_line_with_labels(
                         let offset = label_offset as i64 - current_byte_offset as i64;
                         return expand_la_with_offset(rd, offset);
                     }
-                    // If label not found, emit with 0 offset (error will be caught elsewhere)
-                    return expand_la(rd);
+                    // If label not found, skip the instruction (return None like the parser does)
+                    // This matches the original behavior where la was treated as a pseudo-instruction
+                    return Ok(Vec::new());
                 }
             }
         }
