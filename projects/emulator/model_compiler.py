@@ -60,6 +60,7 @@ class ModelCompiler:
         self.metadata = None
         self.layers = None
         self.binary_data = None
+        self.use_neural_ops = False
         
     def load_json_intermediate(self, json_path: str) -> Dict:
         """
@@ -178,8 +179,9 @@ class ModelCompiler:
         
         return self.binary_data
     
-    def generate_assembly(self, json_path: str, output_asm: str, temp_bin: str = None, 
-                         with_bootloader: bool = True, with_execution: bool = False) -> str:
+    def generate_assembly(self, json_path: str, output_asm: str, temp_bin: str = None,
+                         with_bootloader: bool = True, with_execution: bool = False,
+                         use_neural_ops: bool = False) -> str:
         """
         Generate complete RISC-V assembly file with model data and execution code.
         
@@ -189,12 +191,16 @@ class ModelCompiler:
             temp_bin: Path to temporary binary file (default: output_asm.bin)
             with_bootloader: Include bootloader code (legacy, kept for compatibility)
             with_execution: Include neural network execution code (Sprint 2)
+            use_neural_ops: Emit custom neural op mnemonics (opcode 0x77) for
+                layer execution and output mapping.
         
         Returns:
             Path to generated assembly file
         """
         if self.verbose:
             print(f"[ModelCompiler] Generating assembly: {output_asm}")
+
+        self.use_neural_ops = use_neural_ops
         
         # Load JSON
         self.load_json_intermediate(json_path)
@@ -748,6 +754,64 @@ sigmoid_piecewise:
         if is_last_layer:
             output_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]
         
+        if self.use_neural_ops:
+            desc_addr = self.MEMORY_LAYOUT["buffer_base"] + 0x3A00 + (layer_idx * 0x20)
+            activation_asm = ""
+            if activation == "relu":
+                activation_asm = f"""    # In-place ReLU over output vector
+    li t1, 0x{output_buf:08X}
+    li t2, 0x{output_buf:08X}
+    li t4, {output_size}
+    nvrelu.f32 t3, t1, t2, t4
+    bne t3, zero, .L{layer_idx}_ret
+"""
+            elif activation == "sigmoid":
+                activation_asm = f"""    # In-place sigmoid PWL over output vector
+    li t1, 0x{output_buf:08X}
+    li t2, 0x{output_buf:08X}
+    li t4, {output_size}
+    nvsigpwl.f32 t3, t1, t2, t4
+    bne t3, zero, .L{layer_idx}_ret
+"""
+
+            return f"""
+# Layer {layer_idx}: Dense [{input_size} → {output_size}] + {activation} (custom ops x77)
+layer_{layer_idx}_forward:
+    # Descriptor at 0x{desc_addr:08X}
+    # [0]=input_ptr [4]=weights_ptr [8]=bias_ptr [12]=output_ptr
+    # [16]=input_len [20]=output_len [24]=flags [28]=reserved
+    li t0, 0x{desc_addr:08X}
+    li t1, 0x{input_buf:08X}
+    sw t1, 0(t0)
+
+    la t1, model_data_start
+    li t2, {weights_offset}
+    add t2, t1, t2
+    sw t2, 4(t0)
+
+    li t2, {biases_offset}
+    add t2, t1, t2
+    sw t2, 8(t0)
+
+    li t2, 0x{output_buf:08X}
+    sw t2, 12(t0)
+
+    li t2, {input_size}
+    sw t2, 16(t0)
+    li t2, {output_size}
+    sw t2, 20(t0)
+    sw zero, 24(t0)
+    sw zero, 28(t0)
+
+    # Dense compute: output = bias + input * weights
+    nmatvec.f32 t3, t0
+    bne t3, zero, .L{layer_idx}_ret
+
+{activation_asm}.L{layer_idx}_ret:
+    ret
+
+"""
+
         asm = f"""
 # Layer {layer_idx}: Dense [{input_size} → {output_size}] + {activation}
 layer_{layer_idx}_forward:
@@ -943,6 +1007,18 @@ map_input_recognizer:
     def _generate_output_mapping(self, model_type: str, output_size: int) -> str:
         """Generate code to map network output to framebuffer."""
         if model_type == "generator":
+            if self.use_neural_ops:
+                return f"""
+# Output mapping: Network output -> Framebuffer pixels (custom op x77)
+map_output_generator:
+    # nvclampu8.f32(dst_u8=framebuffer, src_f32=output_buf, len={output_size})
+    li t0, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
+    li t1, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
+    li t2, {output_size}
+    nvclampu8.f32 t3, t0, t1, t2
+    ret
+
+"""
             # For generator: convert 400 floats to pixels and write to framebuffer
             return f"""
 # Output mapping: Network output -> Framebuffer pixels

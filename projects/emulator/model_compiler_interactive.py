@@ -104,8 +104,9 @@ map_output_framebuffer:
 
 """
 
-    def generate_assembly_interactive(self, json_path: str, output_asm: str, 
-                                     temp_bin: str = None) -> str:
+    def generate_assembly_interactive(self, json_path: str, output_asm: str,
+                                     temp_bin: str = None,
+                                     use_neural_ops: bool = False) -> str:
         """
         Generate assembly for interactive framebuffer output.
         
@@ -119,7 +120,8 @@ map_output_framebuffer:
         
         # Generate the standard assembly first
         std_asm = self.generate_assembly(json_path, output_asm, temp_bin, 
-                                        with_bootloader=False, with_execution=True)
+                                        with_bootloader=False, with_execution=True,
+                                        use_neural_ops=use_neural_ops)
         
         # Read the generated assembly
         with open(std_asm, 'r') as f:
@@ -153,6 +155,11 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output", help="Output assembly file (default: <json>.s)")
     parser.add_argument("-b", "--binary", help="Output binary file (default: <output>.bin)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument(
+        "--use-neural-ops",
+        action="store_true",
+        help="Emit custom neural op mnemonics (opcode 0x77) for layer execution",
+    )
     
     args = parser.parse_args()
     
@@ -160,8 +167,12 @@ if __name__ == "__main__":
     output_bin = args.binary or f"{output_asm}.bin"
     
     compiler = InteractiveModelCompiler(verbose=args.verbose)
-    result = compiler.generate_assembly_interactive(args.json_file, output_asm, output_bin)
+    result = compiler.generate_assembly_interactive(
+        args.json_file,
+        output_asm,
+        output_bin,
+        use_neural_ops=args.use_neural_ops,
+    )
     
     print(f"Interactive assembly generated: {result}")
     print(f"Binary data: {output_bin}")
-
