@@ -65,7 +65,7 @@ add_library(memory Memory.cpp)
 
 # CPU module
 add_library(cpu CPU.cpp)
-target_link_libraries(cpu memory instruction)
+target_link_libraries(cpu memory instruction neural_ops)
 
 # Instruction decoder module
 add_library(instruction Instruction.cpp)

@@ -20,6 +20,8 @@ public:
     // Utility
     size_t size() const { return memory_.size(); }
     void reset();
+    const std::vector<uint8_t>& bytes() const { return memory_; }
+    std::vector<uint8_t>& bytesMutable() { return memory_; }
     
 private:
     std::vector<uint8_t> memory_;

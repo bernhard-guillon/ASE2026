@@ -14,6 +14,15 @@ Instruction InstructionDecoder::decode(uint32_t instruction) {
     instr.rs2 = extractRs2(instruction);
     instr.funct3 = extractFunct3(instruction);
     instr.funct7 = extractFunct7(instruction);
+    instr.rs3 = static_cast<uint8_t>((instruction >> 22) & 0b11111);
+    instr.neural_op = static_cast<uint8_t>((instruction >> 27) & 0b11111);
+
+    // CUSTOM0 neural encoding uses a compact register layout that differs from
+    // standard R-type field positions.
+    if (instr.opcode == Opcode::CUSTOM0) {
+        instr.rs1 = static_cast<uint8_t>((instruction >> 12) & 0b11111);
+        instr.rs2 = static_cast<uint8_t>((instruction >> 17) & 0b11111);
+    }
     
     // Decode immediate based on format
     switch (instr.format) {
@@ -52,6 +61,7 @@ Opcode InstructionDecoder::extractOpcode(uint32_t instruction) {
         case 0b0100111: return Opcode::STORE_FP;
         case 0b0110011: return Opcode::OP;
         case 0b1010011: return Opcode::OP_FP;
+        case 0b1110111: return Opcode::CUSTOM0;
         case 0b0110111: return Opcode::LUI;
         case 0b1100011: return Opcode::BRANCH;
         case 0b1100111: return Opcode::JALR;
@@ -66,6 +76,8 @@ InstructionFormat InstructionDecoder::determineFormat(Opcode opcode) {
         case Opcode::OP:
         case Opcode::OP_FP:
             return InstructionFormat::R_TYPE;
+        case Opcode::CUSTOM0:
+            return InstructionFormat::N_TYPE;
         case Opcode::OP_IMM:
         case Opcode::LOAD:
         case Opcode::LOAD_FP:
