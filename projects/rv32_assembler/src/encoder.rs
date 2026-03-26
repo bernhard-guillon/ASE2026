@@ -231,16 +231,18 @@ impl Encoder {
     }
 
     fn encode_f_r_type(mnemonic: &str, rd: u32, rs1: u32, rs2: u32) -> Result<u32> {
-        let (funct7, _funct3) = match mnemonic {
+        let (funct7, funct3) = match mnemonic {
             "fadd.s" => (0b0000000, 0b000),
             "fsub.s" => (0b0000100, 0b000),
             "fmul.s" => (0b0001000, 0b000),
             "fdiv.s" => (0b0001100, 0b000),
+            "fmin.s" => (0b0010100, 0b000),
+            "fmax.s" => (0b0010100, 0b001),
             _ => return Err(AssemblerError::UnknownInstruction(mnemonic.to_string())),
         };
 
         Ok(Self::encode_instruction(
-            OPCODE_FP, rd, 0b000, rs1, rs2, funct7, 0,
+            OPCODE_FP, rd, funct3, rs1, rs2, funct7, 0,
         ))
     }
 

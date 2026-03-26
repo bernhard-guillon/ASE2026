@@ -1,0 +1,2239 @@
+Start testing: Mar 26 12:45 CET
+----------------------------------------------------------
+Unable to find executable: test_memory_NOT_BUILT
+1/112 Testing: test_memory_NOT_BUILT
+1/112 Test: test_memory_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_memory_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_memory_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_memory_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_cpu_NOT_BUILT
+2/112 Testing: test_cpu_NOT_BUILT
+2/112 Test: test_cpu_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_cpu_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_cpu_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_cpu_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_instruction_NOT_BUILT
+3/112 Testing: test_instruction_NOT_BUILT
+3/112 Test: test_instruction_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_instruction_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_instruction_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_instruction_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_execution_NOT_BUILT
+4/112 Testing: test_execution_NOT_BUILT
+4/112 Test: test_execution_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_execution_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_execution_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_execution_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_emulator_NOT_BUILT
+5/112 Testing: test_emulator_NOT_BUILT
+5/112 Test: test_emulator_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_emulator_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_emulator_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_emulator_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_file_io_syscalls_NOT_BUILT
+6/112 Testing: test_file_io_syscalls_NOT_BUILT
+6/112 Test: test_file_io_syscalls_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_file_io_syscalls_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_file_io_syscalls_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_file_io_syscalls_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_fp_instructions_NOT_BUILT
+7/112 Testing: test_fp_instructions_NOT_BUILT
+7/112 Test: test_fp_instructions_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_fp_instructions_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_fp_instructions_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_fp_instructions_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_memory_syscalls_NOT_BUILT
+8/112 Testing: test_memory_syscalls_NOT_BUILT
+8/112 Test: test_memory_syscalls_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_memory_syscalls_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_memory_syscalls_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_memory_syscalls_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_instruction_edges_NOT_BUILT
+9/112 Testing: test_instruction_edges_NOT_BUILT
+9/112 Test: test_instruction_edges_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_instruction_edges_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_instruction_edges_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_instruction_edges_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_framebuffer_NOT_BUILT
+10/112 Testing: test_framebuffer_NOT_BUILT
+10/112 Test: test_framebuffer_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_framebuffer_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_framebuffer_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_framebuffer_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_elf_loader_NOT_BUILT
+11/112 Testing: test_elf_loader_NOT_BUILT
+11/112 Test: test_elf_loader_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_elf_loader_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_elf_loader_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_elf_loader_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: test_neural_ops_NOT_BUILT
+12/112 Testing: test_neural_ops_NOT_BUILT
+12/112 Test: test_neural_ops_NOT_BUILT
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_neural_ops_NOT_BUILT" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_neural_ops_NOT_BUILT" end time: Mar 26 12:45 CET
+"test_neural_ops_NOT_BUILT" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/test_model_loading
+13/112 Testing: test_model_loading
+13/112 Test: test_model_loading
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_model_loading" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_model_loading" end time: Mar 26 12:45 CET
+"test_model_loading" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/run_memory_layout_test
+14/112 Testing: test_memory_layout
+14/112 Test: test_memory_layout
+Command: ""
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"test_memory_layout" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_memory_layout" end time: Mar 26 12:45 CET
+"test_memory_layout" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/112 Testing: python/phase1/model_compiler_unit
+15/112 Test: python/phase1/model_compiler_unit
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_model_compiler.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/phase1/model_compiler_unit" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 14 items
+
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_activation_type_encoding PASSED [  7%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_assembly_has_sections PASSED [ 14%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_assembly_incbin_directive PASSED [ 21%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_assembly_metadata_comments PASSED [ 28%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_binary_data_roundtrip PASSED [ 35%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_binary_format_layer_table PASSED [ 42%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_compile_method PASSED [ 50%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_generate_assembly_creates_files PASSED [ 57%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_generate_binary_format_simple PASSED [ 64%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_generate_binary_multi_layer PASSED [ 71%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_large_model_compilation PASSED [ 78%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_load_json_intermediate PASSED [ 85%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_load_json_invalid_format PASSED [ 92%]
+blackbox_tests/test_model_compiler.py::TestModelCompiler::test_model_type_encoding PASSED [100%]
+
+============================== 14 passed in 0.80s ==============================
+<end of output>
+Test time =   2.22 sec
+----------------------------------------------------------
+Test Passed.
+"python/phase1/model_compiler_unit" end time: Mar 26 12:45 CET
+"python/phase1/model_compiler_unit" time elapsed: 00:00:02
+----------------------------------------------------------
+
+16/112 Testing: python/phase1/model_compiler_blackbox
+16/112 Test: python/phase1/model_compiler_blackbox
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_model_compiler_blackbox.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/phase1/model_compiler_blackbox" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 9 items
+
+blackbox_tests/test_model_compiler_blackbox.py::TestModelCompilerBlackBox::test_assembly_can_be_assembled PASSED [ 11%]
+blackbox_tests/test_model_compiler_blackbox.py::TestModelCompilerBlackBox::test_assembly_syntax_valid PASSED [ 22%]
+blackbox_tests/test_model_compiler_blackbox.py::TestModelCompilerBlackBox::test_binary_file_created PASSED [ 33%]
+blackbox_tests/test_model_compiler_blackbox.py::TestModelCompilerBlackBox::test_cli_interface PASSED [ 44%]
+blackbox_tests/test_model_compiler_blackbox.py::TestModelCompilerBlackBox::test_generated_assembly_is_valid_text PASSED [ 55%]
+blackbox_tests/test_model_compiler_blackbox.py::TestModelCompilerBlackBox::test_incbin_binary_is_embedded PASSED [ 66%]
+blackbox_tests/test_model_compiler_blackbox.py::TestModelCompilerBlackBox::test_large_model_assembly PASSED [ 77%]
+blackbox_tests/test_model_compiler_blackbox.py::TestModelCompilerBlackBox::test_object_file_has_data_section PASSED [ 88%]
+blackbox_tests/test_model_compiler_blackbox.py::TestModelCompilerBlackBox::test_object_file_has_text_section PASSED [100%]
+
+============================== 9 passed in 0.94s ===============================
+<end of output>
+Test time =   2.38 sec
+----------------------------------------------------------
+Test Passed.
+"python/phase1/model_compiler_blackbox" end time: Mar 26 12:45 CET
+"python/phase1/model_compiler_blackbox" time elapsed: 00:00:02
+----------------------------------------------------------
+
+17/112 Testing: python/phase2/bootloader_unit
+17/112 Test: python/phase2/bootloader_unit
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_bootloader_phase2.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/phase2/bootloader_unit" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 17 items
+
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_assembles_successfully PASSED [  5%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_assembly_contains_stack_init PASSED [ 11%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_assembly_has_copy_loop PASSED [ 17%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_assembly_has_exit_syscall PASSED [ 23%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_has_la_directive PASSED [ 29%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_includes_verification PASSED [ 35%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_loads_correct_size PASSED [ 41%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_loop_counter PASSED [ 47%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_uses_registers_correctly PASSED [ 52%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_verifies_magic_number PASSED [ 58%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_verifies_version PASSED [ 64%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_bootloader_vs_skeleton_difference PASSED [ 70%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_generator_model_destination_address PASSED [ 76%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_recognizer_model_destination_address PASSED [ 82%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_skeleton_mode_disables_bootloader PASSED [ 88%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_verification_exit_codes PASSED [ 94%]
+blackbox_tests/test_bootloader_phase2.py::TestBootloaderCodeGeneration::test_verification_samples_data_section PASSED [100%]
+
+============================== 17 passed in 0.81s ==============================
+<end of output>
+Test time =   2.24 sec
+----------------------------------------------------------
+Test Passed.
+"python/phase2/bootloader_unit" end time: Mar 26 12:45 CET
+"python/phase2/bootloader_unit" time elapsed: 00:00:02
+----------------------------------------------------------
+
+18/112 Testing: python/phase2/bootloader_blackbox
+18/112 Test: python/phase2/bootloader_blackbox
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_bootloader_phase2_blackbox.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/phase2/bootloader_blackbox" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 7 items
+
+blackbox_tests/test_bootloader_phase2_blackbox.py::TestBootloaderExecution::test_bootloader_assembles_with_riscv_as PASSED [ 14%]
+blackbox_tests/test_bootloader_phase2_blackbox.py::TestBootloaderExecution::test_bootloader_compiles_to_assembly PASSED [ 28%]
+blackbox_tests/test_bootloader_phase2_blackbox.py::TestBootloaderExecution::test_bootloader_has_correct_sections PASSED [ 42%]
+blackbox_tests/test_bootloader_phase2_blackbox.py::TestBootloaderExecution::test_bootloader_has_start_symbol PASSED [ 57%]
+blackbox_tests/test_bootloader_phase2_blackbox.py::TestBootloaderExecution::test_bootloader_links_to_elf PASSED [ 71%]
+blackbox_tests/test_bootloader_phase2_blackbox.py::TestBootloaderExecution::test_bootloader_memory_copy_correctness PASSED [ 85%]
+blackbox_tests/test_bootloader_phase2_blackbox.py::TestBootloaderExecution::test_bootloader_with_different_model_sizes PASSED [100%]
+
+============================== 7 passed in 0.88s ===============================
+<end of output>
+Test time =   2.33 sec
+----------------------------------------------------------
+Test Passed.
+"python/phase2/bootloader_blackbox" end time: Mar 26 12:45 CET
+"python/phase2/bootloader_blackbox" time elapsed: 00:00:02
+----------------------------------------------------------
+
+19/112 Testing: python/phase3/linker_script_unit
+19/112 Test: python/phase3/linker_script_unit
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_bootloader_phase3.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/phase3/linker_script_unit" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 26 items
+
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptParsingTest::test_entry_point_defined PASSED [  3%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptParsingTest::test_memory_section_exists PASSED [  7%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptParsingTest::test_script_exists PASSED [ 11%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptParsingTest::test_script_is_not_empty PASSED [ 15%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptParsingTest::test_sections_block_exists PASSED [ 19%]
+blackbox_tests/test_bootloader_phase3.py::MemoryRegionTest::test_code_region_defined PASSED [ 23%]
+blackbox_tests/test_bootloader_phase3.py::MemoryRegionTest::test_code_region_length PASSED [ 26%]
+blackbox_tests/test_bootloader_phase3.py::MemoryRegionTest::test_code_region_origin PASSED [ 30%]
+blackbox_tests/test_bootloader_phase3.py::MemoryRegionTest::test_data_region_defined PASSED [ 34%]
+blackbox_tests/test_bootloader_phase3.py::MemoryRegionTest::test_data_region_length PASSED [ 38%]
+blackbox_tests/test_bootloader_phase3.py::MemoryRegionTest::test_data_region_origin PASSED [ 42%]
+blackbox_tests/test_bootloader_phase3.py::SectionPlacementTest::test_bss_section_exists PASSED [ 46%]
+blackbox_tests/test_bootloader_phase3.py::SectionPlacementTest::test_data_section_in_memory PASSED [ 50%]
+blackbox_tests/test_bootloader_phase3.py::SectionPlacementTest::test_rodata_section_exists PASSED [ 53%]
+blackbox_tests/test_bootloader_phase3.py::SectionPlacementTest::test_text_section_in_code PASSED [ 57%]
+blackbox_tests/test_bootloader_phase3.py::SectionPlacementTest::test_wildcard_patterns PASSED [ 61%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptSyntaxTest::test_no_syntax_errors_basic PASSED [ 65%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptSyntaxTest::test_script_ld_format PASSED [ 69%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptComplianceTest::test_code_at_start_of_memory PASSED [ 73%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptComplianceTest::test_discard_section PASSED [ 76%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptComplianceTest::test_has_comments PASSED [ 80%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptComplianceTest::test_model_addresses_addressable PASSED [ 84%]
+blackbox_tests/test_bootloader_phase3.py::LinkerScriptComplianceTest::test_stack_addressable PASSED [ 88%]
+blackbox_tests/test_bootloader_phase3.py::AddressCalculationTest::test_address_regions_dont_overlap PASSED [ 92%]
+blackbox_tests/test_bootloader_phase3.py::AddressCalculationTest::test_bootloader_code_placement PASSED [ 96%]
+blackbox_tests/test_bootloader_phase3.py::AddressCalculationTest::test_embedded_data_placement PASSED [100%]
+
+============================== 26 passed in 0.76s ==============================
+<end of output>
+Test time =   2.16 sec
+----------------------------------------------------------
+Test Passed.
+"python/phase3/linker_script_unit" end time: Mar 26 12:45 CET
+"python/phase3/linker_script_unit" time elapsed: 00:00:02
+----------------------------------------------------------
+
+20/112 Testing: python/phase3/linker_script_blackbox
+20/112 Test: python/phase3/linker_script_blackbox
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_bootloader_phase3_blackbox.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/phase3/linker_script_blackbox" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 10 items
+
+blackbox_tests/test_bootloader_phase3_blackbox.py::LinkerScriptIntegrationTest::test_can_link_with_model_data PASSED [ 10%]
+blackbox_tests/test_bootloader_phase3_blackbox.py::LinkerScriptIntegrationTest::test_data_section_in_correct_region PASSED [ 20%]
+blackbox_tests/test_bootloader_phase3_blackbox.py::LinkerScriptIntegrationTest::test_elf_program_headers PASSED [ 30%]
+blackbox_tests/test_bootloader_phase3_blackbox.py::LinkerScriptIntegrationTest::test_entry_point_is_start PASSED [ 40%]
+blackbox_tests/test_bootloader_phase3_blackbox.py::LinkerScriptIntegrationTest::test_link_simple_bootloader PASSED [ 50%]
+blackbox_tests/test_bootloader_phase3_blackbox.py::LinkerScriptIntegrationTest::test_linker_script_exists PASSED [ 60%]
+blackbox_tests/test_bootloader_phase3_blackbox.py::LinkerScriptIntegrationTest::test_linker_script_syntax_valid PASSED [ 70%]
+blackbox_tests/test_bootloader_phase3_blackbox.py::LinkerScriptIntegrationTest::test_text_section_at_start PASSED [ 80%]
+blackbox_tests/test_bootloader_phase3_blackbox.py::LinkerScriptMemoryLayoutTest::test_code_starts_at_zero PASSED [ 90%]
+blackbox_tests/test_bootloader_phase3_blackbox.py::LinkerScriptMemoryLayoutTest::test_data_after_code PASSED [100%]
+
+============================== 10 passed in 0.79s ==============================
+<end of output>
+Test time =   2.21 sec
+----------------------------------------------------------
+Test Passed.
+"python/phase3/linker_script_blackbox" end time: Mar 26 12:45 CET
+"python/phase3/linker_script_blackbox" time elapsed: 00:00:02
+----------------------------------------------------------
+
+21/112 Testing: python/phase3/linker_script_integration
+21/112 Test: python/phase3/linker_script_integration
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_bootloader_phase3_integration.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/phase3/linker_script_integration" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 23 items
+
+blackbox_tests/test_bootloader_phase3_integration.py::FullPipelineTest::test_full_pipeline_json_to_elf PASSED [  4%]
+blackbox_tests/test_bootloader_phase3_integration.py::FullPipelineTest::test_pipeline_creates_bootloader_symbols PASSED [  8%]
+blackbox_tests/test_bootloader_phase3_integration.py::FullPipelineTest::test_pipeline_multiple_models PASSED [ 13%]
+blackbox_tests/test_bootloader_phase3_integration.py::MemoryLayoutValidationTest::test_data_section_in_data_region PASSED [ 17%]
+blackbox_tests/test_bootloader_phase3_integration.py::MemoryLayoutValidationTest::test_no_section_overlap PASSED [ 21%]
+blackbox_tests/test_bootloader_phase3_integration.py::MemoryLayoutValidationTest::test_sections_within_regions PASSED [ 26%]
+blackbox_tests/test_bootloader_phase3_integration.py::MemoryLayoutValidationTest::test_text_section_at_address_zero PASSED [ 30%]
+blackbox_tests/test_bootloader_phase3_integration.py::ELFStructureValidationTest::test_elf_entry_point_set PASSED [ 34%]
+blackbox_tests/test_bootloader_phase3_integration.py::ELFStructureValidationTest::test_elf_has_program_headers PASSED [ 39%]
+blackbox_tests/test_bootloader_phase3_integration.py::ELFStructureValidationTest::test_elf_has_valid_header PASSED [ 43%]
+blackbox_tests/test_bootloader_phase3_integration.py::ELFStructureValidationTest::test_elf_is_executable PASSED [ 47%]
+blackbox_tests/test_bootloader_phase3_integration.py::LinkerScriptComplianceTest::test_entry_point_is_start PASSED [ 52%]
+blackbox_tests/test_bootloader_phase3_integration.py::LinkerScriptComplianceTest::test_linker_places_sections_correctly PASSED [ 56%]
+blackbox_tests/test_bootloader_phase3_integration.py::LinkerScriptComplianceTest::test_linker_respects_memory_regions PASSED [ 60%]
+blackbox_tests/test_bootloader_phase3_integration.py::BootloaderDataEmbeddingTest::test_embedded_data_in_object_file PASSED [ 65%]
+blackbox_tests/test_bootloader_phase3_integration.py::BootloaderDataEmbeddingTest::test_embedded_data_survives_linking PASSED [ 69%]
+blackbox_tests/test_bootloader_phase3_integration.py::ToolchainCompatibilityTest::test_readelf_compatibility PASSED [ 73%]
+blackbox_tests/test_bootloader_phase3_integration.py::ToolchainCompatibilityTest::test_riscv64_elf_assembler_compatibility PASSED [ 78%]
+blackbox_tests/test_bootloader_phase3_integration.py::ToolchainCompatibilityTest::test_riscv64_elf_linker_compatibility PASSED [ 82%]
+blackbox_tests/test_bootloader_phase3_integration.py::AddressCalculationTest::test_code_region_addresses PASSED [ 86%]
+blackbox_tests/test_bootloader_phase3_integration.py::AddressCalculationTest::test_data_region_addresses PASSED [ 91%]
+blackbox_tests/test_bootloader_phase3_integration.py::RegressionTest::test_phase1_models_still_work PASSED [ 95%]
+blackbox_tests/test_bootloader_phase3_integration.py::RegressionTest::test_phase2_bootloader_works PASSED [100%]
+
+============================== 23 passed in 4.14s ==============================
+<end of output>
+Test time =   5.56 sec
+----------------------------------------------------------
+Test Passed.
+"python/phase3/linker_script_integration" end time: Mar 26 12:45 CET
+"python/phase3/linker_script_integration" time elapsed: 00:00:05
+----------------------------------------------------------
+
+22/112 Testing: python/phase4/pipeline_integration
+22/112 Test: python/phase4/pipeline_integration
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_bootloader_phase4_integration.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/phase4/pipeline_integration" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 14 items
+
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4BasicPipeline::test_pipeline_full_workflow PASSED [  7%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4BasicPipeline::test_pipeline_with_binary_output PASSED [ 14%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4BasicPipeline::test_pipeline_cleanup_intermediate_files PASSED [ 21%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4BasicPipeline::test_pipeline_skip_cleanup PASSED [ 28%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4ErrorHandling::test_invalid_json_file PASSED [ 35%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4ErrorHandling::test_missing_input_file PASSED [ 42%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4ErrorHandling::test_missing_linker_script PASSED [ 50%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4ErrorHandling::test_missing_assembler_tool PASSED [ 57%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4OutputValidation::test_elf_file_size_reasonable PASSED [ 64%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4OutputValidation::test_elf_header_valid PASSED [ 71%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4OutputValidation::test_binary_file_loadable PASSED [ 78%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4Integration::test_multiple_models_different_sizes PASSED [ 85%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4CLI::test_cli_help PASSED [ 92%]
+blackbox_tests/test_bootloader_phase4_integration.py::TestPhase4CLI::test_cli_missing_required_output PASSED [100%]
+
+============================== 14 passed in 1.12s ==============================
+<end of output>
+Test time =   2.55 sec
+----------------------------------------------------------
+Test Passed.
+"python/phase4/pipeline_integration" end time: Mar 26 12:45 CET
+"python/phase4/pipeline_integration" time elapsed: 00:00:02
+----------------------------------------------------------
+
+23/112 Testing: python/phase5/cmake_build_system
+23/112 Test: python/phase5/cmake_build_system
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_bootloader_phase5.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/phase5/cmake_build_system" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 13 items
+
+blackbox_tests/test_bootloader_phase5.py::TestPhase5CMakeConfiguration::test_cmake_bootloader_module_found PASSED [  7%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5CMakeConfiguration::test_cmake_configure_with_bootloader_module PASSED [ 15%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5AddModelBootloader::test_add_model_bootloader_creates_target PASSED [ 23%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5AddModelBootloader::test_add_model_bootloader_validates_json_file PASSED [ 30%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5AddModelBootloader::test_add_model_bootloader_with_binary_flag PASSED [ 38%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5OutputDirectory::test_bootloaders_directory_created PASSED [ 46%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5FunctionAccessors::test_get_bootloader_elf_file PASSED [ 53%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5FunctionAccessors::test_get_bootloader_bin_file PASSED [ 61%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5FunctionAccessors::test_get_bootloader_model_name PASSED [ 69%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5Documentation::test_module_has_docstring_comments PASSED [ 76%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5Documentation::test_module_explains_outputs PASSED [ 84%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5Integration::test_cmake_module_valid_syntax PASSED [ 92%]
+blackbox_tests/test_bootloader_phase5.py::TestPhase5Integration::test_cmake_module_uses_best_practices PASSED [100%]
+
+============================== 13 passed in 3.60s ==============================
+<end of output>
+Test time =   4.99 sec
+----------------------------------------------------------
+Test Passed.
+"python/phase5/cmake_build_system" end time: Mar 26 12:45 CET
+"python/phase5/cmake_build_system" time elapsed: 00:00:04
+----------------------------------------------------------
+
+24/112 Testing: python/phase6/comprehensive_integration
+24/112 Test: python/phase6/comprehensive_integration
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_bootloader_phase6_integration.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/phase6/comprehensive_integration" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 13 items
+
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6ELFValidation::test_elf_generation_basic PASSED [  7%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6ELFValidation::test_elf_entry_point PASSED [ 15%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6ELFValidation::test_elf_file_size_reasonable PASSED [ 23%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6BinaryContent::test_elf_contains_risc_v_instructions PASSED [ 30%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6BinaryContent::test_elf_extraction_to_binary PASSED [ 38%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6ModelLoading::test_multiple_models_compilation PASSED [ 46%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6ModelLoading::test_model_compilation_deterministic PASSED [ 53%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6MemoryLayout::test_memory_layout_consistency PASSED [ 61%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6Pipeline::test_pipeline_json_to_elf_full_flow PASSED [ 69%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6Pipeline::test_pipeline_error_recovery PASSED [ 76%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6EdgeCases::test_large_model_compilation PASSED [ 84%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6EdgeCases::test_model_with_different_activations PASSED [ 92%]
+blackbox_tests/test_bootloader_phase6_integration.py::TestPhase6Performance::test_compilation_completes_reasonably_fast PASSED [100%]
+
+============================== 13 passed in 1.03s ==============================
+<end of output>
+Test time =   2.67 sec
+----------------------------------------------------------
+Test Passed.
+"python/phase6/comprehensive_integration" end time: Mar 26 12:45 CET
+"python/phase6/comprehensive_integration" time elapsed: 00:00:02
+----------------------------------------------------------
+
+25/112 Testing: python/static_char_gen/integration
+25/112 Test: python/static_char_gen/integration
+Command: "/usr/bin/python3" "blackbox_tests/test_static_char_gen_integration.py"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/static_char_gen/integration" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+
+============================================================
+STATIC CHARACTER GENERATION - INTEGRATION TEST SUITE
+============================================================
+
+Phase 1: Compilation & File Tests
+----------------------------------------
+✓ Font header exists
+✓ Font header size valid
+✓ Font array has 255 chars
+✗ Program compiles to RV32I ELF
+✗ Program binary is executable
+
+Phase 2: CLI & Framework Tests
+----------------------------------------
+✗ emulator_runner exists
+✗ CLI --char option works
+✓ Font extraction script exists
+
+Phase 3: Source Code Tests
+----------------------------------------
+✓ static_char_gen.c source exists
+✓ Source has framebuffer logic
+✓ Source reads register a0
+
+Phase 4: Data & Algorithm Tests
+----------------------------------------
+✓ Original dataset loads
+✓ Font data matches dataset
+✓ Full ASCII range (0-254)
+
+============================================================
+RESULTS: 10 passed, 4 failed
+============================================================
+
+Failed tests:
+  - Program compiles to RV32I ELF
+  - Program binary is executable
+  - emulator_runner exists
+  - CLI --char option works
+<end of output>
+Test time =   0.14 sec
+----------------------------------------------------------
+Test Failed.
+"python/static_char_gen/integration" end time: Mar 26 12:45 CET
+"python/static_char_gen/integration" time elapsed: 00:00:00
+----------------------------------------------------------
+
+26/112 Testing: python/static_char_gen/basic
+26/112 Test: python/static_char_gen/basic
+Command: "/usr/bin/python3" "blackbox_tests/test_static_char_gen_basic.py"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/static_char_gen/basic" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+Error: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner not found
+Error: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner not found
+Error: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner not found
+Error: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner not found
+Error: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner not found
+Error: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner not found
+Error: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner not found
+
+0/7 tests completed
+<end of output>
+Test time =   0.12 sec
+----------------------------------------------------------
+Test Passed.
+"python/static_char_gen/basic" end time: Mar 26 12:45 CET
+"python/static_char_gen/basic" time elapsed: 00:00:00
+----------------------------------------------------------
+
+27/112 Testing: python/elf_loader/blackbox
+27/112 Test: python/elf_loader/blackbox
+Command: "/usr/bin/python3" "blackbox_tests/test_elf_loader_blackbox.py"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/elf_loader/blackbox" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================================================
+ELF LOADER BLACKBOX TESTS
+============================================================
+
+✗ NOP program loads
+✗ RODATA program loads
+✗ Const pattern displays
+✗ Array indexing works
+✗ Read offset program
+✗ No regression in existing tests
+✗ ELF validation rejects invalid: [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ GUI mode with ELF
+✗ Entry point execution
+✗ Multiple segments load
+✗ Large binary with font
+✗ Program termination
+✗ Memory allocation correct
+✗ Stack/heap isolation
+✓ ELF loader compatibility
+
+
+============================================================
+RESULTS: 1 passed, 14 failed
+============================================================
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Failed.
+"python/elf_loader/blackbox" end time: Mar 26 12:45 CET
+"python/elf_loader/blackbox" time elapsed: 00:00:00
+----------------------------------------------------------
+
+28/112 Testing: python/neural_ops/oracle
+28/112 Test: python/neural_ops/oracle
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_neural_ops_oracle.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/neural_ops/oracle" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 8 items
+
+blackbox_tests/test_neural_ops_oracle.py::test_one_hot_255_basic PASSED  [ 12%]
+blackbox_tests/test_neural_ops_oracle.py::test_one_hot_255_out_of_range_is_all_zero PASSED [ 25%]
+blackbox_tests/test_neural_ops_oracle.py::test_sigmoid_piecewise_boundaries PASSED [ 37%]
+blackbox_tests/test_neural_ops_oracle.py::test_matvec_io_f32_layout_and_result PASSED [ 50%]
+blackbox_tests/test_neural_ops_oracle.py::test_vec_relu_f32 PASSED       [ 62%]
+blackbox_tests/test_neural_ops_oracle.py::test_vec_sigmoid_pwl_f32_vectorized PASSED [ 75%]
+blackbox_tests/test_neural_ops_oracle.py::test_vec_clamp_scale_u8_f32_corner_cases PASSED [ 87%]
+blackbox_tests/test_neural_ops_oracle.py::test_dense_relu_flow_example PASSED [100%]
+
+============================== 8 passed in 0.87s ===============================
+<end of output>
+Test time =   2.47 sec
+----------------------------------------------------------
+Test Passed.
+"python/neural_ops/oracle" end time: Mar 26 12:45 CET
+"python/neural_ops/oracle" time elapsed: 00:00:02
+----------------------------------------------------------
+
+29/112 Testing: python/assembler/dropin_parity_scaffold
+29/112 Test: python/assembler/dropin_parity_scaffold
+Command: "/usr/bin/python3" "-m" "pytest" "blackbox_tests/test_assembler_dropin_parity_scaffold.py" "-v"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/assembler/dropin_parity_scaffold" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.14.3, pytest-8.4.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.0.1 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+plugins: anyio-4.12.1, hypothesis-6.151.9, Faker-40.8.1, aiohttp-1.0.5, cov-7.0.0, benchmark-5.0.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+blackbox_tests/test_assembler_dropin_parity_scaffold.py::test_dropin_assembler_text_parity_scaffold SKIPPED [100%]
+
+=============================== warnings summary ===============================
+blackbox_tests/test_assembler_dropin_parity_scaffold.py:58
+  /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/test_assembler_dropin_parity_scaffold.py:58: PytestUnknownMarkWarning: Unknown pytest.mark.blackbox - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.blackbox
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 skipped, 1 warning in 0.86s =========================
+<end of output>
+Test time =   2.46 sec
+----------------------------------------------------------
+Test Passed.
+"python/assembler/dropin_parity_scaffold" end time: Mar 26 12:45 CET
+"python/assembler/dropin_parity_scaffold" time elapsed: 00:00:02
+----------------------------------------------------------
+
+30/112 Testing: asm/basic/arithmetic
+30/112 Test: asm/basic/arithmetic
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/basic/arithmetic/test.bin > /tmp/test_output_basic_arithmetic.txt 2>&1; cat /tmp/test_output_basic_arithmetic.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/basic/arithmetic" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/basic/arithmetic" end time: Mar 26 12:45 CET
+"asm/basic/arithmetic" time elapsed: 00:00:00
+----------------------------------------------------------
+
+31/112 Testing: asm/basic/comparisons
+31/112 Test: asm/basic/comparisons
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/basic/comparisons/test.bin > /tmp/test_output_basic_comparisons.txt 2>&1; cat /tmp/test_output_basic_comparisons.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/basic/comparisons" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/basic/comparisons" end time: Mar 26 12:45 CET
+"asm/basic/comparisons" time elapsed: 00:00:00
+----------------------------------------------------------
+
+32/112 Testing: asm/basic/fibonacci
+32/112 Test: asm/basic/fibonacci
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/basic/fibonacci/test.bin > /tmp/test_output_basic_fibonacci.txt 2>&1; cat /tmp/test_output_basic_fibonacci.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/basic/fibonacci" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/basic/fibonacci" end time: Mar 26 12:45 CET
+"asm/basic/fibonacci" time elapsed: 00:00:00
+----------------------------------------------------------
+
+33/112 Testing: asm/basic/hello
+33/112 Test: asm/basic/hello
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/basic/hello/test.bin > /tmp/test_output_basic_hello.txt 2>&1; cat /tmp/test_output_basic_hello.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/basic/hello" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/basic/hello" end time: Mar 26 12:45 CET
+"asm/basic/hello" time elapsed: 00:00:00
+----------------------------------------------------------
+
+34/112 Testing: asm/basic/immediates
+34/112 Test: asm/basic/immediates
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/basic/immediates/test.bin > /tmp/test_output_basic_immediates.txt 2>&1; cat /tmp/test_output_basic_immediates.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/basic/immediates" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/basic/immediates" end time: Mar 26 12:45 CET
+"asm/basic/immediates" time elapsed: 00:00:00
+----------------------------------------------------------
+
+35/112 Testing: asm/basic/loops
+35/112 Test: asm/basic/loops
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/basic/loops/test.bin > /tmp/test_output_basic_loops.txt 2>&1; cat /tmp/test_output_basic_loops.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/basic/loops" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/basic/loops" end time: Mar 26 12:45 CET
+"asm/basic/loops" time elapsed: 00:00:00
+----------------------------------------------------------
+
+36/112 Testing: asm/basic/memory
+36/112 Test: asm/basic/memory
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/basic/memory/test.bin > /tmp/test_output_basic_memory.txt 2>&1; cat /tmp/test_output_basic_memory.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/basic/memory" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/basic/memory" end time: Mar 26 12:45 CET
+"asm/basic/memory" time elapsed: 00:00:00
+----------------------------------------------------------
+
+37/112 Testing: asm/basic/shifts
+37/112 Test: asm/basic/shifts
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/basic/shifts/test.bin > /tmp/test_output_basic_shifts.txt 2>&1; cat /tmp/test_output_basic_shifts.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/basic/shifts" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/basic/shifts" end time: Mar 26 12:45 CET
+"asm/basic/shifts" time elapsed: 00:00:00
+----------------------------------------------------------
+
+38/112 Testing: asm/basic/stack
+38/112 Test: asm/basic/stack
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/basic/stack/test.bin > /tmp/test_output_basic_stack.txt 2>&1; cat /tmp/test_output_basic_stack.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/basic/stack" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/basic/stack" end time: Mar 26 12:45 CET
+"asm/basic/stack" time elapsed: 00:00:00
+----------------------------------------------------------
+
+39/112 Testing: asm/branches/conditional
+39/112 Test: asm/branches/conditional
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/branches/conditional/test.bin > /tmp/test_output_branches_conditional.txt 2>&1; cat /tmp/test_output_branches_conditional.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/branches/conditional" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/branches/conditional" end time: Mar 26 12:45 CET
+"asm/branches/conditional" time elapsed: 00:00:00
+----------------------------------------------------------
+
+40/112 Testing: asm/branches/forward_jumps
+40/112 Test: asm/branches/forward_jumps
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/branches/forward_jumps/test.bin > /tmp/test_output_branches_forward_jumps.txt 2>&1; cat /tmp/test_output_branches_forward_jumps.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/branches/forward_jumps" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/branches/forward_jumps" end time: Mar 26 12:45 CET
+"asm/branches/forward_jumps" time elapsed: 00:00:00
+----------------------------------------------------------
+
+41/112 Testing: asm/branches/negative_offsets
+41/112 Test: asm/branches/negative_offsets
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/branches/negative_offsets/test.bin > /tmp/test_output_branches_negative_offsets.txt 2>&1; cat /tmp/test_output_branches_negative_offsets.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/branches/negative_offsets" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/branches/negative_offsets" end time: Mar 26 12:45 CET
+"asm/branches/negative_offsets" time elapsed: 00:00:00
+----------------------------------------------------------
+
+42/112 Testing: asm/edge_cases/jalr_lsb
+42/112 Test: asm/edge_cases/jalr_lsb
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/edge_cases/jalr_lsb/test.bin > /tmp/test_output_edge_cases_jalr_lsb.txt 2>&1; cat /tmp/test_output_edge_cases_jalr_lsb.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/edge_cases/jalr_lsb" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/edge_cases/jalr_lsb" end time: Mar 26 12:45 CET
+"asm/edge_cases/jalr_lsb" time elapsed: 00:00:00
+----------------------------------------------------------
+
+43/112 Testing: asm/edge_cases/large_immediates
+43/112 Test: asm/edge_cases/large_immediates
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/edge_cases/large_immediates/test.bin > /tmp/test_output_edge_cases_large_immediates.txt 2>&1; cat /tmp/test_output_edge_cases_large_immediates.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/edge_cases/large_immediates" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/edge_cases/large_immediates" end time: Mar 26 12:45 CET
+"asm/edge_cases/large_immediates" time elapsed: 00:00:00
+----------------------------------------------------------
+
+44/112 Testing: asm/edge_cases/shift_masking
+44/112 Test: asm/edge_cases/shift_masking
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/edge_cases/shift_masking/test.bin > /tmp/test_output_edge_cases_shift_masking.txt 2>&1; cat /tmp/test_output_edge_cases_shift_masking.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/edge_cases/shift_masking" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/edge_cases/shift_masking" end time: Mar 26 12:45 CET
+"asm/edge_cases/shift_masking" time elapsed: 00:00:00
+----------------------------------------------------------
+
+45/112 Testing: asm/edge_cases/x0
+45/112 Test: asm/edge_cases/x0
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/edge_cases/x0/test.bin > /tmp/test_output_edge_cases_x0.txt 2>&1; cat /tmp/test_output_edge_cases_x0.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/edge_cases/x0" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/edge_cases/x0" end time: Mar 26 12:45 CET
+"asm/edge_cases/x0" time elapsed: 00:00:00
+----------------------------------------------------------
+
+46/112 Testing: asm/fp_activation/relu
+46/112 Test: asm/fp_activation/relu
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/fp_activation/relu/test.bin > /tmp/test_output_fp_activation_relu.txt 2>&1; cat /tmp/test_output_fp_activation_relu.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/fp_activation/relu" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/fp_activation/relu" end time: Mar 26 12:45 CET
+"asm/fp_activation/relu" time elapsed: 00:00:00
+----------------------------------------------------------
+
+47/112 Testing: asm/fp_activation/sigmoid
+47/112 Test: asm/fp_activation/sigmoid
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/fp_activation/sigmoid/test.bin > /tmp/test_output_fp_activation_sigmoid.txt 2>&1; cat /tmp/test_output_fp_activation_sigmoid.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/fp_activation/sigmoid" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/fp_activation/sigmoid" end time: Mar 26 12:45 CET
+"asm/fp_activation/sigmoid" time elapsed: 00:00:00
+----------------------------------------------------------
+
+48/112 Testing: asm/fp_extension/feq
+48/112 Test: asm/fp_extension/feq
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/fp_extension/feq/test.bin > /tmp/test_output_fp_extension_feq.txt 2>&1; cat /tmp/test_output_fp_extension_feq.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/fp_extension/feq" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/fp_extension/feq" end time: Mar 26 12:45 CET
+"asm/fp_extension/feq" time elapsed: 00:00:00
+----------------------------------------------------------
+
+49/112 Testing: asm/asm/fp_extension
+49/112 Test: asm/asm/fp_extension
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/fp_extension/test.bin > /tmp/test_output_asm_fp_extension.txt 2>&1; cat /tmp/test_output_asm_fp_extension.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/asm/fp_extension" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/asm/fp_extension" end time: Mar 26 12:45 CET
+"asm/asm/fp_extension" time elapsed: 00:00:00
+----------------------------------------------------------
+
+50/112 Testing: asm/jumps/jal
+50/112 Test: asm/jumps/jal
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/jumps/jal/test.bin > /tmp/test_output_jumps_jal.txt 2>&1; cat /tmp/test_output_jumps_jal.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/jumps/jal" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/jumps/jal" end time: Mar 26 12:45 CET
+"asm/jumps/jal" time elapsed: 00:00:00
+----------------------------------------------------------
+
+51/112 Testing: asm/jumps/jalr
+51/112 Test: asm/jumps/jalr
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/jumps/jalr/test.bin > /tmp/test_output_jumps_jalr.txt 2>&1; cat /tmp/test_output_jumps_jalr.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/jumps/jalr" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/jumps/jalr" end time: Mar 26 12:45 CET
+"asm/jumps/jalr" time elapsed: 00:00:00
+----------------------------------------------------------
+
+52/112 Testing: asm/memory/different_widths
+52/112 Test: asm/memory/different_widths
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/memory/different_widths/test.bin > /tmp/test_output_memory_different_widths.txt 2>&1; cat /tmp/test_output_memory_different_widths.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/memory/different_widths" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/memory/different_widths" end time: Mar 26 12:45 CET
+"asm/memory/different_widths" time elapsed: 00:00:00
+----------------------------------------------------------
+
+53/112 Testing: asm/memory/mixed_ops
+53/112 Test: asm/memory/mixed_ops
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/memory/mixed_ops/test.bin > /tmp/test_output_memory_mixed_ops.txt 2>&1; cat /tmp/test_output_memory_mixed_ops.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/memory/mixed_ops" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/memory/mixed_ops" end time: Mar 26 12:45 CET
+"asm/memory/mixed_ops" time elapsed: 00:00:00
+----------------------------------------------------------
+
+54/112 Testing: asm/memory/signed_load
+54/112 Test: asm/memory/signed_load
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/memory/signed_load/test.bin > /tmp/test_output_memory_signed_load.txt 2>&1; cat /tmp/test_output_memory_signed_load.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/memory/signed_load" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/memory/signed_load" end time: Mar 26 12:45 CET
+"asm/memory/signed_load" time elapsed: 00:00:00
+----------------------------------------------------------
+
+55/112 Testing: asm/syscalls/exit_codes
+55/112 Test: asm/syscalls/exit_codes
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/syscalls/exit_codes/test.bin > /tmp/test_output_syscalls_exit_codes.txt 2>&1; cat /tmp/test_output_syscalls_exit_codes.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/syscalls/exit_codes" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/syscalls/exit_codes" end time: Mar 26 12:45 CET
+"asm/syscalls/exit_codes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+56/112 Testing: asm/syscalls/multiple_writes
+56/112 Test: asm/syscalls/multiple_writes
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/syscalls/multiple_writes/test.bin > /tmp/test_output_syscalls_multiple_writes.txt 2>&1; cat /tmp/test_output_syscalls_multiple_writes.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/syscalls/multiple_writes" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/syscalls/multiple_writes" end time: Mar 26 12:45 CET
+"asm/syscalls/multiple_writes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+57/112 Testing: asm/syscalls/stderr
+57/112 Test: asm/syscalls/stderr
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/syscalls/stderr/test.bin > /tmp/test_output_syscalls_stderr.txt 2>&1; cat /tmp/test_output_syscalls_stderr.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/syscalls/stderr" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/syscalls/stderr" end time: Mar 26 12:45 CET
+"asm/syscalls/stderr" time elapsed: 00:00:00
+----------------------------------------------------------
+
+58/112 Testing: asm/upper_immediates/auipc
+58/112 Test: asm/upper_immediates/auipc
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/upper_immediates/auipc/test.bin > /tmp/test_output_upper_immediates_auipc.txt 2>&1; cat /tmp/test_output_upper_immediates_auipc.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/upper_immediates/auipc" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/upper_immediates/auipc" end time: Mar 26 12:45 CET
+"asm/upper_immediates/auipc" time elapsed: 00:00:00
+----------------------------------------------------------
+
+59/112 Testing: asm/upper_immediates/lui
+59/112 Test: asm/upper_immediates/lui
+Command: "/usr/bin/bash" "-c" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/asm/upper_immediates/lui/test.bin > /tmp/test_output_upper_immediates_lui.txt 2>&1; cat /tmp/test_output_upper_immediates_lui.txt"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"asm/upper_immediates/lui" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+/usr/bin/bash: line 1: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner: No such file or directory
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[.*]
+"asm/upper_immediates/lui" end time: Mar 26 12:45 CET
+"asm/upper_immediates/lui" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+60/112 Testing: c/fibonacci/fib
+60/112 Test: c/fibonacci/fib
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/fibonacci/fib.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/fibonacci/fib" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/fibonacci/fib" end time: Mar 26 12:45 CET
+"c/fibonacci/fib" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+61/112 Testing: c/file_io/file_read
+61/112 Test: c/file_io/file_read
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/file_io/file_read.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/file_io/file_read" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/file_io/file_read" end time: Mar 26 12:45 CET
+"c/file_io/file_read" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+62/112 Testing: c/file_io/file_write
+62/112 Test: c/file_io/file_write
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/file_io/file_write.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/file_io/file_write" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/file_io/file_write" end time: Mar 26 12:45 CET
+"c/file_io/file_write" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+63/112 Testing: c/file_io/test_lseek
+63/112 Test: c/file_io/test_lseek
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/file_io/test_lseek.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/file_io/test_lseek" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/file_io/test_lseek" end time: Mar 26 12:45 CET
+"c/file_io/test_lseek" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+64/112 Testing: c/file_io/test_open
+64/112 Test: c/file_io/test_open
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/file_io/test_open.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/file_io/test_open" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/file_io/test_open" end time: Mar 26 12:45 CET
+"c/file_io/test_open" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+65/112 Testing: c/file_io/test_random_access
+65/112 Test: c/file_io/test_random_access
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/file_io/test_random_access.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/file_io/test_random_access" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/file_io/test_random_access" end time: Mar 26 12:45 CET
+"c/file_io/test_random_access" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+66/112 Testing: c/file_io/test_read
+66/112 Test: c/file_io/test_read
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/file_io/test_read.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/file_io/test_read" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/file_io/test_read" end time: Mar 26 12:45 CET
+"c/file_io/test_read" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+67/112 Testing: c/relu/test
+67/112 Test: c/relu/test
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/fp_activation/relu/test.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/relu/test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/relu/test" end time: Mar 26 12:45 CET
+"c/relu/test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+68/112 Testing: c/sigmoid/test
+68/112 Test: c/sigmoid/test
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/fp_activation/sigmoid/test.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/sigmoid/test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/sigmoid/test" end time: Mar 26 12:45 CET
+"c/sigmoid/test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+69/112 Testing: c/fp_extension/test_fp_basic
+69/112 Test: c/fp_extension/test_fp_basic
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/fp_extension/test_fp_basic.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/fp_extension/test_fp_basic" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/fp_extension/test_fp_basic" end time: Mar 26 12:45 CET
+"c/fp_extension/test_fp_basic" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+70/112 Testing: c/fp_extension/test_inline_asm
+70/112 Test: c/fp_extension/test_inline_asm
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/fp_extension/test_inline_asm.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/fp_extension/test_inline_asm" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/fp_extension/test_inline_asm" end time: Mar 26 12:45 CET
+"c/fp_extension/test_inline_asm" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+71/112 Testing: c/hello/hello
+71/112 Test: c/hello/hello
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/hello/hello.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/hello/hello" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/hello/hello" end time: Mar 26 12:45 CET
+"c/hello/hello" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+72/112 Testing: c/hello/test
+72/112 Test: c/hello/test
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/hello/test.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/hello/test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/hello/test" end time: Mar 26 12:45 CET
+"c/hello/test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+73/112 Testing: c/malloc/malloc_debug
+73/112 Test: c/malloc/malloc_debug
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/malloc/malloc_debug.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/malloc/malloc_debug" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/malloc/malloc_debug" end time: Mar 26 12:45 CET
+"c/malloc/malloc_debug" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+74/112 Testing: c/malloc/malloc_large
+74/112 Test: c/malloc/malloc_large
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/malloc/malloc_large.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/malloc/malloc_large" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/malloc/malloc_large" end time: Mar 26 12:45 CET
+"c/malloc/malloc_large" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+75/112 Testing: c/malloc/malloc_multi
+75/112 Test: c/malloc/malloc_multi
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/malloc/malloc_multi.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/malloc/malloc_multi" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/malloc/malloc_multi" end time: Mar 26 12:45 CET
+"c/malloc/malloc_multi" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+76/112 Testing: c/malloc/malloc_test
+76/112 Test: c/malloc/malloc_test
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/malloc/malloc_test.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/malloc/malloc_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/malloc/malloc_test" end time: Mar 26 12:45 CET
+"c/malloc/malloc_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+77/112 Testing: c/malloc/malloc_test2
+77/112 Test: c/malloc/malloc_test2
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/malloc/malloc_test2.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/malloc/malloc_test2" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/malloc/malloc_test2" end time: Mar 26 12:45 CET
+"c/malloc/malloc_test2" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+78/112 Testing: c/recursion/test_recursion
+78/112 Test: c/recursion/test_recursion
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/recursion/test_recursion.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/recursion/test_recursion" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/recursion/test_recursion" end time: Mar 26 12:45 CET
+"c/recursion/test_recursion" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/emulator_runner
+79/112 Testing: c/recursion/test_recursion_advanced
+79/112 Test: c/recursion/test_recursion_advanced
+Command: "" "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/blackbox_tests/c/recursion/test_recursion_advanced.bin"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"c/recursion/test_recursion_advanced" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"c/recursion/test_recursion_advanced" end time: Mar 26 12:45 CET
+"c/recursion/test_recursion_advanced" time elapsed: 00:00:00
+----------------------------------------------------------
+
+80/112 Testing: python/neural_char_gen/validation_256
+80/112 Test: python/neural_char_gen/validation_256
+Command: "/usr/bin/python3" "blackbox_tests/test_neural_256_chars.py"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/neural_char_gen/validation_256" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+Loaded PyTorch reference: (256, 20, 20)
+======================================================================
+NEURAL CHARACTER GENERATION - 256 CHARACTER TEST
+======================================================================
+
+Built neural ELF: /tmp/neural256_tij3gtcs/neural.elf
+
+✗ Char   0 (\x00): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char   1 (\x01): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char   2 (\x02): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char   3 (\x03): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char   4 (\x04): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char   5 (\x05): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char   6 (\x06): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char   7 (\x07): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char   8 (\x08): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char   9 (\x09): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  10 (\x0a): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  11 (\x0b): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  12 (\x0c): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  13 (\x0d): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  14 (\x0e): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  15 (\x0f): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  16 (\x10): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  17 (\x11): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  18 (\x12): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  19 (\x13): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  20 (\x14): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  21 (\x15): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  22 (\x16): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  23 (\x17): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  24 (\x18): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  25 (\x19): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  26 (\x1a): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  27 (\x1b): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  28 (\x1c): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  29 (\x1d): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  30 (\x1e): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  31 (\x1f): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+
+✗ Char  32 (    ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  33 (!   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  34 ("   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  35 (#   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  36 ($   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  37 (%   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  38 (&   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  39 ('   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  40 ((   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  41 ()   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  42 (*   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  43 (+   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  44 (,   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  45 (-   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  46 (.   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  47 (/   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  48 (0   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  49 (1   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  50 (2   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  51 (3   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  52 (4   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  53 (5   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  54 (6   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  55 (7   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  56 (8   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  57 (9   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  58 (:   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  59 (;   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  60 (<   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  61 (=   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  62 (>   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  63 (?   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+
+✗ Char  64 (@   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  65 (A   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  66 (B   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  67 (C   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  68 (D   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  69 (E   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  70 (F   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  71 (G   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  72 (H   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  73 (I   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  74 (J   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  75 (K   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  76 (L   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  77 (M   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  78 (N   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  79 (O   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  80 (P   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  81 (Q   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  82 (R   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  83 (S   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  84 (T   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  85 (U   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  86 (V   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  87 (W   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  88 (X   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  89 (Y   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  90 (Z   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  91 ([   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  92 (\   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  93 (]   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  94 (^   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  95 (_   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+
+✗ Char  96 (`   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  97 (a   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  98 (b   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char  99 (c   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 100 (d   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 101 (e   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 102 (f   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 103 (g   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 104 (h   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 105 (i   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 106 (j   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 107 (k   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 108 (l   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 109 (m   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 110 (n   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 111 (o   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 112 (p   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 113 (q   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 114 (r   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 115 (s   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 116 (t   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 117 (u   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 118 (v   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 119 (w   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 120 (x   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 121 (y   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 122 (z   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 123 ({   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 124 (|   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 125 (}   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 126 (~   ): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 127 (\x7f): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+
+✗ Char 128 (\x80): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 129 (\x81): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 130 (\x82): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 131 (\x83): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 132 (\x84): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 133 (\x85): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 134 (\x86): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 135 (\x87): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 136 (\x88): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 137 (\x89): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 138 (\x8a): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 139 (\x8b): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 140 (\x8c): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 141 (\x8d): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 142 (\x8e): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 143 (\x8f): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 144 (\x90): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 145 (\x91): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 146 (\x92): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 147 (\x93): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 148 (\x94): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 149 (\x95): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 150 (\x96): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 151 (\x97): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 152 (\x98): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 153 (\x99): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 154 (\x9a): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 155 (\x9b): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 156 (\x9c): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 157 (\x9d): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 158 (\x9e): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 159 (\x9f): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+
+✗ Char 160 (\xa0): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 161 (\xa1): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 162 (\xa2): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 163 (\xa3): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 164 (\xa4): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 165 (\xa5): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 166 (\xa6): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 167 (\xa7): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 168 (\xa8): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 169 (\xa9): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 170 (\xaa): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 171 (\xab): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 172 (\xac): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 173 (\xad): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 174 (\xae): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 175 (\xaf): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 176 (\xb0): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 177 (\xb1): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 178 (\xb2): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 179 (\xb3): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 180 (\xb4): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 181 (\xb5): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 182 (\xb6): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 183 (\xb7): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 184 (\xb8): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 185 (\xb9): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 186 (\xba): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 187 (\xbb): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 188 (\xbc): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 189 (\xbd): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 190 (\xbe): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 191 (\xbf): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+
+✗ Char 192 (\xc0): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 193 (\xc1): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 194 (\xc2): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 195 (\xc3): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 196 (\xc4): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 197 (\xc5): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 198 (\xc6): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 199 (\xc7): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 200 (\xc8): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 201 (\xc9): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 202 (\xca): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 203 (\xcb): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 204 (\xcc): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 205 (\xcd): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 206 (\xce): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 207 (\xcf): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 208 (\xd0): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 209 (\xd1): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 210 (\xd2): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 211 (\xd3): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 212 (\xd4): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 213 (\xd5): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 214 (\xd6): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 215 (\xd7): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 216 (\xd8): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 217 (\xd9): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 218 (\xda): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 219 (\xdb): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 220 (\xdc): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 221 (\xdd): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 222 (\xde): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 223 (\xdf): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+
+✗ Char 224 (\xe0): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 225 (\xe1): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 226 (\xe2): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 227 (\xe3): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 228 (\xe4): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 229 (\xe5): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 230 (\xe6): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 231 (\xe7): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 232 (\xe8): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 233 (\xe9): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 234 (\xea): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 235 (\xeb): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 236 (\xec): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 237 (\xed): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 238 (\xee): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 239 (\xef): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 240 (\xf0): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 241 (\xf1): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 242 (\xf2): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 243 (\xf3): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 244 (\xf4): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 245 (\xf5): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 246 (\xf6): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 247 (\xf7): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 248 (\xf8): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 249 (\xf9): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 250 (\xfa): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 251 (\xfb): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 252 (\xfc): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 253 (\xfd): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 254 (\xfe): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+✗ Char 255 (\xff): [Errno 2] No such file or directory: '/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner'
+
+
+======================================================================
+RESULTS: 0 passed, 256 failed
+Pass rate: 0.0%
+======================================================================
+
+======================================================================
+PASSED TEST PATTERNS (first 10)
+======================================================================
+<end of output>
+Test time =   0.44 sec
+----------------------------------------------------------
+Test Failed.
+"python/neural_char_gen/validation_256" end time: Mar 26 12:45 CET
+"python/neural_char_gen/validation_256" time elapsed: 00:00:00
+----------------------------------------------------------
+
+81/112 Testing: python/verilator/differential_validation
+81/112 Test: python/verilator/differential_validation
+Command: "/usr/bin/python3" "blackbox_tests/test_verilator_differential.py"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator
+"python/verilator/differential_validation" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/test_verilator_differential.py", line 260, in <module>
+    test_verilator_differential_validation()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/test_verilator_differential.py", line 255, in test_verilator_differential_validation
+    validator = DifferentialValidator()
+  File "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/test_verilator_differential.py", line 52, in __init__
+    self.build_dir = self._resolve_build_dir()
+                     ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/test_verilator_differential.py", line 62, in _resolve_build_dir
+    raise FileNotFoundError(
+        "Missing build directory artifacts. Configure/build with: cmake -S . -B build && cmake --build build"
+    )
+FileNotFoundError: Missing build directory artifacts. Configure/build with: cmake -S . -B build && cmake --build build
+<end of output>
+Test time =   0.07 sec
+----------------------------------------------------------
+Test Failed.
+"python/verilator/differential_validation" end time: Mar 26 12:45 CET
+"python/verilator/differential_validation" time elapsed: 00:00:00
+----------------------------------------------------------
+
+82/112 Testing: parity/basic/arithmetic
+82/112 Test: parity/basic/arithmetic
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/arithmetic/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_arithmetic_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_arithmetic_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_arithmetic_test_gnu.o" "-DTEST_NAME=arithmetic/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/arithmetic" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: arithmetic/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/arithmetic" end time: Mar 26 12:45 CET
+"parity/basic/arithmetic" time elapsed: 00:00:00
+----------------------------------------------------------
+
+83/112 Testing: parity/basic/comparisons
+83/112 Test: parity/basic/comparisons
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/comparisons/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_comparisons_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_comparisons_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_comparisons_test_gnu.o" "-DTEST_NAME=comparisons/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/comparisons" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: comparisons/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/comparisons" end time: Mar 26 12:45 CET
+"parity/basic/comparisons" time elapsed: 00:00:00
+----------------------------------------------------------
+
+84/112 Testing: parity/basic/fibonacci
+84/112 Test: parity/basic/fibonacci
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/fibonacci/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_fibonacci_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_fibonacci_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_fibonacci_test_gnu.o" "-DTEST_NAME=fibonacci/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/fibonacci" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: fibonacci/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/fibonacci" end time: Mar 26 12:45 CET
+"parity/basic/fibonacci" time elapsed: 00:00:00
+----------------------------------------------------------
+
+85/112 Testing: parity/basic/hello
+85/112 Test: parity/basic/hello
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/hello/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_hello_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_hello_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_hello_test_gnu.o" "-DTEST_NAME=hello/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/hello" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: hello/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/hello" end time: Mar 26 12:45 CET
+"parity/basic/hello" time elapsed: 00:00:00
+----------------------------------------------------------
+
+86/112 Testing: parity/basic/immediates
+86/112 Test: parity/basic/immediates
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/immediates/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_immediates_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_immediates_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_immediates_test_gnu.o" "-DTEST_NAME=immediates/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/immediates" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: immediates/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/immediates" end time: Mar 26 12:45 CET
+"parity/basic/immediates" time elapsed: 00:00:00
+----------------------------------------------------------
+
+87/112 Testing: parity/basic/loops
+87/112 Test: parity/basic/loops
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/loops/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_loops_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_loops_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_loops_test_gnu.o" "-DTEST_NAME=loops/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/loops" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: loops/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/loops" end time: Mar 26 12:45 CET
+"parity/basic/loops" time elapsed: 00:00:00
+----------------------------------------------------------
+
+88/112 Testing: parity/basic/memory
+88/112 Test: parity/basic/memory
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/memory/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_memory_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_memory_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_memory_test_gnu.o" "-DTEST_NAME=memory/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/memory" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:17 (message):
+  ✗ Rust assembler failed for memory/test:
+
+  Assembly error: Invalid immediate value: 912092 (out of range for i20)
+
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/memory" end time: Mar 26 12:45 CET
+"parity/basic/memory" time elapsed: 00:00:00
+----------------------------------------------------------
+
+89/112 Testing: parity/basic/shifts
+89/112 Test: parity/basic/shifts
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/shifts/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_shifts_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_shifts_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_shifts_test_gnu.o" "-DTEST_NAME=shifts/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/shifts" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: shifts/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/shifts" end time: Mar 26 12:45 CET
+"parity/basic/shifts" time elapsed: 00:00:00
+----------------------------------------------------------
+
+90/112 Testing: parity/basic/stack
+90/112 Test: parity/basic/stack
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/basic/stack/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_stack_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_stack_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_stack_test_gnu.o" "-DTEST_NAME=stack/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/basic/stack" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:58 (message):
+  ✗ PARITY MISMATCH: stack/test - size difference
+
+    Rust: 148 bytes
+    GNU: 144 bytes
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/basic/stack" end time: Mar 26 12:45 CET
+"parity/basic/stack" time elapsed: 00:00:00
+----------------------------------------------------------
+
+91/112 Testing: parity/branches/conditional
+91/112 Test: parity/branches/conditional
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/branches/conditional/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_conditional_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_conditional_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_conditional_test_gnu.o" "-DTEST_NAME=conditional/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/branches/conditional" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: conditional/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/branches/conditional" end time: Mar 26 12:45 CET
+"parity/branches/conditional" time elapsed: 00:00:00
+----------------------------------------------------------
+
+92/112 Testing: parity/branches/forward_jumps
+92/112 Test: parity/branches/forward_jumps
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/branches/forward_jumps/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_forward_jumps_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_forward_jumps_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_forward_jumps_test_gnu.o" "-DTEST_NAME=forward_jumps/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/branches/forward_jumps" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: forward_jumps/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/branches/forward_jumps" end time: Mar 26 12:45 CET
+"parity/branches/forward_jumps" time elapsed: 00:00:00
+----------------------------------------------------------
+
+93/112 Testing: parity/branches/negative_offsets
+93/112 Test: parity/branches/negative_offsets
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/branches/negative_offsets/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_negative_offsets_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_negative_offsets_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_negative_offsets_test_gnu.o" "-DTEST_NAME=negative_offsets/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/branches/negative_offsets" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:66 (message):
+  ✗ PARITY MISMATCH: negative_offsets/test - binary content differs
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/branches/negative_offsets" end time: Mar 26 12:45 CET
+"parity/branches/negative_offsets" time elapsed: 00:00:00
+----------------------------------------------------------
+
+94/112 Testing: parity/edge_cases/jalr_lsb
+94/112 Test: parity/edge_cases/jalr_lsb
+Command: "/usr/bin/cmake" "-DRUST_ASSEMBLER=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/rv32as" "-DGNU_ASSEMBLER=/usr/bin/riscv64-elf-as" "-DOBJ_COPY=/usr/bin/riscv64-elf-objcopy" "-DINPUT_ASM=/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/blackbox_tests/asm/edge_cases/jalr_lsb/test.s" "-DRUST_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_jalr_lsb_test_rust.bin" "-DGNU_OUTPUT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_jalr_lsb_test_gnu.bin" "-DGNU_OBJECT=/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/parity_jalr_lsb_test_gnu.o" "-DTEST_NAME=jalr_lsb/test" "-P" "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake"
+Directory: /home/nice/Uni/Master/ASE2026/ASE2026/emulator_build
+"parity/edge_cases/jalr_lsb" start time: Mar 26 12:45 CET
+Output:
+----------------------------------------------------------
+CMake Error at /home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/cmake/RunParityTest.cmake:17 (message):
+  ✗ Rust assembler failed for jalr_lsb/test:
+
+  Assembly error: Wrong number of operands for jalr: expected 3, got 6
+
+
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"parity/edge_cases/jalr_lsb" end time: Mar 26 12:45 CET
+"parity/edge_cases/jalr_lsb" time elapsed: 00:00:00
+----------------------------------------------------------
+

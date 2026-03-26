@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_model_loading.dir/link.d CMakeFiles/test_model_loading.dir/utest/test_model_loading.cpp.o -o test_model_loading  libemulator.a libcpu.a libmemory.a libinstruction.a libneural_ops.a

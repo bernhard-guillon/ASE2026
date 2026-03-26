@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_framebuffer.dir/link.d CMakeFiles/test_framebuffer.dir/utest/test_framebuffer.cpp.o -o test_framebuffer  libemulator.a libcpu.a libmemory.a libinstruction.a lib/libgtest_main.a libneural_ops.a lib/libgtest.a

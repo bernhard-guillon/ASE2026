@@ -1,0 +1,5 @@
+if(EXISTS "/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/test_cpu[1]_tests.cmake")
+  include("/home/nice/Uni/Master/ASE2026/ASE2026/emulator_build/test_cpu[1]_tests.cmake")
+else()
+  add_test(test_cpu_NOT_BUILT test_cpu_NOT_BUILT)
+endif()

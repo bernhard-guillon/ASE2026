@@ -71,7 +71,7 @@ impl Parser {
             // RV32I J-type instructions
             "jal" => Self::parse_j_type(mnemonic, tokens).map(Some),
             // RV32F FR-type instructions
-            "fadd.s" | "fsub.s" | "fmul.s" | "fdiv.s" => {
+            "fadd.s" | "fsub.s" | "fmul.s" | "fdiv.s" | "fmin.s" | "fmax.s" => {
                 Self::parse_f_r_type(mnemonic, tokens).map(Some)
             }
             // RV32F FI-type (load)
@@ -117,8 +117,36 @@ impl Parser {
     }
 
     fn parse_i_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
-        // Special handling for load instructions with offset
-        if mnemonic == "lw" || mnemonic == "lh" || mnemonic == "lb" || mnemonic == "lwu" || mnemonic == "lhu" {
+        // Special handling for float load instruction
+        if mnemonic == "flw" {
+            // Format: flw rd, offset(rs1)
+            // Tokens: [Mnemonic, FloatRegister, Comma, Integer, LeftParen, Register, RightParen]
+            if tokens.len() != 7 {
+                return Err(AssemblerError::WrongOperandCount(
+                    mnemonic.clone(),
+                    2,
+                    tokens.len() - 1,
+                ));
+            }
+
+            let rd = Self::expect_float_register(&tokens[1])?;
+            Self::expect_comma(&tokens[2])?;
+            let imm = Self::expect_integer(&tokens[3])?;
+            Self::expect_lparen(&tokens[4])?;
+            let rs1 = Self::expect_register(&tokens[5])?;
+            Self::expect_rparen(&tokens[6])?;
+
+            return Ok(Instruction::FIType {
+                mnemonic,
+                rd,
+                rs1,
+                imm,
+            });
+        }
+
+        // Special handling for regular load instructions with offset
+        if mnemonic == "lw" || mnemonic == "lh" || mnemonic == "lb" || mnemonic == "lwu" 
+            || mnemonic == "lhu" || mnemonic == "lbu" {
             // Format: lw rd, offset(rs1)
             // Tokens: [Mnemonic, Register, Comma, Integer, LeftParen, Register, RightParen]
             if tokens.len() != 7 {
@@ -311,7 +339,7 @@ impl Parser {
     }
 
     fn parse_f_s_type(mnemonic: String, tokens: &[Token]) -> Result<Instruction> {
-        if tokens.len() != 6 {
+        if tokens.len() != 7 {
             return Err(AssemblerError::WrongOperandCount(
                 mnemonic.clone(),
                 2,

@@ -52,9 +52,14 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
         }
     }
     
-    // First pass: collect labels and their EXACT byte offsets by simulating assembly
+    // First pass: collect labels from ALL sections with their EXACT byte offsets
     let mut label_map = std::collections::HashMap::new();
-    let mut byte_offset = 0;
+    let mut section_sizes = std::collections::HashMap::new();
+    let mut current_section = ".text".to_string();
+    let mut section_byte_offset = 0;
+    
+    // Initialize section sizes
+    section_sizes.insert(".text".to_string(), 0);
     
     for line in &lines {
         let tokens = match lexer::tokenize(line) {
@@ -66,25 +71,58 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
             continue;
         }
         
-        // Check for labels
-        if let Some(Token::Label(label_name)) = tokens.first() {
-            label_map.insert(label_name.clone(), byte_offset);
+        // Check for section directives
+        if let Some(Token::Directive(directive)) = tokens.first() {
+            if directive.starts_with("section ") {
+                let section_name = directive.trim_start_matches("section ").to_string();
+                current_section = section_name.clone();
+                section_byte_offset = 0;  // Reset offset for new section
+                
+                // Initialize section size if not seen before
+                if !section_sizes.contains_key(&current_section) {
+                    section_sizes.insert(current_section.clone(), 0);
+                }
+            }
             continue;
         }
         
-        // Skip directives and non-instructions
+        // Check for labels
+        if let Some(Token::Label(label_name)) = tokens.first() {
+            // Compute absolute offset: sum of all previous sections' sizes + current offset
+            let mut absolute_offset = 0;
+            // Use sorted section order for deterministic computation
+            let mut sections: Vec<_> = section_sizes.keys().collect();
+            sections.sort();
+            for section_name in sections {
+                if section_name == &current_section {
+                    absolute_offset += section_byte_offset;
+                    break;
+                }
+                absolute_offset += section_sizes[section_name];
+            }
+            label_map.insert(label_name.clone(), absolute_offset);
+            continue;
+        }
+        
+        // Skip non-instructions
         match tokens.first() {
-            Some(Token::Directive(_)) | Some(Token::String(_)) => continue,
+            Some(Token::String(_)) => continue,
             _ => {}
         }
         
         // Calculate EXACT size by simulating the assembly
         let size = simulate_line_size(&tokens)?;
-        byte_offset += size;
+        section_byte_offset += size;
+        
+        // Update section size
+        if let Some(sect_size) = section_sizes.get_mut(&current_section) {
+            *sect_size = section_byte_offset;
+        }
     }
     
-    // Second pass: assemble with label resolution
+    // Second pass: assemble .text section only with label resolution
     let mut bytes = Vec::new();
+    let mut current_section = ".text".to_string();
     
     for line in &lines {
         let tokens = lexer::tokenize(line)?;
@@ -93,9 +131,23 @@ pub fn assemble_program(text: &str) -> Result<Vec<u8>> {
             continue;
         }
         
-        // Skip labels and directives
+        // Handle section directives
+        if let Some(Token::Directive(directive)) = tokens.first() {
+            if directive.starts_with("section ") {
+                let section_name = directive.trim_start_matches("section ").to_string();
+                current_section = section_name;
+            }
+            continue;
+        }
+        
+        // Only assemble .text section
+        if current_section != ".text" {
+            continue;
+        }
+        
+        // Skip labels and other directives
         match tokens.first() {
-            Some(Token::Label(_)) | Some(Token::Directive(_)) | Some(Token::String(_)) => continue,
+            Some(Token::Label(_)) | Some(Token::String(_)) => continue,
             _ => {}
         }
         
@@ -127,8 +179,8 @@ fn simulate_line_size(tokens: &[Token]) -> Result<usize> {
             }
             return Ok(8);  // Conservative
         } else if mnemonic == "la" && tokens.len() == 4 {
-            // la is always skipped (unknown labels in data section)
-            return Ok(0);
+            // la always expands to 8 bytes (auipc + addi)
+            return Ok(8);
         } else if ["beq", "bne", "blt", "bltu", "bge", "bgeu", "jal"].contains(&mnemonic.as_str()) {
             return Ok(4);  // Branch/jump with label resolution
         } else {
@@ -256,6 +308,47 @@ fn assemble_line_with_labels(
                     return Ok(Vec::new());
                 }
             }
+        } else if mnemonic == "j" && tokens.len() == 2 {
+            // j label - pseudo for jal x0, label
+            if let Token::Mnemonic(label_name) = &tokens[1] {
+                if let Some(&label_offset) = label_map.get(label_name) {
+                    let imm = label_offset as i64 - current_byte_offset as i64;
+                    let instr = instruction::Instruction::JType {
+                        mnemonic: "jal".to_string(),
+                        rd: instruction::Register::X0,
+                        imm,
+                    };
+                    let encoded = Encoder::encode(&instr)?;
+                    return Ok(vec![encoded]);
+                }
+            }
+        } else if mnemonic == "mv" && tokens.len() == 4 {
+            // mv rd, rs - pseudo for addi rd, rs, 0
+            if let (Token::Mnemonic(rd_name), Token::Comma, Token::Mnemonic(rs_name)) =
+                (&tokens[1], &tokens[2], &tokens[3])
+            {
+                use instruction::Register;
+                if let (Some(rd), Some(rs)) = (Register::from_name(rd_name), Register::from_name(rs_name)) {
+                    let instr = instruction::Instruction::IType {
+                        mnemonic: "addi".to_string(),
+                        rd,
+                        rs1: rs,
+                        imm: 0,
+                    };
+                    let encoded = Encoder::encode(&instr)?;
+                    return Ok(vec![encoded]);
+                }
+            }
+        } else if mnemonic == "ret" && tokens.len() == 1 {
+            // ret - pseudo for jalr x0, x1, 0
+            let instr = instruction::Instruction::IType {
+                mnemonic: "jalr".to_string(),
+                rd: instruction::Register::X0,
+                rs1: instruction::Register::X1,
+                imm: 0,
+            };
+            let encoded = Encoder::encode(&instr)?;
+            return Ok(vec![encoded]);
         }
     }
 

@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_elf_loader.dir/link.d CMakeFiles/test_elf_loader.dir/utest/test_elf_loader.cpp.o -o test_elf_loader  libemulator.a libcpu.a libmemory.a libinstruction.a lib/libgtest_main.a libneural_ops.a lib/libgtest.a

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libneural_ops.a CMakeFiles/neural_ops.dir/NeuralOps.cpp.o
+/usr/bin/ranlib libneural_ops.a
