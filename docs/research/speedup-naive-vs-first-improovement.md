@@ -27,6 +27,23 @@ Across all 36 tested characters:
 - Optimized first exact cycle: min/avg/max = **2,000 / 2,000 / 2,000**
 - Speedup (`baseline / optimized`): min/avg/max = **1500x / 1500x / 1500x**
 
+## HDL/Verilator follow-up results
+
+After implementing CUSTOM0/x77 in the Verilog CPU and re-running the same `A-Z0-9` methodology on `verilator_runner`, we measured:
+
+- Baseline (`neural.elf`) first exact cycle: min/avg/max = **4,000,000 / 4,000,000 / 4,000,000**
+- Optimized (`neural-ai-opsx77.elf`) first exact cycle: min/avg/max = **2,000,000 / 2,000,000 / 2,000,000**
+- Speedup (`baseline / optimized`): min/avg/max = **2.0x / 2.0x / 2.0x**
+
+### Why Verilator speedup is smaller than emulator_runner speedup
+
+The two backends execute x77 at different abstraction levels:
+
+- `emulator_runner` dispatches each x77 op directly into native C++ neural kernels (`NeuralOps`), so large scalar loops are collapsed into a few host-side calls (very small constant factors).
+- `verilator_runner` executes x77 via a microcoded FSM inside `hdl/rtl/cpu.v`; loops still iterate element-by-element with memory transactions and DPI-C FP helper calls.
+
+So while ISA-level instruction count is greatly reduced in both, the Verilog implementation still performs most arithmetic/memory work sequentially at micro-op granularity, yielding a moderate but real gain (~2x), not a three-order-of-magnitude gain.
+
 ## Why the speedup happens
 
 ## 1) Same math, fewer executed ISA-level instructions
@@ -73,6 +90,8 @@ For fixed architecture, this is effectively constant-time per character, but wit
 
 Observed result: ~**1500x** lower cycle threshold to reach stable output.
 
+For the HDL/Verilator backend, asymptotics are likewise unchanged, but constants improve less because loop bodies are still executed in the HDL state machine (not replaced by fully parallel dedicated datapaths), consistent with the observed **~2x**.
+
 ## Validity notes
 
 - This study measures cycle budget to stable framebuffer output in this emulator, not wall-clock hardware performance.
@@ -81,4 +100,9 @@ Observed result: ~**1500x** lower cycle threshold to reach stable output.
 
 ## Conclusion
 
-The first x77 integration provides a major practical win: character generation converges at roughly **1500x fewer cycles** than the naive scalar path on `A-Z0-9`, while preserving the same algorithmic complexity class and output behavior.
+The first x77 integration provides a clear practical win on both backends:
+
+- `emulator_runner`: about **1500x** fewer cycles.
+- `verilator_runner` (current HDL microcoded implementation): about **2x** fewer cycles.
+
+Both preserve the same complexity class; gains come from improved constant factors. The remaining HDL gap is a microarchitecture opportunity (e.g., wider/parallel neural datapaths, reduced per-element FSM overhead, and tighter on-chip neural execution units).
