@@ -106,7 +106,8 @@ map_output_framebuffer:
 
     def generate_assembly_interactive(self, json_path: str, output_asm: str,
                                      temp_bin: str = None,
-                                     use_neural_ops: bool = False) -> str:
+                                     use_neural_ops: bool = False,
+                                     neural_opcode: str = "x77") -> str:
         """
         Generate assembly for interactive framebuffer output.
         
@@ -120,8 +121,9 @@ map_output_framebuffer:
         
         # Generate the standard assembly first
         std_asm = self.generate_assembly(json_path, output_asm, temp_bin, 
-                                        with_bootloader=False, with_execution=True,
-                                        use_neural_ops=use_neural_ops)
+                                         with_bootloader=False, with_execution=True,
+                                         use_neural_ops=use_neural_ops,
+                                         neural_opcode=neural_opcode)
         
         # Read the generated assembly
         with open(std_asm, 'r') as f:
@@ -160,6 +162,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Emit custom neural op mnemonics (opcode 0x77) for layer execution",
     )
+    parser.add_argument(
+        "--neural-opcode",
+        choices=["x77", "x7b"],
+        default="x77",
+        help="Custom neural opcode variant to emit when --use-neural-ops is set",
+    )
     
     args = parser.parse_args()
     
@@ -172,6 +180,7 @@ if __name__ == "__main__":
         output_asm,
         output_bin,
         use_neural_ops=args.use_neural_ops,
+        neural_opcode=args.neural_opcode,
     )
     
     print(f"Interactive assembly generated: {result}")

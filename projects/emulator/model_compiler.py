@@ -61,6 +61,7 @@ class ModelCompiler:
         self.layers = None
         self.binary_data = None
         self.use_neural_ops = False
+        self.neural_opcode = "x77"
         
     def load_json_intermediate(self, json_path: str) -> Dict:
         """
@@ -181,7 +182,7 @@ class ModelCompiler:
     
     def generate_assembly(self, json_path: str, output_asm: str, temp_bin: str = None,
                          with_bootloader: bool = True, with_execution: bool = False,
-                         use_neural_ops: bool = False) -> str:
+                         use_neural_ops: bool = False, neural_opcode: str = "x77") -> str:
         """
         Generate complete RISC-V assembly file with model data and execution code.
         
@@ -193,6 +194,8 @@ class ModelCompiler:
             with_execution: Include neural network execution code (Sprint 2)
             use_neural_ops: Emit custom neural op mnemonics (opcode 0x77) for
                 layer execution and output mapping.
+            neural_opcode: Neural custom opcode variant: "x77" (legacy CUSTOM0)
+                or "x7b" (enhanced CUSTOM3).
         
         Returns:
             Path to generated assembly file
@@ -201,6 +204,9 @@ class ModelCompiler:
             print(f"[ModelCompiler] Generating assembly: {output_asm}")
 
         self.use_neural_ops = use_neural_ops
+        self.neural_opcode = neural_opcode.lower()
+        if self.neural_opcode not in ("x77", "x7b"):
+            raise ValueError(f"Unsupported neural_opcode '{neural_opcode}'; expected x77 or x7b")
         
         # Load JSON
         self.load_json_intermediate(json_path)
@@ -755,6 +761,8 @@ sigmoid_piecewise:
             output_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]
         
         if self.use_neural_ops:
+            op_suffix = "x" if self.neural_opcode == "x7b" else ""
+            op_tag = self.neural_opcode.upper()
             desc_addr = self.MEMORY_LAYOUT["buffer_base"] + 0x3A00 + (layer_idx * 0x20)
             activation_asm = ""
             if activation == "relu":
@@ -762,7 +770,7 @@ sigmoid_piecewise:
     li t1, 0x{output_buf:08X}
     li t2, 0x{output_buf:08X}
     li t4, {output_size}
-    nvrelu.f32 t3, t1, t2, t4
+    nvrelu{op_suffix}.f32 t3, t1, t2, t4
     bne t3, zero, .L{layer_idx}_ret
 """
             elif activation == "sigmoid":
@@ -770,12 +778,12 @@ sigmoid_piecewise:
     li t1, 0x{output_buf:08X}
     li t2, 0x{output_buf:08X}
     li t4, {output_size}
-    nvsigpwl.f32 t3, t1, t2, t4
+    nvsigpwl{op_suffix}.f32 t3, t1, t2, t4
     bne t3, zero, .L{layer_idx}_ret
 """
 
             return f"""
-# Layer {layer_idx}: Dense [{input_size} → {output_size}] + {activation} (custom ops x77)
+# Layer {layer_idx}: Dense [{input_size} → {output_size}] + {activation} (custom ops {op_tag})
 layer_{layer_idx}_forward:
     # Descriptor at 0x{desc_addr:08X}
     # [0]=input_ptr [4]=weights_ptr [8]=bias_ptr [12]=output_ptr
@@ -804,7 +812,7 @@ layer_{layer_idx}_forward:
     sw zero, 28(t0)
 
     # Dense compute: output = bias + input * weights
-    nmatvec.f32 t3, t0
+    nmatvec{op_suffix}.f32 t3, t0
     bne t3, zero, .L{layer_idx}_ret
 
 {activation_asm}.L{layer_idx}_ret:
@@ -1008,14 +1016,16 @@ map_input_recognizer:
         """Generate code to map network output to framebuffer."""
         if model_type == "generator":
             if self.use_neural_ops:
+                op_suffix = "x" if self.neural_opcode == "x7b" else ""
+                op_tag = self.neural_opcode.upper()
                 return f"""
-# Output mapping: Network output -> Framebuffer pixels (custom op x77)
+# Output mapping: Network output -> Framebuffer pixels (custom op {op_tag})
 map_output_generator:
     # nvclampu8.f32(dst_u8=framebuffer, src_f32=output_buf, len={output_size})
     li t0, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
     li t1, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
     li t2, {output_size}
-    nvclampu8.f32 t3, t0, t1, t2
+    nvclampu8{op_suffix}.f32 t3, t0, t1, t2
     ret
 
 """
