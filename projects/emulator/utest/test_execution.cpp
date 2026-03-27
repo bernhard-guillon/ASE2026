@@ -975,6 +975,13 @@ TEST_F(ExecutionTest, NeuralCustom3UnknownOpFailsLoud) {
     EXPECT_THROW(cpu.execute(instr, memory), std::runtime_error);
 }
 
+TEST_F(ExecutionTest, NeuralCustom0UnknownOpFailsLoud) {
+    // opid=31 unsupported, opcode=0x77
+    const uint32_t raw = (31u << 27) | (10u << 7) | 0x77u;
+    Instruction instr = InstructionDecoder::decode(raw);
+    EXPECT_THROW(cpu.execute(instr, memory), std::runtime_error);
+}
+
 TEST_F(ExecutionTest, FunctionCallReturn) {
     cpu.setPC(100);
     cpu.setReg(10, 500);

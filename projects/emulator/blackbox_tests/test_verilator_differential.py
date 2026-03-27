@@ -142,6 +142,12 @@ class DifferentialValidator:
 
                 cpp_res, _ = self._run_cmd(self.cpp_runner, elf, args, cpp_dir)
                 vlt_res, _ = self._run_cmd(self.verilator_runner, elf, args, vlt_dir)
+                if "invalid_op_fail" in case_name:
+                    assert cpp_res.returncode != 0 and vlt_res.returncode != 0, (
+                        f"{case_name}: invalid-op fail-loud case unexpectedly succeeded "
+                        f"(cpp={cpp_res.returncode}, vlt={vlt_res.returncode})"
+                    )
+                    continue
                 self._assert_same(case_name, cpp_res, vlt_res)
 
         print("blackbox parity: PASS")

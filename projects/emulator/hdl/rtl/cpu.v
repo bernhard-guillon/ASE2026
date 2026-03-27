@@ -714,8 +714,9 @@ module cpu (
 
                 ST_NVEC_VALIDATE: begin
                     if (neural_op_hold < 5'd1 || neural_op_hold > 5'd3) begin
-                        neural_status <= NEURAL_ERR_INVALID_PTR;
-                        state <= ST_NEURAL_FINISH;
+                        // Fail loud on unsupported neural opcode (matches C++ throw path).
+                        halted <= 1'b1;
+                        exit_code <= 32'd1;
                     end else if (n_len == 32'd0) begin
                         neural_status <= NEURAL_ERR_INVALID_LEN;
                         state <= ST_NEURAL_FINISH;
