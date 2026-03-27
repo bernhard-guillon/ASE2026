@@ -975,6 +975,22 @@ TEST_F(ExecutionTest, NeuralCustom3UnknownOpFailsLoud) {
     EXPECT_THROW(cpu.execute(instr, memory), std::runtime_error);
 }
 
+TEST_F(ExecutionTest, NeuralCustom3NMatvec4xPlaceholderFailsLoud) {
+    // Phase-8 contract: opid=4 is reserved for nmatvec4x and must fail loud
+    // until execution support lands in later phases.
+    const uint32_t raw = (4u << 27) | (10u << 7) | 0x7Bu;
+    Instruction instr = InstructionDecoder::decode(raw);
+    EXPECT_THROW(cpu.execute(instr, memory), std::runtime_error);
+}
+
+TEST_F(ExecutionTest, NeuralCustom3NMatvec8xPlaceholderFailsLoud) {
+    // Phase-8 contract: opid=5 is reserved for nmatvec8x and must fail loud
+    // until execution support lands in later phases.
+    const uint32_t raw = (5u << 27) | (10u << 7) | 0x7Bu;
+    Instruction instr = InstructionDecoder::decode(raw);
+    EXPECT_THROW(cpu.execute(instr, memory), std::runtime_error);
+}
+
 TEST_F(ExecutionTest, NeuralCustom0UnknownOpFailsLoud) {
     // opid=31 unsupported, opcode=0x77
     const uint32_t raw = (31u << 27) | (10u << 7) | 0x77u;
