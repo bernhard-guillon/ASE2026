@@ -18,7 +18,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 
 ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
@@ -156,17 +156,28 @@ def run_backend(
     chars: List[int],
     baseline_cfg: BinaryConfig,
     optimized_cfg: BinaryConfig,
+    enhanced_cfg: Optional[BinaryConfig],
     timeout_s: int,
 ) -> Dict:
     baseline_cycles = []
     optimized_cycles = []
+    enhanced_cycles = []
     per_char = []
     for char_code in chars:
         base = first_match_cycle(runner, baseline_cfg, char_code, timeout_s)
         opt = first_match_cycle(runner, optimized_cfg, char_code, timeout_s)
         speedup = base / opt
+        enh = None
+        enh_speedup = None
+        enh_vs_opt = None
+        if enhanced_cfg is not None:
+            enh = first_match_cycle(runner, enhanced_cfg, char_code, timeout_s)
+            enh_speedup = base / enh
+            enh_vs_opt = opt / enh
         baseline_cycles.append(base)
         optimized_cycles.append(opt)
+        if enh is not None:
+            enhanced_cycles.append(enh)
         per_char.append(
             {
                 "char_code": char_code,
@@ -174,9 +185,12 @@ def run_backend(
                 "baseline_cycles": base,
                 "optimized_cycles": opt,
                 "speedup": speedup,
+                "enhanced_cycles": enh,
+                "enhanced_speedup": enh_speedup,
+                "enhanced_vs_optimized_speedup": enh_vs_opt,
             }
         )
-    return {
+    report = {
         "backend": backend,
         "runner": str(runner),
         "baseline": {
@@ -194,6 +208,24 @@ def run_backend(
         "speedup_summary": summarize([row["speedup"] for row in per_char]),
         "per_char": per_char,
     }
+    if enhanced_cfg is not None:
+        report["enhanced"] = {
+            "elf": str(enhanced_cfg.elf),
+            "reference_cycles": enhanced_cfg.reference_cycles,
+            "threshold_cycles": enhanced_cfg.threshold_cycles,
+            "summary": summarize(enhanced_cycles),
+        }
+        report["enhanced_speedup_summary"] = summarize(
+            [row["enhanced_speedup"] for row in per_char if row["enhanced_speedup"] is not None]
+        )
+        report["enhanced_vs_optimized_speedup_summary"] = summarize(
+            [
+                row["enhanced_vs_optimized_speedup"]
+                for row in per_char
+                if row["enhanced_vs_optimized_speedup"] is not None
+            ]
+        )
+    return report
 
 
 def require_file(path: Path, kind: str) -> None:
@@ -212,6 +244,11 @@ def main() -> int:
         default="cpp,verilator",
         help="Comma-separated backends to run: cpp,verilator",
     )
+    parser.add_argument(
+        "--with-enhanced",
+        action="store_true",
+        help="Also benchmark 0x7B enhanced ELF (neural-op-enhance.elf).",
+    )
     args = parser.parse_args()
 
     repo = args.repo_root.resolve()
@@ -223,8 +260,11 @@ def main() -> int:
 
     baseline_elf = build_dir / "neural.elf"
     optimized_elf = build_dir / "neural-ai-opsx77.elf"
+    enhanced_elf = build_dir / "neural-op-enhance.elf"
     require_file(baseline_elf, "baseline elf")
     require_file(optimized_elf, "optimized elf")
+    if args.with_enhanced:
+        require_file(enhanced_elf, "enhanced elf")
 
     chars = parse_charset(args.charset)
     requested_backends = [b.strip() for b in args.backends.split(",") if b.strip()]
@@ -235,9 +275,21 @@ def main() -> int:
         BinaryConfig("baseline", baseline_elf, 5_000_000, [2_000_000, 2_500_000, 3_000_000, 4_000_000]),
         BinaryConfig("optimized", optimized_elf, 20_000, [2_000, 5_000, 10_000, 20_000]),
     )
+    cpp_enhanced_cfg = BinaryConfig(
+        "enhanced",
+        enhanced_elf,
+        20_000,
+        [1_000, 1_500, 2_000, 3_000, 5_000, 10_000, 20_000],
+    )
     vlt_cfgs = (
         BinaryConfig("baseline", baseline_elf, 5_000_000, [2_000_000, 3_000_000, 4_000_000, 5_000_000]),
         BinaryConfig("optimized", optimized_elf, 5_000_000, [1_000_000, 2_000_000, 3_000_000, 4_000_000]),
+    )
+    vlt_enhanced_cfg = BinaryConfig(
+        "enhanced",
+        enhanced_elf,
+        5_000_000,
+        [250_000, 500_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000],
     )
 
     backend_results = []
@@ -245,11 +297,31 @@ def main() -> int:
         if backend == "cpp":
             runner = build_dir / "emulator_runner"
             require_file(runner, "cpp runner")
-            backend_results.append(run_backend(backend, runner, chars, cpp_cfgs[0], cpp_cfgs[1], args.timeout_s))
+            backend_results.append(
+                run_backend(
+                    backend,
+                    runner,
+                    chars,
+                    cpp_cfgs[0],
+                    cpp_cfgs[1],
+                    cpp_enhanced_cfg if args.with_enhanced else None,
+                    args.timeout_s,
+                )
+            )
         elif backend == "verilator":
             runner = build_dir / "verilator_runner"
             require_file(runner, "verilator runner")
-            backend_results.append(run_backend(backend, runner, chars, vlt_cfgs[0], vlt_cfgs[1], args.timeout_s))
+            backend_results.append(
+                run_backend(
+                    backend,
+                    runner,
+                    chars,
+                    vlt_cfgs[0],
+                    vlt_cfgs[1],
+                    vlt_enhanced_cfg if args.with_enhanced else None,
+                    args.timeout_s,
+                )
+            )
         else:
             raise RuntimeError(f"Unsupported backend: {backend}")
 
@@ -265,7 +337,7 @@ def main() -> int:
         json.dump(report, f, indent=2)
         f.write("\n")
 
-    print(f"Wrote baseline report: {args.output_json}")
+    print(f"Wrote cycle report: {args.output_json}")
     return 0
 
 
