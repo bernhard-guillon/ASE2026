@@ -95,6 +95,33 @@ public:
         uint32_t len
     );
 
+    // Enhanced kernels for CUSTOM3 (0x7B). Semantics must match v1 methods.
+    static uint32_t matvec_f32_v2(
+        std::vector<uint8_t>& memory,
+        uint32_t desc_addr
+    );
+
+    static uint32_t vec_relu_f32_v2(
+        std::vector<uint8_t>& memory,
+        uint32_t dst_ptr,
+        uint32_t src_ptr,
+        uint32_t len
+    );
+
+    static uint32_t vec_sigmoid_pwl_f32_v2(
+        std::vector<uint8_t>& memory,
+        uint32_t dst_ptr,
+        uint32_t src_ptr,
+        uint32_t len
+    );
+
+    static uint32_t vec_clamp_scale_u8_f32_v2(
+        std::vector<uint8_t>& memory,
+        uint32_t dst_ptr_u8,
+        uint32_t src_ptr_f32,
+        uint32_t len
+    );
+
 private:
     // Helper: read float32 from memory at aligned address
     static float read_f32(const std::vector<uint8_t>& mem, uint32_t addr);

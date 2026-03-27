@@ -184,3 +184,175 @@ uint32_t NeuralOps::vec_clamp_scale_u8_f32(
     
     return ERR_OK;
 }
+
+// ============================================================================
+// CUSTOM3 (0x7B) enhanced kernels
+//
+// These paths keep fail-loud validation identical to v1 but use slightly more
+// cache-friendly loop ordering for matvec and explicit chunking for vector ops.
+// Semantics must remain identical to v1 kernels.
+// ============================================================================
+
+uint32_t NeuralOps::matvec_f32_v2(
+    std::vector<uint8_t>& memory,
+    uint32_t desc_addr
+) {
+    if (!is_valid_ptr(memory, desc_addr, 32)) {
+        return ERR_INVALID_PTR;
+    }
+
+    const uint32_t input_ptr = read_u32(memory, desc_addr + 0x00);
+    const uint32_t weights_ptr = read_u32(memory, desc_addr + 0x04);
+    const uint32_t bias_ptr = read_u32(memory, desc_addr + 0x08);
+    const uint32_t output_ptr = read_u32(memory, desc_addr + 0x0C);
+    const uint32_t input_len = read_u32(memory, desc_addr + 0x10);
+    const uint32_t output_len = read_u32(memory, desc_addr + 0x14);
+    const uint32_t flags = read_u32(memory, desc_addr + 0x18);
+
+    if (flags != 0) return ERR_INVALID_PTR;
+    if (input_len == 0 || output_len == 0) return ERR_INVALID_LEN;
+    if (!is_aligned(input_ptr, 4) || !is_aligned(weights_ptr, 4) ||
+        !is_aligned(bias_ptr, 4) || !is_aligned(output_ptr, 4)) {
+        return ERR_UNALIGNED;
+    }
+
+    const uint32_t input_size = input_len * 4;
+    const uint32_t weights_size = input_len * output_len * 4;
+    const uint32_t bias_size = output_len * 4;
+    const uint32_t output_size = output_len * 4;
+
+    if (!is_valid_ptr(memory, input_ptr, input_size) ||
+        !is_valid_ptr(memory, weights_ptr, weights_size) ||
+        !is_valid_ptr(memory, bias_ptr, bias_size) ||
+        !is_valid_ptr(memory, output_ptr, output_size)) {
+        return ERR_INVALID_PTR;
+    }
+
+    // Initialize output from bias once, then accumulate by input row.
+    for (uint32_t j = 0; j < output_len; ++j) {
+        write_f32(memory, output_ptr + j * 4, read_f32(memory, bias_ptr + j * 4));
+    }
+
+    for (uint32_t i = 0; i < input_len; ++i) {
+        const float inp = read_f32(memory, input_ptr + i * 4);
+        const uint32_t w_row = weights_ptr + (i * output_len * 4);
+
+        // 4-lane unroll in software model to mirror planned RTL lane grouping.
+        uint32_t j = 0;
+        for (; j + 3 < output_len; j += 4) {
+            const float w0 = read_f32(memory, w_row + (j + 0) * 4);
+            const float w1 = read_f32(memory, w_row + (j + 1) * 4);
+            const float w2 = read_f32(memory, w_row + (j + 2) * 4);
+            const float w3 = read_f32(memory, w_row + (j + 3) * 4);
+
+            const float o0 = read_f32(memory, output_ptr + (j + 0) * 4) + inp * w0;
+            const float o1 = read_f32(memory, output_ptr + (j + 1) * 4) + inp * w1;
+            const float o2 = read_f32(memory, output_ptr + (j + 2) * 4) + inp * w2;
+            const float o3 = read_f32(memory, output_ptr + (j + 3) * 4) + inp * w3;
+
+            write_f32(memory, output_ptr + (j + 0) * 4, o0);
+            write_f32(memory, output_ptr + (j + 1) * 4, o1);
+            write_f32(memory, output_ptr + (j + 2) * 4, o2);
+            write_f32(memory, output_ptr + (j + 3) * 4, o3);
+        }
+        for (; j < output_len; ++j) {
+            const float w = read_f32(memory, w_row + j * 4);
+            const float o = read_f32(memory, output_ptr + j * 4) + inp * w;
+            write_f32(memory, output_ptr + j * 4, o);
+        }
+    }
+
+    return ERR_OK;
+}
+
+uint32_t NeuralOps::vec_relu_f32_v2(
+    std::vector<uint8_t>& memory,
+    uint32_t dst_ptr,
+    uint32_t src_ptr,
+    uint32_t len
+) {
+    if (len == 0) return ERR_INVALID_LEN;
+    if (!is_aligned(dst_ptr, 4) || !is_aligned(src_ptr, 4)) return ERR_UNALIGNED;
+
+    const uint32_t size = len * 4;
+    if (!is_valid_ptr(memory, dst_ptr, size) || !is_valid_ptr(memory, src_ptr, size)) {
+        return ERR_INVALID_PTR;
+    }
+
+    uint32_t i = 0;
+    for (; i + 3 < len; i += 4) {
+        const float x0 = read_f32(memory, src_ptr + (i + 0) * 4);
+        const float x1 = read_f32(memory, src_ptr + (i + 1) * 4);
+        const float x2 = read_f32(memory, src_ptr + (i + 2) * 4);
+        const float x3 = read_f32(memory, src_ptr + (i + 3) * 4);
+        write_f32(memory, dst_ptr + (i + 0) * 4, (x0 > 0.0f) ? x0 : 0.0f);
+        write_f32(memory, dst_ptr + (i + 1) * 4, (x1 > 0.0f) ? x1 : 0.0f);
+        write_f32(memory, dst_ptr + (i + 2) * 4, (x2 > 0.0f) ? x2 : 0.0f);
+        write_f32(memory, dst_ptr + (i + 3) * 4, (x3 > 0.0f) ? x3 : 0.0f);
+    }
+    for (; i < len; ++i) {
+        const float x = read_f32(memory, src_ptr + i * 4);
+        write_f32(memory, dst_ptr + i * 4, (x > 0.0f) ? x : 0.0f);
+    }
+    return ERR_OK;
+}
+
+uint32_t NeuralOps::vec_sigmoid_pwl_f32_v2(
+    std::vector<uint8_t>& memory,
+    uint32_t dst_ptr,
+    uint32_t src_ptr,
+    uint32_t len
+) {
+    if (len == 0) return ERR_INVALID_LEN;
+    if (!is_aligned(dst_ptr, 4) || !is_aligned(src_ptr, 4)) return ERR_UNALIGNED;
+
+    const uint32_t size = len * 4;
+    if (!is_valid_ptr(memory, dst_ptr, size) || !is_valid_ptr(memory, src_ptr, size)) {
+        return ERR_INVALID_PTR;
+    }
+
+    auto sigmoid_pwl = [](float x) {
+        if (x <= -4.0f) return 0.0f;
+        if (x >= 4.0f) return 1.0f;
+        return 0.5f + x * 0.125f;
+    };
+
+    uint32_t i = 0;
+    for (; i + 3 < len; i += 4) {
+        write_f32(memory, dst_ptr + (i + 0) * 4, sigmoid_pwl(read_f32(memory, src_ptr + (i + 0) * 4)));
+        write_f32(memory, dst_ptr + (i + 1) * 4, sigmoid_pwl(read_f32(memory, src_ptr + (i + 1) * 4)));
+        write_f32(memory, dst_ptr + (i + 2) * 4, sigmoid_pwl(read_f32(memory, src_ptr + (i + 2) * 4)));
+        write_f32(memory, dst_ptr + (i + 3) * 4, sigmoid_pwl(read_f32(memory, src_ptr + (i + 3) * 4)));
+    }
+    for (; i < len; ++i) {
+        write_f32(memory, dst_ptr + i * 4, sigmoid_pwl(read_f32(memory, src_ptr + i * 4)));
+    }
+    return ERR_OK;
+}
+
+uint32_t NeuralOps::vec_clamp_scale_u8_f32_v2(
+    std::vector<uint8_t>& memory,
+    uint32_t dst_ptr_u8,
+    uint32_t src_ptr_f32,
+    uint32_t len
+) {
+    if (len == 0) return ERR_INVALID_LEN;
+    if (!is_aligned(src_ptr_f32, 4)) return ERR_UNALIGNED;
+
+    const uint32_t f32_size = len * 4;
+    if (!is_valid_ptr(memory, src_ptr_f32, f32_size) || !is_valid_ptr(memory, dst_ptr_u8, len)) {
+        return ERR_INVALID_PTR;
+    }
+
+    for (uint32_t i = 0; i < len; ++i) {
+        float x = read_f32(memory, src_ptr_f32 + i * 4);
+        if (std::isnan(x)) x = 0.0f;
+        if (x < 0.0f) x = 0.0f;
+        if (x > 1.0f) x = 1.0f;
+        const float scaled = x * 255.0f;
+        uint32_t ival = static_cast<uint32_t>(scaled);
+        if (ival > 255) ival = 255;
+        memory[dst_ptr_u8 + i] = static_cast<uint8_t>(ival);
+    }
+    return ERR_OK;
+}

@@ -330,3 +330,157 @@ TEST_F(NeuralOpsTest, PipelineReluToSigmoid) {
     EXPECT_FLOAT_EQ(read_f32(data_ptr + 4), 0.5625f);  // sigmoid(0.5)
     EXPECT_FLOAT_EQ(read_f32(data_ptr + 8), 0.75f);  // sigmoid(2.0)
 }
+
+TEST_F(NeuralOpsTest, MatvecV2MatchesV1) {
+    std::vector<uint8_t> mem_v1 = memory;
+    std::vector<uint8_t> mem_v2 = memory;
+
+    const uint32_t input_ptr = 0x1000;
+    const uint32_t weights_ptr = 0x1100;
+    const uint32_t bias_ptr = 0x1200;
+    const uint32_t output_ptr = 0x1300;
+    const uint32_t desc_ptr = 0x0;
+
+    auto init_mem = [&](std::vector<uint8_t>& mem) {
+        auto write_u32_local = [&](uint32_t addr, uint32_t val) { std::memcpy(&mem[addr], &val, 4); };
+        auto write_f32_local = [&](uint32_t addr, float val) {
+            uint32_t bits;
+            std::memcpy(&bits, &val, 4);
+            std::memcpy(&mem[addr], &bits, 4);
+        };
+
+        write_f32_local(input_ptr + 0, 1.0f);
+        write_f32_local(input_ptr + 4, 2.0f);
+
+        write_f32_local(weights_ptr + 0, 1.0f);
+        write_f32_local(weights_ptr + 4, 2.0f);
+        write_f32_local(weights_ptr + 8, 3.0f);
+        write_f32_local(weights_ptr + 12, 4.0f);
+
+        write_f32_local(bias_ptr + 0, 0.0f);
+        write_f32_local(bias_ptr + 4, 0.0f);
+
+        write_u32_local(desc_ptr + 0x00, input_ptr);
+        write_u32_local(desc_ptr + 0x04, weights_ptr);
+        write_u32_local(desc_ptr + 0x08, bias_ptr);
+        write_u32_local(desc_ptr + 0x0C, output_ptr);
+        write_u32_local(desc_ptr + 0x10, 2);
+        write_u32_local(desc_ptr + 0x14, 2);
+        write_u32_local(desc_ptr + 0x18, 0);
+    };
+
+    init_mem(mem_v1);
+    init_mem(mem_v2);
+
+    const uint32_t err_v1 = NeuralOps::matvec_f32(mem_v1, desc_ptr);
+    const uint32_t err_v2 = NeuralOps::matvec_f32_v2(mem_v2, desc_ptr);
+    EXPECT_EQ(err_v1, NeuralOps::ERR_OK);
+    EXPECT_EQ(err_v2, NeuralOps::ERR_OK);
+
+    for (uint32_t j = 0; j < 2; ++j) {
+        float a;
+        float b;
+        std::memcpy(&a, &mem_v1[output_ptr + j * 4], 4);
+        std::memcpy(&b, &mem_v2[output_ptr + j * 4], 4);
+        EXPECT_FLOAT_EQ(a, b);
+    }
+}
+
+TEST_F(NeuralOpsTest, ReluV2MatchesV1) {
+    std::vector<uint8_t> mem_v1 = memory;
+    std::vector<uint8_t> mem_v2 = memory;
+    const uint32_t src_ptr = 0x3000;
+    const uint32_t dst_ptr = 0x3100;
+
+    auto init_mem = [&](std::vector<uint8_t>& mem) {
+        auto write_f32_local = [&](uint32_t addr, float val) {
+            uint32_t bits;
+            std::memcpy(&bits, &val, 4);
+            std::memcpy(&mem[addr], &bits, 4);
+        };
+        write_f32_local(src_ptr + 0, -2.0f);
+        write_f32_local(src_ptr + 4, 0.0f);
+        write_f32_local(src_ptr + 8, 1.5f);
+        write_f32_local(src_ptr + 12, -0.5f);
+    };
+
+    init_mem(mem_v1);
+    init_mem(mem_v2);
+
+    EXPECT_EQ(NeuralOps::vec_relu_f32(mem_v1, dst_ptr, src_ptr, 4), NeuralOps::ERR_OK);
+    EXPECT_EQ(NeuralOps::vec_relu_f32_v2(mem_v2, dst_ptr, src_ptr, 4), NeuralOps::ERR_OK);
+
+    for (uint32_t i = 0; i < 4; ++i) {
+        float a;
+        float b;
+        std::memcpy(&a, &mem_v1[dst_ptr + i * 4], 4);
+        std::memcpy(&b, &mem_v2[dst_ptr + i * 4], 4);
+        EXPECT_FLOAT_EQ(a, b);
+    }
+}
+
+TEST_F(NeuralOpsTest, SigmoidV2MatchesV1) {
+    std::vector<uint8_t> mem_v1 = memory;
+    std::vector<uint8_t> mem_v2 = memory;
+    const uint32_t src_ptr = 0x6000;
+    const uint32_t dst_ptr = 0x6100;
+
+    auto init_mem = [&](std::vector<uint8_t>& mem) {
+        auto write_f32_local = [&](uint32_t addr, float val) {
+            uint32_t bits;
+            std::memcpy(&bits, &val, 4);
+            std::memcpy(&mem[addr], &bits, 4);
+        };
+        write_f32_local(src_ptr + 0, -5.0f);
+        write_f32_local(src_ptr + 4, -4.0f);
+        write_f32_local(src_ptr + 8, -2.0f);
+        write_f32_local(src_ptr + 12, 0.0f);
+        write_f32_local(src_ptr + 16, 2.0f);
+        write_f32_local(src_ptr + 20, 4.0f);
+        write_f32_local(src_ptr + 24, 5.0f);
+    };
+
+    init_mem(mem_v1);
+    init_mem(mem_v2);
+
+    EXPECT_EQ(NeuralOps::vec_sigmoid_pwl_f32(mem_v1, dst_ptr, src_ptr, 7), NeuralOps::ERR_OK);
+    EXPECT_EQ(NeuralOps::vec_sigmoid_pwl_f32_v2(mem_v2, dst_ptr, src_ptr, 7), NeuralOps::ERR_OK);
+
+    for (uint32_t i = 0; i < 7; ++i) {
+        float a;
+        float b;
+        std::memcpy(&a, &mem_v1[dst_ptr + i * 4], 4);
+        std::memcpy(&b, &mem_v2[dst_ptr + i * 4], 4);
+        EXPECT_FLOAT_EQ(a, b);
+    }
+}
+
+TEST_F(NeuralOpsTest, ClampV2MatchesV1) {
+    std::vector<uint8_t> mem_v1 = memory;
+    std::vector<uint8_t> mem_v2 = memory;
+    const uint32_t src_ptr = 0x8000;
+    const uint32_t dst_ptr = 0x8100;
+
+    auto init_mem = [&](std::vector<uint8_t>& mem) {
+        auto write_f32_local = [&](uint32_t addr, float val) {
+            uint32_t bits;
+            std::memcpy(&bits, &val, 4);
+            std::memcpy(&mem[addr], &bits, 4);
+        };
+        write_f32_local(src_ptr + 0, 0.0f);
+        write_f32_local(src_ptr + 4, 0.5f);
+        write_f32_local(src_ptr + 8, 1.0f);
+        write_f32_local(src_ptr + 12, -0.5f);
+        write_f32_local(src_ptr + 16, 1.5f);
+    };
+
+    init_mem(mem_v1);
+    init_mem(mem_v2);
+
+    EXPECT_EQ(NeuralOps::vec_clamp_scale_u8_f32(mem_v1, dst_ptr, src_ptr, 5), NeuralOps::ERR_OK);
+    EXPECT_EQ(NeuralOps::vec_clamp_scale_u8_f32_v2(mem_v2, dst_ptr, src_ptr, 5), NeuralOps::ERR_OK);
+
+    for (uint32_t i = 0; i < 5; ++i) {
+        EXPECT_EQ(mem_v1[dst_ptr + i], mem_v2[dst_ptr + i]);
+    }
+}
