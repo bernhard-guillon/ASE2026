@@ -101,6 +101,17 @@ public:
         uint32_t desc_addr
     );
 
+    // Lane-specialized CUSTOM3 matvec variants used by new op IDs.
+    static uint32_t matvec_f32_v2_lane4(
+        std::vector<uint8_t>& memory,
+        uint32_t desc_addr
+    );
+
+    static uint32_t matvec_f32_v2_lane8(
+        std::vector<uint8_t>& memory,
+        uint32_t desc_addr
+    );
+
     static uint32_t vec_relu_f32_v2(
         std::vector<uint8_t>& memory,
         uint32_t dst_ptr,

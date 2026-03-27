@@ -968,25 +968,95 @@ TEST_F(ExecutionTest, NeuralCustom3NMatvecExecutesAndSetsStatus) {
     EXPECT_EQ(cpu.getPC(), 4u);
 }
 
+TEST_F(ExecutionTest, NeuralCustom3NMatvec4xExecutesAndSetsStatus) {
+    const uint32_t desc = 0x100;
+    const uint32_t input = 0x140;
+    const uint32_t weights = 0x180;
+    const uint32_t bias = 0x1C0;
+    const uint32_t output = 0x200;
+
+    auto write_f32 = [&](uint32_t addr, float v) {
+        uint32_t bits;
+        std::memcpy(&bits, &v, sizeof(bits));
+        memory.write32(addr, bits);
+    };
+
+    write_f32(input + 0, 1.0f);
+    write_f32(input + 4, 2.0f);
+    write_f32(weights + 0, 1.0f);
+    write_f32(weights + 4, 2.0f);
+    write_f32(weights + 8, 3.0f);
+    write_f32(weights + 12, 4.0f);
+    write_f32(bias + 0, 0.0f);
+    write_f32(bias + 4, 0.0f);
+
+    memory.write32(desc + 0x00, input);
+    memory.write32(desc + 0x04, weights);
+    memory.write32(desc + 0x08, bias);
+    memory.write32(desc + 0x0C, output);
+    memory.write32(desc + 0x10, 2);
+    memory.write32(desc + 0x14, 2);
+    memory.write32(desc + 0x18, 0);
+    memory.write32(desc + 0x1C, 0);
+
+    cpu.setReg(5, desc); // rs1 for nmatvec4x
+    // opid=4 (nmatvec4x), rd=x6, rs1=x5, opcode=0x7B
+    uint32_t raw = (4u << 27) | (0u << 22) | (0u << 17) | (5u << 12) | (6u << 7) | 0x7Bu;
+    Instruction instr = InstructionDecoder::decode(raw);
+    cpu.execute(instr, memory);
+
+    EXPECT_EQ(cpu.getReg(6), 0u); // status ok
+    EXPECT_EQ(memory.read32(output + 0), 0x40E00000u); // 7.0
+    EXPECT_EQ(memory.read32(output + 4), 0x41200000u); // 10.0
+    EXPECT_EQ(cpu.getPC(), 4u);
+}
+
+TEST_F(ExecutionTest, NeuralCustom3NMatvec8xExecutesAndSetsStatus) {
+    const uint32_t desc = 0x100;
+    const uint32_t input = 0x140;
+    const uint32_t weights = 0x180;
+    const uint32_t bias = 0x1C0;
+    const uint32_t output = 0x200;
+
+    auto write_f32 = [&](uint32_t addr, float v) {
+        uint32_t bits;
+        std::memcpy(&bits, &v, sizeof(bits));
+        memory.write32(addr, bits);
+    };
+
+    write_f32(input + 0, 1.0f);
+    write_f32(input + 4, 2.0f);
+    write_f32(weights + 0, 1.0f);
+    write_f32(weights + 4, 2.0f);
+    write_f32(weights + 8, 3.0f);
+    write_f32(weights + 12, 4.0f);
+    write_f32(bias + 0, 0.0f);
+    write_f32(bias + 4, 0.0f);
+
+    memory.write32(desc + 0x00, input);
+    memory.write32(desc + 0x04, weights);
+    memory.write32(desc + 0x08, bias);
+    memory.write32(desc + 0x0C, output);
+    memory.write32(desc + 0x10, 2);
+    memory.write32(desc + 0x14, 2);
+    memory.write32(desc + 0x18, 0);
+    memory.write32(desc + 0x1C, 0);
+
+    cpu.setReg(5, desc); // rs1 for nmatvec8x
+    // opid=5 (nmatvec8x), rd=x6, rs1=x5, opcode=0x7B
+    uint32_t raw = (5u << 27) | (0u << 22) | (0u << 17) | (5u << 12) | (6u << 7) | 0x7Bu;
+    Instruction instr = InstructionDecoder::decode(raw);
+    cpu.execute(instr, memory);
+
+    EXPECT_EQ(cpu.getReg(6), 0u); // status ok
+    EXPECT_EQ(memory.read32(output + 0), 0x40E00000u); // 7.0
+    EXPECT_EQ(memory.read32(output + 4), 0x41200000u); // 10.0
+    EXPECT_EQ(cpu.getPC(), 4u);
+}
+
 TEST_F(ExecutionTest, NeuralCustom3UnknownOpFailsLoud) {
     // opid=31 unsupported, opcode=0x7B
     const uint32_t raw = (31u << 27) | (10u << 7) | 0x7Bu;
-    Instruction instr = InstructionDecoder::decode(raw);
-    EXPECT_THROW(cpu.execute(instr, memory), std::runtime_error);
-}
-
-TEST_F(ExecutionTest, NeuralCustom3NMatvec4xPlaceholderFailsLoud) {
-    // Phase-8 contract: opid=4 is reserved for nmatvec4x and must fail loud
-    // until execution support lands in later phases.
-    const uint32_t raw = (4u << 27) | (10u << 7) | 0x7Bu;
-    Instruction instr = InstructionDecoder::decode(raw);
-    EXPECT_THROW(cpu.execute(instr, memory), std::runtime_error);
-}
-
-TEST_F(ExecutionTest, NeuralCustom3NMatvec8xPlaceholderFailsLoud) {
-    // Phase-8 contract: opid=5 is reserved for nmatvec8x and must fail loud
-    // until execution support lands in later phases.
-    const uint32_t raw = (5u << 27) | (10u << 7) | 0x7Bu;
     Instruction instr = InstructionDecoder::decode(raw);
     EXPECT_THROW(cpu.execute(instr, memory), std::runtime_error);
 }

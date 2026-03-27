@@ -540,6 +540,18 @@ void CPU::executeNeural(const Instruction& instr, Memory& memory) {
                 ? NeuralOps::matvec_f32_v2(raw_mem, getReg(instr.rs1))
                 : NeuralOps::matvec_f32(raw_mem, getReg(instr.rs1));
             break;
+        case 4: // NMATVEC4X.F32 rd_status, rs_desc (CUSTOM3 only)
+            if (!is_v2) {
+                throw std::runtime_error("Unsupported neural custom operation");
+            }
+            status = NeuralOps::matvec_f32_v2_lane4(raw_mem, getReg(instr.rs1));
+            break;
+        case 5: // NMATVEC8X.F32 rd_status, rs_desc (CUSTOM3 only)
+            if (!is_v2) {
+                throw std::runtime_error("Unsupported neural custom operation");
+            }
+            status = NeuralOps::matvec_f32_v2_lane8(raw_mem, getReg(instr.rs1));
+            break;
         case 1: // NVRELU.F32 rd_status, rs_dst, rs_src, rs_len
             status = is_v2
                 ? NeuralOps::vec_relu_f32_v2(

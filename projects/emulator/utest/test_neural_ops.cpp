@@ -386,6 +386,122 @@ TEST_F(NeuralOpsTest, MatvecV2MatchesV1) {
     }
 }
 
+TEST_F(NeuralOpsTest, MatvecV2Lane4MatchesV1) {
+    std::vector<uint8_t> mem_v1 = memory;
+    std::vector<uint8_t> mem_lane4 = memory;
+
+    const uint32_t input_ptr = 0x1000;
+    const uint32_t weights_ptr = 0x1100;
+    const uint32_t bias_ptr = 0x1200;
+    const uint32_t output_ptr = 0x1300;
+    const uint32_t desc_ptr = 0x0;
+
+    auto init_mem = [&](std::vector<uint8_t>& mem) {
+        auto write_u32_local = [&](uint32_t addr, uint32_t val) { std::memcpy(&mem[addr], &val, 4); };
+        auto write_f32_local = [&](uint32_t addr, float val) {
+            uint32_t bits;
+            std::memcpy(&bits, &val, 4);
+            std::memcpy(&mem[addr], &bits, 4);
+        };
+
+        write_f32_local(input_ptr + 0, 1.0f);
+        write_f32_local(input_ptr + 4, 2.0f);
+        write_f32_local(input_ptr + 8, -1.0f);
+
+        // 3x4 weights (row-major by input rows)
+        const float w[12] = {
+            1.0f, 2.0f, 3.0f, 4.0f,
+            0.5f, 0.0f, -1.0f, 2.0f,
+            -2.0f, 1.0f, 0.5f, -0.5f
+        };
+        for (int i = 0; i < 12; ++i) {
+            write_f32_local(weights_ptr + i * 4, w[i]);
+        }
+        write_f32_local(bias_ptr + 0, 0.1f);
+        write_f32_local(bias_ptr + 4, 0.2f);
+        write_f32_local(bias_ptr + 8, 0.3f);
+        write_f32_local(bias_ptr + 12, 0.4f);
+
+        write_u32_local(desc_ptr + 0x00, input_ptr);
+        write_u32_local(desc_ptr + 0x04, weights_ptr);
+        write_u32_local(desc_ptr + 0x08, bias_ptr);
+        write_u32_local(desc_ptr + 0x0C, output_ptr);
+        write_u32_local(desc_ptr + 0x10, 3);
+        write_u32_local(desc_ptr + 0x14, 4);
+        write_u32_local(desc_ptr + 0x18, 0);
+    };
+
+    init_mem(mem_v1);
+    init_mem(mem_lane4);
+
+    EXPECT_EQ(NeuralOps::matvec_f32(mem_v1, desc_ptr), NeuralOps::ERR_OK);
+    EXPECT_EQ(NeuralOps::matvec_f32_v2_lane4(mem_lane4, desc_ptr), NeuralOps::ERR_OK);
+
+    for (uint32_t j = 0; j < 4; ++j) {
+        float a;
+        float b;
+        std::memcpy(&a, &mem_v1[output_ptr + j * 4], 4);
+        std::memcpy(&b, &mem_lane4[output_ptr + j * 4], 4);
+        EXPECT_FLOAT_EQ(a, b);
+    }
+}
+
+TEST_F(NeuralOpsTest, MatvecV2Lane8MatchesV1) {
+    std::vector<uint8_t> mem_v1 = memory;
+    std::vector<uint8_t> mem_lane8 = memory;
+
+    const uint32_t input_ptr = 0x1000;
+    const uint32_t weights_ptr = 0x1200;
+    const uint32_t bias_ptr = 0x1800;
+    const uint32_t output_ptr = 0x1C00;
+    const uint32_t desc_ptr = 0x0;
+
+    auto init_mem = [&](std::vector<uint8_t>& mem) {
+        auto write_u32_local = [&](uint32_t addr, uint32_t val) { std::memcpy(&mem[addr], &val, 4); };
+        auto write_f32_local = [&](uint32_t addr, float val) {
+            uint32_t bits;
+            std::memcpy(&bits, &val, 4);
+            std::memcpy(&mem[addr], &bits, 4);
+        };
+
+        write_f32_local(input_ptr + 0, 0.25f);
+        write_f32_local(input_ptr + 4, -1.5f);
+        write_f32_local(input_ptr + 8, 2.0f);
+
+        // 3x8 weights
+        for (uint32_t i = 0; i < 3; ++i) {
+            for (uint32_t j = 0; j < 8; ++j) {
+                write_f32_local(weights_ptr + (i * 8 + j) * 4, static_cast<float>((i + 1) * (j + 1)) * 0.1f);
+            }
+        }
+        for (uint32_t j = 0; j < 8; ++j) {
+            write_f32_local(bias_ptr + j * 4, static_cast<float>(j) * 0.01f);
+        }
+
+        write_u32_local(desc_ptr + 0x00, input_ptr);
+        write_u32_local(desc_ptr + 0x04, weights_ptr);
+        write_u32_local(desc_ptr + 0x08, bias_ptr);
+        write_u32_local(desc_ptr + 0x0C, output_ptr);
+        write_u32_local(desc_ptr + 0x10, 3);
+        write_u32_local(desc_ptr + 0x14, 8);
+        write_u32_local(desc_ptr + 0x18, 0);
+    };
+
+    init_mem(mem_v1);
+    init_mem(mem_lane8);
+
+    EXPECT_EQ(NeuralOps::matvec_f32(mem_v1, desc_ptr), NeuralOps::ERR_OK);
+    EXPECT_EQ(NeuralOps::matvec_f32_v2_lane8(mem_lane8, desc_ptr), NeuralOps::ERR_OK);
+
+    for (uint32_t j = 0; j < 8; ++j) {
+        float a;
+        float b;
+        std::memcpy(&a, &mem_v1[output_ptr + j * 4], 4);
+        std::memcpy(&b, &mem_lane8[output_ptr + j * 4], 4);
+        EXPECT_FLOAT_EQ(a, b);
+    }
+}
+
 TEST_F(NeuralOpsTest, ReluV2MatchesV1) {
     std::vector<uint8_t> mem_v1 = memory;
     std::vector<uint8_t> mem_v2 = memory;
