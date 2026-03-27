@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import subprocess
 import re
+import os
 from pathlib import Path
 
 
@@ -44,31 +45,44 @@ def test_verilator_neural_op_enhance_runs_and_matches_cpp():
     build_dir = emulator_dir / "build"
     cpp_runner = build_dir / "emulator_runner"
     verilator_runner = build_dir / "verilator_runner"
-    neural_op_enhance = build_dir / "neural-op-enhance.elf"
-
     assert cpp_runner.exists(), f"Missing emulator runner: {cpp_runner}"
     assert verilator_runner.exists(), f"Missing verilator runner: {verilator_runner}"
-    assert neural_op_enhance.exists(), f"Missing neural op enhance ELF: {neural_op_enhance}"
+    variant_map = {
+        "base": "neural-op-enhance.elf",
+        "4x": "neural-op-enhance4.elf",
+        "8x": "neural-op-enhance8.elf",
+    }
+    variants_env = os.environ.get("NEURAL_ENHANCE_VARIANTS", "base").strip()
+    variants = [v.strip() for v in variants_env.split(",") if v.strip()]
+    assert variants, "NEURAL_ENHANCE_VARIANTS resolved to empty list"
 
     cpp_cycles = 20_000
     verilator_cycles = 5_000_000
-
     cases = [65, 122]  # A, z
-    for char_code in cases:
-        cpp_res = _run(cpp_runner, neural_op_enhance, char_code, cpp_cycles)
-        vlt_res = _run(verilator_runner, neural_op_enhance, char_code, verilator_cycles)
 
-        assert cpp_res.returncode == 0, (
-            f"cpp runner failed for {char_code}\nstdout:\n{cpp_res.stdout}\nstderr:\n{cpp_res.stderr}"
-        )
-        assert vlt_res.returncode == 0, (
-            f"verilator runner failed for {char_code}\nstdout:\n{vlt_res.stdout}\nstderr:\n{vlt_res.stderr}"
-        )
+    for variant in variants:
+        assert variant in variant_map, f"Unsupported NEURAL_ENHANCE_VARIANTS entry: {variant}"
+        elf = build_dir / variant_map[variant]
+        assert elf.exists(), f"Missing neural op enhance ELF for variant {variant}: {elf}"
 
-        cpp_grid = _extract_grid(cpp_res.stdout)
-        vlt_grid = _extract_grid(vlt_res.stdout)
-        assert cpp_grid is not None, f"cpp framebuffer missing for char {char_code}"
-        assert vlt_grid is not None, f"verilator framebuffer missing for char {char_code}"
-        assert cpp_grid == vlt_grid, (
-            f"framebuffer mismatch for char {char_code}\nCPP:\n{cpp_grid}\n\nVLT:\n{vlt_grid}"
-        )
+        for char_code in cases:
+            cpp_res = _run(cpp_runner, elf, char_code, cpp_cycles)
+            vlt_res = _run(verilator_runner, elf, char_code, verilator_cycles)
+
+            assert cpp_res.returncode == 0, (
+                f"cpp runner failed for variant={variant} char={char_code}\n"
+                f"stdout:\n{cpp_res.stdout}\nstderr:\n{cpp_res.stderr}"
+            )
+            assert vlt_res.returncode == 0, (
+                f"verilator runner failed for variant={variant} char={char_code}\n"
+                f"stdout:\n{vlt_res.stdout}\nstderr:\n{vlt_res.stderr}"
+            )
+
+            cpp_grid = _extract_grid(cpp_res.stdout)
+            vlt_grid = _extract_grid(vlt_res.stdout)
+            assert cpp_grid is not None, f"cpp framebuffer missing for variant={variant} char={char_code}"
+            assert vlt_grid is not None, f"verilator framebuffer missing for variant={variant} char={char_code}"
+            assert cpp_grid == vlt_grid, (
+                f"framebuffer mismatch for variant={variant} char={char_code}\n"
+                f"CPP:\n{cpp_grid}\n\nVLT:\n{vlt_grid}"
+            )

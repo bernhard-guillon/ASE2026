@@ -54,6 +54,8 @@ class DifferentialValidator:
         self.verilator_runner = self.build_dir / "verilator_runner"
         self.static_elf = self.build_dir / "static_char_gen.elf"
         self.neural_elf = self._resolve_neural_elf()
+        self.neural_enhance_variants = self._resolve_neural_enhance_variants()
+        self.neural_enhance_variant_set = set(self.neural_enhance_variants)
 
     def _resolve_build_dir(self) -> Path:
         candidate = self.emulator_dir / "build"
@@ -74,6 +76,14 @@ class DifferentialValidator:
             if candidate.exists():
                 return candidate
         return None
+
+    def _resolve_neural_enhance_variants(self):
+        variants = []
+        for name in ("neural-op-enhance.elf", "neural-op-enhance4.elf", "neural-op-enhance8.elf"):
+            candidate = self.build_dir / name
+            if candidate.exists():
+                variants.append(candidate)
+        return variants
 
     def _seed_fs(self, work_dir: Path):
         (work_dir / "test_data.txt").write_text("seed-data\n", encoding="utf-8")
@@ -165,12 +175,21 @@ class DifferentialValidator:
             ("static-Z", self.static_elf, 90, 500000),
             ("static-z", self.static_elf, 122, 500000),
         ]
-        if self.neural_elf is not None:
+        if self.neural_elf is not None and self.neural_elf not in self.neural_enhance_variant_set:
             neural_cycles = 5000000 if self.neural_elf.name in ("neural-ai-opsx77.elf", "neural-op-enhance.elf") else 5000000
             fb_cases.extend(
                 [
                     ("neural-A", self.neural_elf, 65, neural_cycles),
                     ("neural-z", self.neural_elf, 122, neural_cycles),
+                ]
+            )
+        for enhance_elf in self.neural_enhance_variants:
+            neural_cycles = 5000000
+            tag = enhance_elf.stem
+            fb_cases.extend(
+                [
+                    (f"{tag}-A", enhance_elf, 65, neural_cycles),
+                    (f"{tag}-z", enhance_elf, 122, neural_cycles),
                 ]
             )
 
@@ -200,9 +219,11 @@ class DifferentialValidator:
 
     def run_perf_sanity(self):
         perf_cases = [("static-A", self.static_elf, 65, 500000)]
-        if self.neural_elf is not None:
+        if self.neural_elf is not None and self.neural_elf not in self.neural_enhance_variant_set:
             neural_cycles = 5000000 if self.neural_elf.name in ("neural-ai-opsx77.elf", "neural-op-enhance.elf") else 2000000
             perf_cases.append(("neural-A", self.neural_elf, 65, neural_cycles))
+        for enhance_elf in self.neural_enhance_variants:
+            perf_cases.append((f"{enhance_elf.stem}-A", enhance_elf, 65, 5000000))
 
         print(f"performance sanity: {len(perf_cases)} case(s)")
         for name, elf, char_code, cycles in perf_cases:

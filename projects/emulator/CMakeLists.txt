@@ -552,17 +552,37 @@ endif()
 # Neural Character Generation Validation Test (requires Python + rv32as)
 if(PYTHON_EXECUTABLE AND RV32AS_EXECUTABLE)
     add_test(
-        NAME python/neural_char_gen/validation_256
+        NAME python/neural_char_gen/validation_256_base
         COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_neural_256_chars.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
-    set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
+    set_tests_properties(python/neural_char_gen/validation_256_base PROPERTIES
         LABELS "neural;validation;blackbox"
         TIMEOUT 600
-        ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE};EMULATOR_BACKEND=cpp"
+        ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE};EMULATOR_BACKEND=cpp;NEURAL_LANE_MODE=base"
+    )
+    add_test(
+        NAME python/neural_char_gen/validation_256_4x
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_neural_256_chars.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/neural_char_gen/validation_256_4x PROPERTIES
+        LABELS "neural;validation;blackbox"
+        TIMEOUT 600
+        ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE};EMULATOR_BACKEND=cpp;NEURAL_LANE_MODE=4x"
+    )
+    add_test(
+        NAME python/neural_char_gen/validation_256_8x
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_neural_256_chars.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/neural_char_gen/validation_256_8x PROPERTIES
+        LABELS "neural;validation;blackbox"
+        TIMEOUT 600
+        ENVIRONMENT "EMULATOR_NEW_ASSEMBLER=${RV32AS_EXECUTABLE};EMULATOR_BACKEND=cpp;NEURAL_LANE_MODE=8x"
     )
 elseif(NOT RV32AS_EXECUTABLE)
-    message(WARNING "rv32as not available - python/neural_char_gen/validation_256 test disabled")
+    message(WARNING "rv32as not available - python/neural_char_gen/validation_256_* tests disabled")
 endif()
 
 # Ensure rv32as binary exists before tests that depend on it.
@@ -581,8 +601,18 @@ if(RV32AS_EXECUTABLE)
             FIXTURES_REQUIRED rv32as_ready
         )
     endif()
-    if(TEST python/neural_char_gen/validation_256)
-        set_tests_properties(python/neural_char_gen/validation_256 PROPERTIES
+    if(TEST python/neural_char_gen/validation_256_base)
+        set_tests_properties(python/neural_char_gen/validation_256_base PROPERTIES
+            FIXTURES_REQUIRED rv32as_ready
+        )
+    endif()
+    if(TEST python/neural_char_gen/validation_256_4x)
+        set_tests_properties(python/neural_char_gen/validation_256_4x PROPERTIES
+            FIXTURES_REQUIRED rv32as_ready
+        )
+    endif()
+    if(TEST python/neural_char_gen/validation_256_8x)
+        set_tests_properties(python/neural_char_gen/validation_256_8x PROPERTIES
             FIXTURES_REQUIRED rv32as_ready
         )
     endif()
@@ -595,7 +625,7 @@ add_test(
 )
 set_tests_properties(python/verilator/differential_validation PROPERTIES
     LABELS "verilator;differential;validation"
-    TIMEOUT 180
+    TIMEOUT 480
 )
 
 add_test(
@@ -616,6 +646,7 @@ add_test(
 set_tests_properties(python/verilator/neural_op_enhance PROPERTIES
     LABELS "verilator;neural;enhance;validation"
     TIMEOUT 180
+    ENVIRONMENT "NEURAL_ENHANCE_VARIANTS=base,4x,8x"
 )
 
 # ============================================================================
