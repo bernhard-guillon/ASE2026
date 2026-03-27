@@ -265,6 +265,95 @@ uint32_t NeuralOps::matvec_f32_v2(
     return ERR_OK;
 }
 
+uint32_t NeuralOps::matvec_f32_v2_lane4(
+    std::vector<uint8_t>& memory,
+    uint32_t desc_addr
+) {
+    return matvec_f32_v2(memory, desc_addr);
+}
+
+uint32_t NeuralOps::matvec_f32_v2_lane8(
+    std::vector<uint8_t>& memory,
+    uint32_t desc_addr
+) {
+    if (!is_valid_ptr(memory, desc_addr, 32)) {
+        return ERR_INVALID_PTR;
+    }
+
+    const uint32_t input_ptr = read_u32(memory, desc_addr + 0x00);
+    const uint32_t weights_ptr = read_u32(memory, desc_addr + 0x04);
+    const uint32_t bias_ptr = read_u32(memory, desc_addr + 0x08);
+    const uint32_t output_ptr = read_u32(memory, desc_addr + 0x0C);
+    const uint32_t input_len = read_u32(memory, desc_addr + 0x10);
+    const uint32_t output_len = read_u32(memory, desc_addr + 0x14);
+    const uint32_t flags = read_u32(memory, desc_addr + 0x18);
+
+    if (flags != 0) return ERR_INVALID_PTR;
+    if (input_len == 0 || output_len == 0) return ERR_INVALID_LEN;
+    if (!is_aligned(input_ptr, 4) || !is_aligned(weights_ptr, 4) ||
+        !is_aligned(bias_ptr, 4) || !is_aligned(output_ptr, 4)) {
+        return ERR_UNALIGNED;
+    }
+
+    const uint32_t input_size = input_len * 4;
+    const uint32_t weights_size = input_len * output_len * 4;
+    const uint32_t bias_size = output_len * 4;
+    const uint32_t output_size = output_len * 4;
+
+    if (!is_valid_ptr(memory, input_ptr, input_size) ||
+        !is_valid_ptr(memory, weights_ptr, weights_size) ||
+        !is_valid_ptr(memory, bias_ptr, bias_size) ||
+        !is_valid_ptr(memory, output_ptr, output_size)) {
+        return ERR_INVALID_PTR;
+    }
+
+    for (uint32_t j = 0; j < output_len; ++j) {
+        write_f32(memory, output_ptr + j * 4, read_f32(memory, bias_ptr + j * 4));
+    }
+
+    for (uint32_t i = 0; i < input_len; ++i) {
+        const float inp = read_f32(memory, input_ptr + i * 4);
+        const uint32_t w_row = weights_ptr + (i * output_len * 4);
+
+        uint32_t j = 0;
+        for (; j + 7 < output_len; j += 8) {
+            const float w0 = read_f32(memory, w_row + (j + 0) * 4);
+            const float w1 = read_f32(memory, w_row + (j + 1) * 4);
+            const float w2 = read_f32(memory, w_row + (j + 2) * 4);
+            const float w3 = read_f32(memory, w_row + (j + 3) * 4);
+            const float w4 = read_f32(memory, w_row + (j + 4) * 4);
+            const float w5 = read_f32(memory, w_row + (j + 5) * 4);
+            const float w6 = read_f32(memory, w_row + (j + 6) * 4);
+            const float w7 = read_f32(memory, w_row + (j + 7) * 4);
+
+            const float o0 = read_f32(memory, output_ptr + (j + 0) * 4) + inp * w0;
+            const float o1 = read_f32(memory, output_ptr + (j + 1) * 4) + inp * w1;
+            const float o2 = read_f32(memory, output_ptr + (j + 2) * 4) + inp * w2;
+            const float o3 = read_f32(memory, output_ptr + (j + 3) * 4) + inp * w3;
+            const float o4 = read_f32(memory, output_ptr + (j + 4) * 4) + inp * w4;
+            const float o5 = read_f32(memory, output_ptr + (j + 5) * 4) + inp * w5;
+            const float o6 = read_f32(memory, output_ptr + (j + 6) * 4) + inp * w6;
+            const float o7 = read_f32(memory, output_ptr + (j + 7) * 4) + inp * w7;
+
+            write_f32(memory, output_ptr + (j + 0) * 4, o0);
+            write_f32(memory, output_ptr + (j + 1) * 4, o1);
+            write_f32(memory, output_ptr + (j + 2) * 4, o2);
+            write_f32(memory, output_ptr + (j + 3) * 4, o3);
+            write_f32(memory, output_ptr + (j + 4) * 4, o4);
+            write_f32(memory, output_ptr + (j + 5) * 4, o5);
+            write_f32(memory, output_ptr + (j + 6) * 4, o6);
+            write_f32(memory, output_ptr + (j + 7) * 4, o7);
+        }
+        for (; j < output_len; ++j) {
+            const float w = read_f32(memory, w_row + j * 4);
+            const float o = read_f32(memory, output_ptr + j * 4) + inp * w;
+            write_f32(memory, output_ptr + j * 4, o);
+        }
+    }
+
+    return ERR_OK;
+}
+
 uint32_t NeuralOps::vec_relu_f32_v2(
     std::vector<uint8_t>& memory,
     uint32_t dst_ptr,

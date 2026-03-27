@@ -62,6 +62,7 @@ class ModelCompiler:
         self.binary_data = None
         self.use_neural_ops = False
         self.neural_opcode = "x77"
+        self.neural_lane_mode = "base"
         
     def load_json_intermediate(self, json_path: str) -> Dict:
         """
@@ -182,7 +183,8 @@ class ModelCompiler:
     
     def generate_assembly(self, json_path: str, output_asm: str, temp_bin: str = None,
                          with_bootloader: bool = True, with_execution: bool = False,
-                         use_neural_ops: bool = False, neural_opcode: str = "x77") -> str:
+                         use_neural_ops: bool = False, neural_opcode: str = "x77",
+                         neural_lane_mode: str = "base") -> str:
         """
         Generate complete RISC-V assembly file with model data and execution code.
         
@@ -196,6 +198,8 @@ class ModelCompiler:
                 layer execution and output mapping.
             neural_opcode: Neural custom opcode variant: "x77" (legacy CUSTOM0)
                 or "x7b" (enhanced CUSTOM3).
+            neural_lane_mode: For x7b custom ops, selects matvec mnemonic family:
+                "base" -> nmatvecx.f32, "4x" -> nmatvec4x.f32, "8x" -> nmatvec8x.f32.
         
         Returns:
             Path to generated assembly file
@@ -207,6 +211,13 @@ class ModelCompiler:
         self.neural_opcode = neural_opcode.lower()
         if self.neural_opcode not in ("x77", "x7b"):
             raise ValueError(f"Unsupported neural_opcode '{neural_opcode}'; expected x77 or x7b")
+        self.neural_lane_mode = neural_lane_mode.lower()
+        if self.neural_lane_mode not in ("base", "4x", "8x"):
+            raise ValueError(
+                f"Unsupported neural_lane_mode '{neural_lane_mode}'; expected base, 4x or 8x"
+            )
+        if self.neural_opcode == "x77" and self.neural_lane_mode != "base":
+            raise ValueError("neural_lane_mode 4x/8x is only valid with neural_opcode x7b")
         
         # Load JSON
         self.load_json_intermediate(json_path)
@@ -763,6 +774,14 @@ sigmoid_piecewise:
         if self.use_neural_ops:
             op_suffix = "x" if self.neural_opcode == "x7b" else ""
             op_tag = self.neural_opcode.upper()
+            if self.neural_opcode == "x7b":
+                matvec_mnemonic = {
+                    "base": "nmatvecx.f32",
+                    "4x": "nmatvec4x.f32",
+                    "8x": "nmatvec8x.f32",
+                }[self.neural_lane_mode]
+            else:
+                matvec_mnemonic = "nmatvec.f32"
             desc_addr = self.MEMORY_LAYOUT["buffer_base"] + 0x3A00 + (layer_idx * 0x20)
             activation_asm = ""
             if activation == "relu":
@@ -812,7 +831,7 @@ layer_{layer_idx}_forward:
     sw zero, 28(t0)
 
     # Dense compute: output = bias + input * weights
-    nmatvec{op_suffix}.f32 t3, t0
+    {matvec_mnemonic} t3, t0
     bne t3, zero, .L{layer_idx}_ret
 
 {activation_asm}.L{layer_idx}_ret:

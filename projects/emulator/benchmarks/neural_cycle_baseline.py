@@ -18,7 +18,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List
 
 
 ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
@@ -50,6 +50,13 @@ def parse_charset(spec: str) -> List[int]:
     if not chars:
         raise ValueError("Charset resolved to empty set")
     return chars
+
+
+def parse_variants(spec: str) -> List[str]:
+    variants = [v.strip() for v in spec.split(",") if v.strip()]
+    if not variants:
+        raise RuntimeError("Variant list resolved to empty set")
+    return variants
 
 
 def extract_grid(output: str) -> str:
@@ -139,7 +146,7 @@ def load_hotspots(model_json: Path) -> Dict:
     }
 
 
-def summarize(values: Iterable[int]) -> Dict[str, float]:
+def summarize(values: Iterable[float]) -> Dict[str, float]:
     seq = list(values)
     if not seq:
         raise ValueError("Cannot summarize empty sequence")
@@ -150,46 +157,81 @@ def summarize(values: Iterable[int]) -> Dict[str, float]:
     }
 
 
+def get_variant_catalog(backend: str) -> Dict[str, BinaryConfig]:
+    if backend == "cpp":
+        return {
+            "x7b-base": BinaryConfig("x7b-base", Path("neural-op-enhance.elf"), 20_000, [1_000, 1_500, 2_000, 3_000, 5_000, 10_000, 20_000]),
+            "x7b-4lane": BinaryConfig("x7b-4lane", Path("neural-op-enhance4.elf"), 20_000, [500, 750, 1_000, 1_250, 1_500, 2_000, 3_000, 5_000, 10_000, 20_000]),
+            "x7b-8lane": BinaryConfig("x7b-8lane", Path("neural-op-enhance8.elf"), 20_000, [500, 750, 1_000, 1_250, 1_500, 2_000, 3_000, 5_000, 10_000, 20_000]),
+        }
+    if backend == "verilator":
+        return {
+            "x7b-base": BinaryConfig("x7b-base", Path("neural-op-enhance.elf"), 5_000_000, [250_000, 500_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000]),
+            "x7b-4lane": BinaryConfig("x7b-4lane", Path("neural-op-enhance4.elf"), 5_000_000, [150_000, 200_000, 250_000, 300_000, 400_000, 500_000, 600_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000]),
+            "x7b-8lane": BinaryConfig("x7b-8lane", Path("neural-op-enhance8.elf"), 5_000_000, [150_000, 200_000, 250_000, 300_000, 400_000, 500_000, 600_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000]),
+        }
+    raise RuntimeError(f"Unsupported backend: {backend}")
+
+
 def run_backend(
     backend: str,
     runner: Path,
     chars: List[int],
     baseline_cfg: BinaryConfig,
     optimized_cfg: BinaryConfig,
-    enhanced_cfg: Optional[BinaryConfig],
+    variant_cfgs: List[BinaryConfig],
     timeout_s: int,
 ) -> Dict:
-    baseline_cycles = []
-    optimized_cycles = []
-    enhanced_cycles = []
+    baseline_cycles: List[int] = []
+    optimized_cycles: List[int] = []
+    variant_cycles: Dict[str, List[int]] = {cfg.name: [] for cfg in variant_cfgs}
+    variant_base_speedups: Dict[str, List[float]] = {cfg.name: [] for cfg in variant_cfgs}
+    variant_opt_speedups: Dict[str, List[float]] = {cfg.name: [] for cfg in variant_cfgs}
+    lane_scaling_values: List[float] = []
+    lane_efficiency_values: List[float] = []
     per_char = []
+
     for char_code in chars:
         base = first_match_cycle(runner, baseline_cfg, char_code, timeout_s)
         opt = first_match_cycle(runner, optimized_cfg, char_code, timeout_s)
-        speedup = base / opt
-        enh = None
-        enh_speedup = None
-        enh_vs_opt = None
-        if enhanced_cfg is not None:
-            enh = first_match_cycle(runner, enhanced_cfg, char_code, timeout_s)
-            enh_speedup = base / enh
-            enh_vs_opt = opt / enh
+        base_vs_opt = base / opt
+
+        row = {
+            "char_code": char_code,
+            "char": chr(char_code) if 32 <= char_code <= 126 else f"\\x{char_code:02x}",
+            "baseline_cycles": base,
+            "optimized_cycles": opt,
+            "speedup_baseline_vs_x77": base_vs_opt,
+            "variants": {},
+        }
+
+        for cfg in variant_cfgs:
+            cyc = first_match_cycle(runner, cfg, char_code, timeout_s)
+            base_speedup = base / cyc
+            x77_speedup = opt / cyc
+            row["variants"][cfg.name] = {
+                "cycles": cyc,
+                "speedup_vs_baseline": base_speedup,
+                "speedup_vs_x77": x77_speedup,
+            }
+            variant_cycles[cfg.name].append(cyc)
+            variant_base_speedups[cfg.name].append(base_speedup)
+            variant_opt_speedups[cfg.name].append(x77_speedup)
+
+        if "x7b-4lane" in row["variants"] and "x7b-8lane" in row["variants"]:
+            lane4 = row["variants"]["x7b-4lane"]["cycles"]
+            lane8 = row["variants"]["x7b-8lane"]["cycles"]
+            scaling = lane4 / lane8
+            efficiency = scaling / 2.0
+            row["lane4_to_lane8_scaling"] = scaling
+            row["lane4_to_lane8_efficiency_vs_ideal2x"] = efficiency
+            lane_scaling_values.append(scaling)
+            lane_efficiency_values.append(efficiency)
+
         baseline_cycles.append(base)
         optimized_cycles.append(opt)
-        if enh is not None:
-            enhanced_cycles.append(enh)
-        per_char.append(
-            {
-                "char_code": char_code,
-                "char": chr(char_code) if 32 <= char_code <= 126 else f"\\x{char_code:02x}",
-                "baseline_cycles": base,
-                "optimized_cycles": opt,
-                "speedup": speedup,
-                "enhanced_cycles": enh,
-                "enhanced_speedup": enh_speedup,
-                "enhanced_vs_optimized_speedup": enh_vs_opt,
-            }
-        )
+        per_char.append(row)
+
     report = {
         "backend": backend,
         "runner": str(runner),
@@ -199,32 +241,31 @@ def run_backend(
             "threshold_cycles": baseline_cfg.threshold_cycles,
             "summary": summarize(baseline_cycles),
         },
-        "optimized": {
+        "optimized_x77": {
             "elf": str(optimized_cfg.elf),
             "reference_cycles": optimized_cfg.reference_cycles,
             "threshold_cycles": optimized_cfg.threshold_cycles,
             "summary": summarize(optimized_cycles),
         },
-        "speedup_summary": summarize([row["speedup"] for row in per_char]),
+        "speedup_baseline_vs_x77_summary": summarize([row["speedup_baseline_vs_x77"] for row in per_char]),
+        "variants": {},
         "per_char": per_char,
     }
-    if enhanced_cfg is not None:
-        report["enhanced"] = {
-            "elf": str(enhanced_cfg.elf),
-            "reference_cycles": enhanced_cfg.reference_cycles,
-            "threshold_cycles": enhanced_cfg.threshold_cycles,
-            "summary": summarize(enhanced_cycles),
+
+    for cfg in variant_cfgs:
+        report["variants"][cfg.name] = {
+            "elf": str(cfg.elf),
+            "reference_cycles": cfg.reference_cycles,
+            "threshold_cycles": cfg.threshold_cycles,
+            "summary": summarize(variant_cycles[cfg.name]),
+            "speedup_vs_baseline_summary": summarize(variant_base_speedups[cfg.name]),
+            "speedup_vs_x77_summary": summarize(variant_opt_speedups[cfg.name]),
         }
-        report["enhanced_speedup_summary"] = summarize(
-            [row["enhanced_speedup"] for row in per_char if row["enhanced_speedup"] is not None]
-        )
-        report["enhanced_vs_optimized_speedup_summary"] = summarize(
-            [
-                row["enhanced_vs_optimized_speedup"]
-                for row in per_char
-                if row["enhanced_vs_optimized_speedup"] is not None
-            ]
-        )
+
+    if lane_scaling_values:
+        report["lane4_to_lane8_scaling_summary"] = summarize(lane_scaling_values)
+        report["lane4_to_lane8_efficiency_vs_ideal2x_summary"] = summarize(lane_efficiency_values)
+
     return report
 
 
@@ -233,10 +274,31 @@ def require_file(path: Path, kind: str) -> None:
         raise RuntimeError(f"Missing {kind}: {path}")
 
 
+def resolve_backend_configs(build_dir: Path, backend: str, variant_names: List[str]):
+    if backend == "cpp":
+        baseline_cfg = BinaryConfig("baseline", build_dir / "neural.elf", 5_000_000, [2_000_000, 2_500_000, 3_000_000, 4_000_000])
+        optimized_cfg = BinaryConfig("x77", build_dir / "neural-ai-opsx77.elf", 20_000, [2_000, 5_000, 10_000, 20_000])
+    elif backend == "verilator":
+        baseline_cfg = BinaryConfig("baseline", build_dir / "neural.elf", 5_000_000, [2_000_000, 3_000_000, 4_000_000, 5_000_000])
+        optimized_cfg = BinaryConfig("x77", build_dir / "neural-ai-opsx77.elf", 5_000_000, [1_000_000, 2_000_000, 3_000_000, 4_000_000])
+    else:
+        raise RuntimeError(f"Unsupported backend: {backend}")
+
+    catalog = get_variant_catalog(backend)
+    variant_cfgs = []
+    for name in variant_names:
+        if name not in catalog:
+            raise RuntimeError(f"Unsupported variant '{name}' for backend {backend}. Supported: {sorted(catalog.keys())}")
+        cfg = catalog[name]
+        variant_cfgs.append(BinaryConfig(cfg.name, build_dir / cfg.elf, cfg.reference_cycles, cfg.threshold_cycles))
+
+    return baseline_cfg, optimized_cfg, variant_cfgs
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Neural cycle baseline/hotspot benchmark")
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[3])
-    parser.add_argument("--charset", default="AZ09", help="Chars/ranges, e.g. A-Z0-9 or AZ09")
+    parser.add_argument("--charset", default="A-Z0-9", help="Chars/ranges, e.g. A-Z0-9")
     parser.add_argument("--timeout-s", type=int, default=60)
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument(
@@ -245,9 +307,14 @@ def main() -> int:
         help="Comma-separated backends to run: cpp,verilator",
     )
     parser.add_argument(
+        "--variants",
+        default="x7b-4lane,x7b-8lane",
+        help="Comma-separated x7B variants: x7b-base,x7b-4lane,x7b-8lane",
+    )
+    parser.add_argument(
         "--with-enhanced",
         action="store_true",
-        help="Also benchmark 0x7B enhanced ELF (neural-op-enhance.elf).",
+        help="Backward-compatible alias: include x7b-base in variant set.",
     )
     args = parser.parse_args()
 
@@ -258,76 +325,42 @@ def main() -> int:
 
     require_file(model_json, "model json")
 
-    baseline_elf = build_dir / "neural.elf"
-    optimized_elf = build_dir / "neural-ai-opsx77.elf"
-    enhanced_elf = build_dir / "neural-op-enhance.elf"
-    require_file(baseline_elf, "baseline elf")
-    require_file(optimized_elf, "optimized elf")
-    if args.with_enhanced:
-        require_file(enhanced_elf, "enhanced elf")
-
     chars = parse_charset(args.charset)
     requested_backends = [b.strip() for b in args.backends.split(",") if b.strip()]
     if not requested_backends:
         raise RuntimeError("No backends selected")
 
-    cpp_cfgs = (
-        BinaryConfig("baseline", baseline_elf, 5_000_000, [2_000_000, 2_500_000, 3_000_000, 4_000_000]),
-        BinaryConfig("optimized", optimized_elf, 20_000, [2_000, 5_000, 10_000, 20_000]),
-    )
-    cpp_enhanced_cfg = BinaryConfig(
-        "enhanced",
-        enhanced_elf,
-        20_000,
-        [1_000, 1_500, 2_000, 3_000, 5_000, 10_000, 20_000],
-    )
-    vlt_cfgs = (
-        BinaryConfig("baseline", baseline_elf, 5_000_000, [2_000_000, 3_000_000, 4_000_000, 5_000_000]),
-        BinaryConfig("optimized", optimized_elf, 5_000_000, [1_000_000, 2_000_000, 3_000_000, 4_000_000]),
-    )
-    vlt_enhanced_cfg = BinaryConfig(
-        "enhanced",
-        enhanced_elf,
-        5_000_000,
-        [250_000, 500_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000],
-    )
+    variant_names = parse_variants(args.variants)
+    if args.with_enhanced and "x7b-base" not in variant_names:
+        variant_names.append("x7b-base")
 
     backend_results = []
     for backend in requested_backends:
-        if backend == "cpp":
-            runner = build_dir / "emulator_runner"
-            require_file(runner, "cpp runner")
-            backend_results.append(
-                run_backend(
-                    backend,
-                    runner,
-                    chars,
-                    cpp_cfgs[0],
-                    cpp_cfgs[1],
-                    cpp_enhanced_cfg if args.with_enhanced else None,
-                    args.timeout_s,
-                )
+        runner = build_dir / ("emulator_runner" if backend == "cpp" else "verilator_runner")
+        require_file(runner, f"{backend} runner")
+
+        baseline_cfg, optimized_cfg, variant_cfgs = resolve_backend_configs(build_dir, backend, variant_names)
+        require_file(baseline_cfg.elf, "baseline elf")
+        require_file(optimized_cfg.elf, "x77 optimized elf")
+        for cfg in variant_cfgs:
+            require_file(cfg.elf, f"variant elf ({cfg.name})")
+
+        backend_results.append(
+            run_backend(
+                backend,
+                runner,
+                chars,
+                baseline_cfg,
+                optimized_cfg,
+                variant_cfgs,
+                args.timeout_s,
             )
-        elif backend == "verilator":
-            runner = build_dir / "verilator_runner"
-            require_file(runner, "verilator runner")
-            backend_results.append(
-                run_backend(
-                    backend,
-                    runner,
-                    chars,
-                    vlt_cfgs[0],
-                    vlt_cfgs[1],
-                    vlt_enhanced_cfg if args.with_enhanced else None,
-                    args.timeout_s,
-                )
-            )
-        else:
-            raise RuntimeError(f"Unsupported backend: {backend}")
+        )
 
     report = {
         "charset": args.charset,
         "chars_tested": chars,
+        "variant_order": variant_names,
         "hotspots": load_hotspots(model_json),
         "results": backend_results,
     }

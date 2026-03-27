@@ -388,6 +388,66 @@ class TestModelCompiler(unittest.TestCase):
         # Allow small variation for alignment/padding
         self.assertAlmostEqual(len(binary), expected_size, delta=10)
 
+    def test_generate_assembly_rejects_invalid_lane_mode(self):
+        """Lane mode must be one of base/4x/8x."""
+        json_path = self._save_json(self.simple_model)
+        asm_path = os.path.join(self.temp_dir.name, "lane_invalid.s")
+        with self.assertRaises(ValueError) as ctx:
+            self.compiler.generate_assembly(
+                json_path,
+                asm_path,
+                use_neural_ops=True,
+                neural_opcode="x7b",
+                neural_lane_mode="16x",
+            )
+        self.assertIn("neural_lane_mode", str(ctx.exception))
+
+    def test_generate_assembly_rejects_lane_mode_for_x77(self):
+        """Lane mode 4x/8x is invalid on x77 opcode path."""
+        json_path = self._save_json(self.simple_model)
+        asm_path = os.path.join(self.temp_dir.name, "lane_x77_invalid.s")
+        with self.assertRaises(ValueError) as ctx:
+            self.compiler.generate_assembly(
+                json_path,
+                asm_path,
+                use_neural_ops=True,
+                neural_opcode="x77",
+                neural_lane_mode="4x",
+            )
+        self.assertIn("only valid with neural_opcode x7b", str(ctx.exception))
+
+    def test_generate_assembly_emits_nmatvec4x(self):
+        """x7b + 4x lane mode should emit nmatvec4x mnemonic."""
+        json_path = self._save_json(self.simple_model)
+        asm_path = os.path.join(self.temp_dir.name, "lane4.s")
+        self.compiler.generate_assembly(
+            json_path,
+            asm_path,
+            use_neural_ops=True,
+            neural_opcode="x7b",
+            neural_lane_mode="4x",
+            with_execution=True,
+        )
+        with open(asm_path, "r") as f:
+            asm = f.read()
+        self.assertIn("nmatvec4x.f32", asm)
+
+    def test_generate_assembly_emits_nmatvec8x(self):
+        """x7b + 8x lane mode should emit nmatvec8x mnemonic."""
+        json_path = self._save_json(self.simple_model)
+        asm_path = os.path.join(self.temp_dir.name, "lane8.s")
+        self.compiler.generate_assembly(
+            json_path,
+            asm_path,
+            use_neural_ops=True,
+            neural_opcode="x7b",
+            neural_lane_mode="8x",
+            with_execution=True,
+        )
+        with open(asm_path, "r") as f:
+            asm = f.read()
+        self.assertIn("nmatvec8x.f32", asm)
+
 
 if __name__ == '__main__':
     unittest.main()

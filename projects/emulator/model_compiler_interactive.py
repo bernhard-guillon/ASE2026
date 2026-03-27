@@ -105,9 +105,10 @@ map_output_framebuffer:
 """
 
     def generate_assembly_interactive(self, json_path: str, output_asm: str,
-                                     temp_bin: str = None,
-                                     use_neural_ops: bool = False,
-                                     neural_opcode: str = "x77") -> str:
+                                      temp_bin: str = None,
+                                      use_neural_ops: bool = False,
+                                      neural_opcode: str = "x77",
+                                      neural_lane_mode: str = "base") -> str:
         """
         Generate assembly for interactive framebuffer output.
         
@@ -123,7 +124,8 @@ map_output_framebuffer:
         std_asm = self.generate_assembly(json_path, output_asm, temp_bin, 
                                          with_bootloader=False, with_execution=True,
                                          use_neural_ops=use_neural_ops,
-                                         neural_opcode=neural_opcode)
+                                         neural_opcode=neural_opcode,
+                                         neural_lane_mode=neural_lane_mode)
         
         # Read the generated assembly
         with open(std_asm, 'r') as f:
@@ -168,6 +170,12 @@ if __name__ == "__main__":
         default="x77",
         help="Custom neural opcode variant to emit when --use-neural-ops is set",
     )
+    parser.add_argument(
+        "--neural-lane-mode",
+        choices=["base", "4x", "8x"],
+        default="base",
+        help="For x7b neural ops: matvec variant to emit (base=nmatvecx, 4x=nmatvec4x, 8x=nmatvec8x)",
+    )
     
     args = parser.parse_args()
     
@@ -181,6 +189,7 @@ if __name__ == "__main__":
         output_bin,
         use_neural_ops=args.use_neural_ops,
         neural_opcode=args.neural_opcode,
+        neural_lane_mode=args.neural_lane_mode,
     )
     
     print(f"Interactive assembly generated: {result}")

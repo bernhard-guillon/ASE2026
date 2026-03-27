@@ -234,17 +234,20 @@ module cpu (
     reg [4:0] neural_op_hold;
     reg [31:0] neural_status;
     reg neural_is_v2_hold;
+    reg [3:0] neural_lane_width_hold;
 
     reg [31:0] n_desc_addr;
     reg [2:0]  n_desc_idx;
     reg [31:0] n_input_ptr, n_weights_ptr, n_bias_ptr, n_output_ptr;
     reg [31:0] n_input_len, n_output_len, n_flags;
     reg [31:0] n_i, n_j;
-    reg [31:0] n_acc_bits;
-    reg [31:0] n_acc1_bits;
     reg [31:0] n_tmp_in_bits, n_tmp_w_bits;
     reg [31:0] n_tmp_w1_bits;
-    reg        n_pair_active;
+    reg [3:0]  n_lane_count;
+    reg [2:0]  n_lane_idx;
+    reg [31:0] n_acc_lanes [0:7];
+    wire [31:0] n_lane_idx_u32 = {29'd0, n_lane_idx};
+    wire [31:0] n_lane_count_u32 = {28'd0, n_lane_count};
 
     reg [31:0] n_dst_ptr, n_src_ptr, n_len, n_idx;
     reg [31:0] n_src_bits, n_dst_bits;
@@ -285,6 +288,7 @@ module cpu (
             neural_op_hold <= 5'd0;
             neural_status <= NEURAL_ERR_OK;
             neural_is_v2_hold <= 1'b0;
+            neural_lane_width_hold <= 4'd1;
             n_desc_addr <= 32'd0;
             n_desc_idx <= 3'd0;
             n_input_ptr <= 32'd0;
@@ -296,12 +300,11 @@ module cpu (
             n_flags <= 32'd0;
             n_i <= 32'd0;
             n_j <= 32'd0;
-            n_acc_bits <= 32'd0;
-            n_acc1_bits <= 32'd0;
             n_tmp_in_bits <= 32'd0;
             n_tmp_w_bits <= 32'd0;
             n_tmp_w1_bits <= 32'd0;
-            n_pair_active <= 1'b0;
+            n_lane_count <= 4'd0;
+            n_lane_idx <= 3'd0;
             n_dst_ptr <= 32'd0;
             n_src_ptr <= 32'd0;
             n_len <= 32'd0;
@@ -313,6 +316,9 @@ module cpu (
             for (i = 0; i < 32; i = i + 1) begin
                 regs[i] <= 32'd0;
                 fp_regs[i] <= 32'd0;
+                if (i < 8) begin
+                    n_acc_lanes[i] <= 32'd0;
+                end
             end
             
         end else if (reg_write_en && !enable) begin
@@ -471,9 +477,17 @@ module cpu (
                             neural_op_hold <= neural_op_id;
                             neural_status <= NEURAL_ERR_OK;
                             neural_is_v2_hold <= (opcode == OP_CUSTOM3);
-                            n_pair_active <= 1'b0;
-
-                            if (neural_op_id == 5'd0) begin
+                            if (opcode == OP_CUSTOM3 && neural_op_id == 5'd5) begin
+                                neural_lane_width_hold <= 4'd8;
+                            end else if (opcode == OP_CUSTOM3 && neural_op_id == 5'd4) begin
+                                neural_lane_width_hold <= 4'd4;
+                            end else if (opcode == OP_CUSTOM3) begin
+                                neural_lane_width_hold <= 4'd2;
+                            end else begin
+                                neural_lane_width_hold <= 4'd1;
+                            end
+                            if (neural_op_id == 5'd0 ||
+                                (opcode == OP_CUSTOM3 && (neural_op_id == 5'd4 || neural_op_id == 5'd5))) begin
                                 // NMATVEC.F32: rs1 points to descriptor
                                 n_desc_addr <= neural_rs1_val;
                                 if (neural_rs1_val + 32 > MEM_SIZE) begin
@@ -600,6 +614,8 @@ module cpu (
                         state <= ST_NEURAL_FINISH;
                     end else begin
                         n_j <= 32'd0;
+                        n_lane_count <= 4'd0;
+                        n_lane_idx <= 3'd0;
                         state <= ST_NMATVEC_OUTER_CHECK;
                     end
                 end
@@ -609,16 +625,54 @@ module cpu (
                         neural_status <= NEURAL_ERR_OK;
                         state <= ST_NEURAL_FINISH;
                     end else begin
-                        n_pair_active <= neural_is_v2_hold && ((n_j + 32'd1) < n_output_len);
+                        if (neural_lane_width_hold == 4'd8) begin
+                            if ((n_j + 32'd8) <= n_output_len) begin
+                                n_lane_count <= 4'd8;
+                            end else if ((n_j + 32'd7) <= n_output_len) begin
+                                n_lane_count <= 4'd7;
+                            end else if ((n_j + 32'd6) <= n_output_len) begin
+                                n_lane_count <= 4'd6;
+                            end else if ((n_j + 32'd5) <= n_output_len) begin
+                                n_lane_count <= 4'd5;
+                            end else if ((n_j + 32'd4) <= n_output_len) begin
+                                n_lane_count <= 4'd4;
+                            end else if ((n_j + 32'd3) <= n_output_len) begin
+                                n_lane_count <= 4'd3;
+                            end else if ((n_j + 32'd2) <= n_output_len) begin
+                                n_lane_count <= 4'd2;
+                            end else begin
+                                n_lane_count <= 4'd1;
+                            end
+                        end else if (neural_lane_width_hold == 4'd4) begin
+                            if ((n_j + 32'd4) <= n_output_len) begin
+                                n_lane_count <= 4'd4;
+                            end else if ((n_j + 32'd3) <= n_output_len) begin
+                                n_lane_count <= 4'd3;
+                            end else if ((n_j + 32'd2) <= n_output_len) begin
+                                n_lane_count <= 4'd2;
+                            end else begin
+                                n_lane_count <= 4'd1;
+                            end
+                        end else if (neural_lane_width_hold == 4'd2) begin
+                            if ((n_j + 32'd2) <= n_output_len) begin
+                                n_lane_count <= 4'd2;
+                            end else begin
+                                n_lane_count <= 4'd1;
+                            end
+                        end else begin
+                            n_lane_count <= 4'd1;
+                        end
+                        n_lane_idx <= 3'd0;
                         mem_addr_reg <= n_bias_ptr + (n_j << 2);
                         state <= ST_NMATVEC_LOAD_BIAS;
                     end
                 end
 
                 ST_NMATVEC_LOAD_BIAS: begin
-                    n_acc_bits <= mem_rdata;
-                    if (neural_is_v2_hold && n_pair_active) begin
-                        mem_addr_reg <= n_bias_ptr + ((n_j + 32'd1) << 2);
+                    n_acc_lanes[n_lane_idx] <= mem_rdata;
+                    if ((n_lane_idx + 4'd1) < n_lane_count) begin
+                        n_lane_idx <= n_lane_idx + 3'd1;
+                        mem_addr_reg <= n_bias_ptr + ((n_j + n_lane_idx_u32 + 32'd1) << 2);
                         state <= ST_NMATVEC_LOAD_BIAS_PAIR;
                     end else begin
                         n_i <= 32'd0;
@@ -627,15 +681,22 @@ module cpu (
                 end
 
                 ST_NMATVEC_LOAD_BIAS_PAIR: begin
-                    n_acc1_bits <= mem_rdata;
-                    n_i <= 32'd0;
-                    state <= ST_NMATVEC_INNER_CHECK;
+                    n_acc_lanes[n_lane_idx] <= mem_rdata;
+                    if ((n_lane_idx + 4'd1) < n_lane_count) begin
+                        n_lane_idx <= n_lane_idx + 3'd1;
+                        mem_addr_reg <= n_bias_ptr + ((n_j + n_lane_idx_u32 + 32'd1) << 2);
+                        state <= ST_NMATVEC_LOAD_BIAS_PAIR;
+                    end else begin
+                        n_i <= 32'd0;
+                        state <= ST_NMATVEC_INNER_CHECK;
+                    end
                 end
 
                 ST_NMATVEC_INNER_CHECK: begin
                     if (n_i >= n_input_len) begin
+                        n_lane_idx <= 3'd0;
                         mem_addr_reg <= n_output_ptr + (n_j << 2);
-                        mem_wdata_reg <= n_acc_bits;
+                        mem_wdata_reg <= n_acc_lanes[0];
                         mem_size_reg <= 2'b10;
                         mem_we_reg <= 1'b1;
                         if (neural_is_v2_hold) begin
@@ -651,6 +712,7 @@ module cpu (
 
                 ST_NMATVEC_LOAD_INPUT: begin
                     n_tmp_in_bits <= mem_rdata;
+                    n_lane_idx <= 3'd0;
                     mem_addr_reg <= n_weights_ptr + (((n_i * n_output_len) + n_j) << 2);
                     state <= ST_NMATVEC_LOAD_WEIGHT;
                 end
@@ -661,9 +723,10 @@ module cpu (
                 end
 
                 ST_NMATVEC_MAC: begin
-                    n_acc_bits <= fp_add(n_acc_bits, fp_mul(n_tmp_in_bits, n_tmp_w_bits));
-                    if (neural_is_v2_hold && n_pair_active) begin
-                        mem_addr_reg <= n_weights_ptr + (((n_i * n_output_len) + (n_j + 32'd1)) << 2);
+                    n_acc_lanes[n_lane_idx] <= fp_add(n_acc_lanes[n_lane_idx], fp_mul(n_tmp_in_bits, n_tmp_w_bits));
+                    if ((n_lane_idx + 4'd1) < n_lane_count) begin
+                        n_lane_idx <= n_lane_idx + 3'd1;
+                        mem_addr_reg <= n_weights_ptr + (((n_i * n_output_len) + (n_j + n_lane_idx_u32 + 32'd1)) << 2);
                         state <= ST_NMATVEC_LOAD_WEIGHT_PAIR;
                     end else begin
                         n_i <= n_i + 32'd1;
@@ -677,9 +740,15 @@ module cpu (
                 end
 
                 ST_NMATVEC_MAC_PAIR: begin
-                    n_acc1_bits <= fp_add(n_acc1_bits, fp_mul(n_tmp_in_bits, n_tmp_w1_bits));
-                    n_i <= n_i + 32'd1;
-                    state <= ST_NMATVEC_INNER_CHECK;
+                    n_acc_lanes[n_lane_idx] <= fp_add(n_acc_lanes[n_lane_idx], fp_mul(n_tmp_in_bits, n_tmp_w1_bits));
+                    if ((n_lane_idx + 4'd1) < n_lane_count) begin
+                        n_lane_idx <= n_lane_idx + 3'd1;
+                        mem_addr_reg <= n_weights_ptr + (((n_i * n_output_len) + (n_j + n_lane_idx_u32 + 32'd1)) << 2);
+                        state <= ST_NMATVEC_LOAD_WEIGHT_PAIR;
+                    end else begin
+                        n_i <= n_i + 32'd1;
+                        state <= ST_NMATVEC_INNER_CHECK;
+                    end
                 end
 
                 ST_NMATVEC_STORE_REQ: begin
@@ -687,9 +756,10 @@ module cpu (
                 end
 
                 ST_NMATVEC_STORE_COMMIT: begin
-                    if (neural_is_v2_hold && n_pair_active) begin
-                        mem_addr_reg <= n_output_ptr + ((n_j + 32'd1) << 2);
-                        mem_wdata_reg <= n_acc1_bits;
+                    if ((n_lane_idx + 4'd1) < n_lane_count) begin
+                        n_lane_idx <= n_lane_idx + 3'd1;
+                        mem_addr_reg <= n_output_ptr + ((n_j + n_lane_idx_u32 + 32'd1) << 2);
+                        mem_wdata_reg <= n_acc_lanes[n_lane_idx + 3'd1];
                         mem_size_reg <= 2'b10;
                         mem_we_reg <= 1'b1;
                         if (neural_is_v2_hold) begin
@@ -698,7 +768,7 @@ module cpu (
                             state <= ST_NMATVEC_STORE2_REQ;
                         end
                     end else begin
-                        n_j <= n_j + 32'd1;
+                        n_j <= n_j + n_lane_count_u32;
                         state <= ST_NMATVEC_OUTER_CHECK;
                     end
                 end
@@ -708,8 +778,7 @@ module cpu (
                 end
 
                 ST_NMATVEC_STORE2_COMMIT: begin
-                    n_j <= n_j + 32'd2;
-                    state <= ST_NMATVEC_OUTER_CHECK;
+                    state <= ST_NMATVEC_STORE_COMMIT;
                 end
 
                 ST_NVEC_VALIDATE: begin
