@@ -95,9 +95,10 @@ impl Parser {
             "fmv.x.w" => Self::parse_f_move_type(mnemonic, tokens).map(Some),
             // RV32F FMV (int to float reg)
             "fmv.w.x" => Self::parse_f_move_rev_type(mnemonic, tokens).map(Some),
-            // Neural custom ops (Phase D.2)
-            "nmatvec.f32" => Self::parse_n_desc_type(mnemonic, tokens).map(Some),
-            "nvrelu.f32" | "nvsigpwl.f32" | "nvclampu8.f32" => {
+            // Neural custom ops v1 (0x77) and v2-preview (0x7B)
+            "nmatvec.f32" | "nmatvecx.f32" => Self::parse_n_desc_type(mnemonic, tokens).map(Some),
+            "nvrelu.f32" | "nvsigpwl.f32" | "nvclampu8.f32"
+            | "nvrelux.f32" | "nvsigpwlx.f32" | "nvclampu8x.f32" => {
                 Self::parse_n_vec_type(mnemonic, tokens).map(Some)
             }
             _ => Err(AssemblerError::UnknownInstruction(mnemonic)),
@@ -849,6 +850,52 @@ mod tests {
                 assert_eq!(rs1, Register::X10);
                 assert_eq!(rs2, Register::X11);
                 assert_eq!(rs3, Register::X12);
+            }
+            _ => panic!("expected NType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_nmatvecx_f32() {
+        let tokens = crate::lexer::tokenize("NMATVECX.F32 t1, t0").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::NType {
+                mnemonic,
+                rd,
+                rs1,
+                rs2,
+                rs3,
+            }) => {
+                assert_eq!(mnemonic, "nmatvecx.f32");
+                assert_eq!(rd, Register::X6);
+                assert_eq!(rs1, Register::X5);
+                assert_eq!(rs2, Register::X0);
+                assert_eq!(rs3, Register::X0);
+            }
+            _ => panic!("expected NType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_nvrelux_f32() {
+        let tokens = crate::lexer::tokenize("NVRELUX.F32 a0, a1, a2, a3").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::NType {
+                mnemonic,
+                rd,
+                rs1,
+                rs2,
+                rs3,
+            }) => {
+                assert_eq!(mnemonic, "nvrelux.f32");
+                assert_eq!(rd, Register::X10);
+                assert_eq!(rs1, Register::X11);
+                assert_eq!(rs2, Register::X12);
+                assert_eq!(rs3, Register::X13);
             }
             _ => panic!("expected NType"),
         }

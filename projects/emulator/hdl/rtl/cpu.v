@@ -57,6 +57,7 @@ module cpu (
     localparam OP_OP       = 7'b0110011;
     localparam OP_OP_FP    = 7'b1010011;
     localparam OP_CUSTOM0  = 7'b1110111;
+    localparam OP_CUSTOM3  = 7'b1111011;
     localparam OP_LUI      = 7'b0110111;
     localparam OP_BRANCH   = 7'b1100011;
     localparam OP_JALR     = 7'b1100111;
@@ -70,7 +71,7 @@ module cpu (
     wire [4:0]  rs1    = instruction[19:15];
     wire [4:0]  rs2    = instruction[24:20];
     wire [6:0]  funct7 = instruction[31:25];
-    // CUSTOM0 compact neural encoding fields
+    // CUSTOM0/CUSTOM3 compact neural encoding fields
     wire [4:0]  neural_rd    = instruction[11:7];
     wire [4:0]  neural_rs1   = instruction[16:12];
     wire [4:0]  neural_rs2   = instruction[21:17];
@@ -452,7 +453,7 @@ module cpu (
                             pc <= pc + 4;
                         end
 
-                        OP_CUSTOM0: begin
+                        OP_CUSTOM0, OP_CUSTOM3: begin
                             neural_rd_hold <= neural_rd;
                             neural_op_hold <= neural_op_id;
                             neural_status <= NEURAL_ERR_OK;

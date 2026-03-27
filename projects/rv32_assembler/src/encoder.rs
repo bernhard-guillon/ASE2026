@@ -19,7 +19,8 @@ const OPCODE_SYSTEM: u32 = 0b1110011;  // ECALL, EBREAK
 const OPCODE_FP_LOAD: u32 = 0b0000111; // FLW
 const OPCODE_FP_STORE: u32 = 0b0100111; // FSW
 const OPCODE_FP: u32 = 0b1010011;      // Floating-point operations
-const OPCODE_CUSTOM0: u32 = 0b1110111; // Neural custom extension (0x77)
+const OPCODE_CUSTOM0: u32 = 0b1110111; // Neural custom extension v1 (0x77)
+const OPCODE_CUSTOM3: u32 = 0b1111011; // Neural custom extension v2 preview (0x7B)
 
 impl Encoder {
     pub fn encode(instruction: &Instruction) -> Result<[u8; 4]> {
@@ -365,18 +366,22 @@ impl Encoder {
 
     fn encode_n_type(mnemonic: &str, rd: u32, rs1: u32, rs2: u32, rs3: u32) -> Result<u32> {
         // Custom compact neural format:
-        // [31:27]=opid [26:22]=rs3 [21:17]=rs2 [16:12]=rs1 [11:7]=rd [6:0]=opcode(0x77)
+        // [31:27]=opid [26:22]=rs3 [21:17]=rs2 [16:12]=rs1 [11:7]=rd [6:0]=opcode(0x77/0x7B)
         //
-        // nmatvec.f32 uses only rd/rs1. rs2/rs3 must be zero for canonical encoding.
-        let opid = match mnemonic {
-            "nmatvec.f32" => 0u32,
-            "nvrelu.f32" => 1u32,
-            "nvsigpwl.f32" => 2u32,
-            "nvclampu8.f32" => 3u32,
+        // nmatvec*.f32 uses only rd/rs1. rs2/rs3 must be zero for canonical encoding.
+        let (opid, opcode, canonical_desc) = match mnemonic {
+            "nmatvec.f32" => (0u32, OPCODE_CUSTOM0, true),
+            "nvrelu.f32" => (1u32, OPCODE_CUSTOM0, false),
+            "nvsigpwl.f32" => (2u32, OPCODE_CUSTOM0, false),
+            "nvclampu8.f32" => (3u32, OPCODE_CUSTOM0, false),
+            "nmatvecx.f32" => (0u32, OPCODE_CUSTOM3, true),
+            "nvrelux.f32" => (1u32, OPCODE_CUSTOM3, false),
+            "nvsigpwlx.f32" => (2u32, OPCODE_CUSTOM3, false),
+            "nvclampu8x.f32" => (3u32, OPCODE_CUSTOM3, false),
             _ => return Err(AssemblerError::UnknownInstruction(mnemonic.to_string())),
         };
 
-        let (packed_rs2, packed_rs3) = if mnemonic == "nmatvec.f32" {
+        let (packed_rs2, packed_rs3) = if canonical_desc {
             (0u32, 0u32)
         } else {
             (rs2, rs3)
@@ -387,7 +392,7 @@ impl Encoder {
             | ((packed_rs2 & 0x1f) << 17)
             | ((rs1 & 0x1f) << 12)
             | ((rd & 0x1f) << 7)
-            | OPCODE_CUSTOM0)
+            | opcode)
     }
 
     // Encode 32-bit instruction word with fields
@@ -552,5 +557,43 @@ mod tests {
         let clamp_word = u32::from_le_bytes(Encoder::encode(&clamp).unwrap());
         assert_eq!((sig_word >> 27) & 0x1f, 2);
         assert_eq!((clamp_word >> 27) & 0x1f, 3);
+    }
+
+    #[test]
+    fn test_encode_nmatvecx_opcode_and_funct7() {
+        let instr = Instruction::NType {
+            mnemonic: "nmatvecx.f32".to_string(),
+            rd: Register::X6,
+            rs1: Register::X5,
+            rs2: Register::X31,
+            rs3: Register::X31,
+        };
+        let bytes = Encoder::encode(&instr).unwrap();
+        let word = u32::from_le_bytes(bytes);
+        assert_eq!(word & 0x7f, 0x7b);
+        assert_eq!((word >> 27) & 0x1f, 0);
+        assert_eq!((word >> 12) & 0x1f, 5);
+        // Canonical nmatvec* form must zero rs2/rs3 fields regardless of inputs.
+        assert_eq!((word >> 17) & 0x1f, 0);
+        assert_eq!((word >> 22) & 0x1f, 0);
+    }
+
+    #[test]
+    fn test_encode_nvrelux_opcode_and_register_fields() {
+        let instr = Instruction::NType {
+            mnemonic: "nvrelux.f32".to_string(),
+            rd: Register::X10,
+            rs1: Register::X11,
+            rs2: Register::X12,
+            rs3: Register::X13,
+        };
+        let bytes = Encoder::encode(&instr).unwrap();
+        let word = u32::from_le_bytes(bytes);
+        assert_eq!(word & 0x7f, 0x7b);
+        assert_eq!((word >> 27) & 0x1f, 1);
+        assert_eq!((word >> 12) & 0x1f, 11);
+        assert_eq!((word >> 7) & 0x1f, 10);
+        assert_eq!((word >> 17) & 0x1f, 12);
+        assert_eq!((word >> 22) & 0x1f, 13);
     }
 }

@@ -899,6 +899,32 @@ TEST_F(ExecutionTest, NeuralNVClampU8ExecutesAndSetsStatus) {
     EXPECT_EQ(cpu.getPC(), 4u);
 }
 
+TEST_F(ExecutionTest, NeuralCustom3NVReLUExecutesAndSetsStatus) {
+    const uint32_t src = 0x100;
+    const uint32_t dst = 0x200;
+    const float in_vals[3] = {-1.0f, 0.0f, 2.5f};
+    for (int i = 0; i < 3; ++i) {
+        uint32_t bits;
+        std::memcpy(&bits, &in_vals[i], sizeof(bits));
+        memory.write32(src + i * 4, bits);
+    }
+
+    cpu.setReg(11, dst); // rs1
+    cpu.setReg(12, src); // rs2
+    cpu.setReg(13, 3);   // rs3
+
+    // opid=1 (nvrelux), rd=x10, rs1=x11, rs2=x12, rs3=x13, opcode=0x7B
+    uint32_t raw = (1u << 27) | (13u << 22) | (12u << 17) | (11u << 12) | (10u << 7) | 0x7Bu;
+    Instruction instr = InstructionDecoder::decode(raw);
+    cpu.execute(instr, memory);
+
+    EXPECT_EQ(cpu.getReg(10), 0u); // status ok
+    EXPECT_EQ(memory.read32(dst + 0), 0x00000000u);
+    EXPECT_EQ(memory.read32(dst + 4), 0x00000000u);
+    EXPECT_EQ(memory.read32(dst + 8), 0x40200000u); // 2.5f
+    EXPECT_EQ(cpu.getPC(), 4u);
+}
+
 TEST_F(ExecutionTest, FunctionCallReturn) {
     cpu.setPC(100);
     cpu.setReg(10, 500);

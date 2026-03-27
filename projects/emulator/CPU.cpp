@@ -105,6 +105,7 @@ void CPU::execute(const Instruction& instr, Memory& memory) {
             break;
 
         case Opcode::CUSTOM0:
+        case Opcode::CUSTOM3:
             executeNeural(instr, memory);
             incrementPC();
             break;
