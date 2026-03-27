@@ -393,6 +393,10 @@ if(RISCV_TOOLCHAIN_FOUND)
         set(NEURAL_OPSX77_OBJ "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.o")
         set(NEURAL_OPSX77_ELF "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.elf")
         set(NEURAL_OPSX77_BIN "${CMAKE_CURRENT_BINARY_DIR}/neural-ai-opsx77.bin")
+        set(NEURAL_OP_ENHANCE_ASM "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance.s")
+        set(NEURAL_OP_ENHANCE_OBJ "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance.o")
+        set(NEURAL_OP_ENHANCE_ELF "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance.elf")
+        set(NEURAL_OP_ENHANCE_BIN "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance.bin")
         set(NEURAL_MODEL_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
         set(NEURAL_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_interactive.py")
 
@@ -448,8 +452,34 @@ if(RISCV_TOOLCHAIN_FOUND)
             )
 
             add_custom_target(neural_opsx77_elf ALL DEPENDS ${NEURAL_OPSX77_ELF})
+
+            add_custom_command(
+                OUTPUT ${NEURAL_OP_ENHANCE_ASM}
+                COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b -o ${NEURAL_OP_ENHANCE_ASM} -b ${NEURAL_OP_ENHANCE_BIN} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                COMMENT "Generating neural-op-enhance.s from model JSON"
+                VERBATIM
+            )
+
+            add_custom_command(
+                OUTPUT ${NEURAL_OP_ENHANCE_OBJ}
+                COMMAND ${RV32AS_EXECUTABLE} ${NEURAL_OP_ENHANCE_ASM} -march rv32if -mabi ilp32f -o ${NEURAL_OP_ENHANCE_OBJ}
+                DEPENDS ${NEURAL_OP_ENHANCE_ASM} rv32as_build
+                COMMENT "Assembling neural-op-enhance.o with rv32as"
+                VERBATIM
+            )
+
+            add_custom_command(
+                OUTPUT ${NEURAL_OP_ENHANCE_ELF}
+                COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${NEURAL_OP_ENHANCE_ELF} ${NEURAL_OP_ENHANCE_OBJ}
+                DEPENDS ${NEURAL_OP_ENHANCE_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+                COMMENT "Linking neural-op-enhance.elf"
+                VERBATIM
+            )
+
+            add_custom_target(neural_op_enhance_elf ALL DEPENDS ${NEURAL_OP_ENHANCE_ELF})
         else()
-            message(WARNING "rv32as not found - neural_opsx77_elf target disabled")
+            message(WARNING "rv32as not found - neural_opsx77_elf and neural_op_enhance_elf targets disabled")
         endif()
     else()
         message(WARNING "Python not found - neural_elf target disabled")
@@ -515,6 +545,16 @@ add_test(
 )
 set_tests_properties(python/verilator/neural_opsx77 PROPERTIES
     LABELS "verilator;neural;opsx77;validation"
+    TIMEOUT 180
+)
+
+add_test(
+    NAME python/verilator/neural_op_enhance
+    COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_verilator_neural_op_enhance.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+set_tests_properties(python/verilator/neural_op_enhance PROPERTIES
+    LABELS "verilator;neural;enhance;validation"
     TIMEOUT 180
 )
 

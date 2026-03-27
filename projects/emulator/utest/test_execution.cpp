@@ -899,6 +899,89 @@ TEST_F(ExecutionTest, NeuralNVClampU8ExecutesAndSetsStatus) {
     EXPECT_EQ(cpu.getPC(), 4u);
 }
 
+TEST_F(ExecutionTest, NeuralCustom3NVReLUExecutesAndSetsStatus) {
+    const uint32_t src = 0x100;
+    const uint32_t dst = 0x200;
+    const float in_vals[3] = {-1.0f, 0.0f, 2.5f};
+    for (int i = 0; i < 3; ++i) {
+        uint32_t bits;
+        std::memcpy(&bits, &in_vals[i], sizeof(bits));
+        memory.write32(src + i * 4, bits);
+    }
+
+    cpu.setReg(11, dst); // rs1
+    cpu.setReg(12, src); // rs2
+    cpu.setReg(13, 3);   // rs3
+
+    // opid=1 (nvrelux), rd=x10, rs1=x11, rs2=x12, rs3=x13, opcode=0x7B
+    uint32_t raw = (1u << 27) | (13u << 22) | (12u << 17) | (11u << 12) | (10u << 7) | 0x7Bu;
+    Instruction instr = InstructionDecoder::decode(raw);
+    cpu.execute(instr, memory);
+
+    EXPECT_EQ(cpu.getReg(10), 0u); // status ok
+    EXPECT_EQ(memory.read32(dst + 0), 0x00000000u);
+    EXPECT_EQ(memory.read32(dst + 4), 0x00000000u);
+    EXPECT_EQ(memory.read32(dst + 8), 0x40200000u); // 2.5f
+    EXPECT_EQ(cpu.getPC(), 4u);
+}
+
+TEST_F(ExecutionTest, NeuralCustom3NMatvecExecutesAndSetsStatus) {
+    const uint32_t desc = 0x100;
+    const uint32_t input = 0x140;
+    const uint32_t weights = 0x180;
+    const uint32_t bias = 0x1C0;
+    const uint32_t output = 0x200;
+
+    auto write_f32 = [&](uint32_t addr, float v) {
+        uint32_t bits;
+        std::memcpy(&bits, &v, sizeof(bits));
+        memory.write32(addr, bits);
+    };
+
+    write_f32(input + 0, 1.0f);
+    write_f32(input + 4, 2.0f);
+    write_f32(weights + 0, 1.0f);
+    write_f32(weights + 4, 2.0f);
+    write_f32(weights + 8, 3.0f);
+    write_f32(weights + 12, 4.0f);
+    write_f32(bias + 0, 0.0f);
+    write_f32(bias + 4, 0.0f);
+
+    memory.write32(desc + 0x00, input);
+    memory.write32(desc + 0x04, weights);
+    memory.write32(desc + 0x08, bias);
+    memory.write32(desc + 0x0C, output);
+    memory.write32(desc + 0x10, 2);
+    memory.write32(desc + 0x14, 2);
+    memory.write32(desc + 0x18, 0);
+    memory.write32(desc + 0x1C, 0);
+
+    cpu.setReg(5, desc); // rs1 for nmatvecx
+    // opid=0 (nmatvecx), rd=x6, rs1=x5, opcode=0x7B
+    uint32_t raw = (0u << 27) | (0u << 22) | (0u << 17) | (5u << 12) | (6u << 7) | 0x7Bu;
+    Instruction instr = InstructionDecoder::decode(raw);
+    cpu.execute(instr, memory);
+
+    EXPECT_EQ(cpu.getReg(6), 0u); // status ok
+    EXPECT_EQ(memory.read32(output + 0), 0x40E00000u); // 7.0
+    EXPECT_EQ(memory.read32(output + 4), 0x41200000u); // 10.0
+    EXPECT_EQ(cpu.getPC(), 4u);
+}
+
+TEST_F(ExecutionTest, NeuralCustom3UnknownOpFailsLoud) {
+    // opid=31 unsupported, opcode=0x7B
+    const uint32_t raw = (31u << 27) | (10u << 7) | 0x7Bu;
+    Instruction instr = InstructionDecoder::decode(raw);
+    EXPECT_THROW(cpu.execute(instr, memory), std::runtime_error);
+}
+
+TEST_F(ExecutionTest, NeuralCustom0UnknownOpFailsLoud) {
+    // opid=31 unsupported, opcode=0x77
+    const uint32_t raw = (31u << 27) | (10u << 7) | 0x77u;
+    Instruction instr = InstructionDecoder::decode(raw);
+    EXPECT_THROW(cpu.execute(instr, memory), std::runtime_error);
+}
+
 TEST_F(ExecutionTest, FunctionCallReturn) {
     cpu.setPC(100);
     cpu.setReg(10, 500);

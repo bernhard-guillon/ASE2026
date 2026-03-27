@@ -105,6 +105,7 @@ void CPU::execute(const Instruction& instr, Memory& memory) {
             break;
 
         case Opcode::CUSTOM0:
+        case Opcode::CUSTOM3:
             executeNeural(instr, memory);
             incrementPC();
             break;
@@ -531,34 +532,58 @@ void CPU::executeFPArithmetic(const Instruction& instr) {
 void CPU::executeNeural(const Instruction& instr, Memory& memory) {
     auto& raw_mem = memory.bytesMutable();
     uint32_t status = NeuralOps::ERR_INVALID_PTR;
+    const bool is_v2 = (instr.opcode == Opcode::CUSTOM3);
 
     switch (instr.neural_op) {
         case 0: // NMATVEC.F32 rd_status, rs_desc
-            status = NeuralOps::matvec_f32(raw_mem, getReg(instr.rs1));
+            status = is_v2
+                ? NeuralOps::matvec_f32_v2(raw_mem, getReg(instr.rs1))
+                : NeuralOps::matvec_f32(raw_mem, getReg(instr.rs1));
             break;
         case 1: // NVRELU.F32 rd_status, rs_dst, rs_src, rs_len
-            status = NeuralOps::vec_relu_f32(
-                raw_mem,
-                getReg(instr.rs1),
-                getReg(instr.rs2),
-                getReg(instr.rs3)
-            );
+            status = is_v2
+                ? NeuralOps::vec_relu_f32_v2(
+                    raw_mem,
+                    getReg(instr.rs1),
+                    getReg(instr.rs2),
+                    getReg(instr.rs3)
+                )
+                : NeuralOps::vec_relu_f32(
+                    raw_mem,
+                    getReg(instr.rs1),
+                    getReg(instr.rs2),
+                    getReg(instr.rs3)
+                );
             break;
         case 2: // NVSIGPWL.F32 rd_status, rs_dst, rs_src, rs_len
-            status = NeuralOps::vec_sigmoid_pwl_f32(
-                raw_mem,
-                getReg(instr.rs1),
-                getReg(instr.rs2),
-                getReg(instr.rs3)
-            );
+            status = is_v2
+                ? NeuralOps::vec_sigmoid_pwl_f32_v2(
+                    raw_mem,
+                    getReg(instr.rs1),
+                    getReg(instr.rs2),
+                    getReg(instr.rs3)
+                )
+                : NeuralOps::vec_sigmoid_pwl_f32(
+                    raw_mem,
+                    getReg(instr.rs1),
+                    getReg(instr.rs2),
+                    getReg(instr.rs3)
+                );
             break;
         case 3: // NVCLAMPU8.F32 rd_status, rs_dst_u8, rs_src_f32, rs_len
-            status = NeuralOps::vec_clamp_scale_u8_f32(
-                raw_mem,
-                getReg(instr.rs1),
-                getReg(instr.rs2),
-                getReg(instr.rs3)
-            );
+            status = is_v2
+                ? NeuralOps::vec_clamp_scale_u8_f32_v2(
+                    raw_mem,
+                    getReg(instr.rs1),
+                    getReg(instr.rs2),
+                    getReg(instr.rs3)
+                )
+                : NeuralOps::vec_clamp_scale_u8_f32(
+                    raw_mem,
+                    getReg(instr.rs1),
+                    getReg(instr.rs2),
+                    getReg(instr.rs3)
+                );
             break;
         default:
             throw std::runtime_error("Unsupported neural custom operation");

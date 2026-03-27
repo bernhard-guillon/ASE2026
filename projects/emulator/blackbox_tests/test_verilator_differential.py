@@ -65,6 +65,7 @@ class DifferentialValidator:
 
     def _resolve_neural_elf(self):
         for candidate in (
+            self.build_dir / "neural-op-enhance.elf",
             self.build_dir / "neural-ai-opsx77.elf",
             self.build_dir / "neural_chargen.elf",
             self.build_dir / "neural.elf",
@@ -141,6 +142,12 @@ class DifferentialValidator:
 
                 cpp_res, _ = self._run_cmd(self.cpp_runner, elf, args, cpp_dir)
                 vlt_res, _ = self._run_cmd(self.verilator_runner, elf, args, vlt_dir)
+                if "invalid_op_fail" in case_name:
+                    assert cpp_res.returncode != 0 and vlt_res.returncode != 0, (
+                        f"{case_name}: invalid-op fail-loud case unexpectedly succeeded "
+                        f"(cpp={cpp_res.returncode}, vlt={vlt_res.returncode})"
+                    )
+                    continue
                 self._assert_same(case_name, cpp_res, vlt_res)
 
         print("blackbox parity: PASS")
@@ -154,7 +161,7 @@ class DifferentialValidator:
             ("static-z", self.static_elf, 122, 500000),
         ]
         if self.neural_elf is not None:
-            neural_cycles = 5000000 if self.neural_elf.name == "neural-ai-opsx77.elf" else 5000000
+            neural_cycles = 5000000 if self.neural_elf.name in ("neural-ai-opsx77.elf", "neural-op-enhance.elf") else 5000000
             fb_cases.extend(
                 [
                     ("neural-A", self.neural_elf, 65, neural_cycles),
@@ -189,7 +196,7 @@ class DifferentialValidator:
     def run_perf_sanity(self):
         perf_cases = [("static-A", self.static_elf, 65, 500000)]
         if self.neural_elf is not None:
-            neural_cycles = 5000000 if self.neural_elf.name == "neural-ai-opsx77.elf" else 2000000
+            neural_cycles = 5000000 if self.neural_elf.name in ("neural-ai-opsx77.elf", "neural-op-enhance.elf") else 2000000
             perf_cases.append(("neural-A", self.neural_elf, 65, neural_cycles))
 
         print(f"performance sanity: {len(perf_cases)} case(s)")

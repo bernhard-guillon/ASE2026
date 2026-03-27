@@ -25,7 +25,8 @@ enum class Opcode : uint8_t {
     STORE_FP  = 0b0100111,  // F extension: FSW
     OP        = 0b0110011,
     OP_FP     = 0b1010011,  // F extension: FADD.S, FMUL.S, etc.
-    CUSTOM0   = 0b1110111,  // Neural custom extension
+    CUSTOM0   = 0b1110111,  // Neural custom extension v1 (0x77)
+    CUSTOM3   = 0b1111011,  // Neural custom extension v2 preview (0x7B)
     LUI       = 0b0110111,
     BRANCH    = 0b1100011,
     JALR      = 0b1100111,
@@ -46,7 +47,7 @@ struct Instruction {
     uint8_t funct3;         // Function code 3 bits (bits 12-14)
     uint8_t funct7;         // Function code 7 bits (bits 25-31)
     uint8_t rs3;            // Neural/custom source register 3
-    uint8_t neural_op;      // Neural operation id (bits 31:27 for CUSTOM0)
+    uint8_t neural_op;      // Neural operation id (bits 31:27 for CUSTOM0/CUSTOM3)
     
     // Immediate values (sign-extended)
     int32_t imm;            // Decoded immediate value

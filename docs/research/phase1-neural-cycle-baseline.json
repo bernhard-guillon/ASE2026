@@ -1,0 +1,663 @@
+{
+  "charset": "A-Z0-9",
+  "chars_tested": [
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57
+  ],
+  "hotspots": {
+    "total_layers": 3,
+    "total_macs": 233216,
+    "total_activations": 912,
+    "layers": [
+      {
+        "layer_index": 0,
+        "input_size": 255,
+        "output_size": 256,
+        "activation": "relu",
+        "macs": 65280,
+        "activations": 256,
+        "mac_share_percent": 27.991
+      },
+      {
+        "layer_index": 1,
+        "input_size": 256,
+        "output_size": 256,
+        "activation": "relu",
+        "macs": 65536,
+        "activations": 256,
+        "mac_share_percent": 28.101
+      },
+      {
+        "layer_index": 2,
+        "input_size": 256,
+        "output_size": 400,
+        "activation": "sigmoid",
+        "macs": 102400,
+        "activations": 400,
+        "mac_share_percent": 43.908
+      }
+    ]
+  },
+  "results": [
+    {
+      "backend": "cpp",
+      "runner": "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/emulator_runner",
+      "baseline": {
+        "elf": "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/neural.elf",
+        "reference_cycles": 5000000,
+        "threshold_cycles": [
+          2000000,
+          2500000,
+          3000000,
+          4000000
+        ],
+        "summary": {
+          "min": 3000000,
+          "avg": 3000000,
+          "max": 3000000
+        }
+      },
+      "optimized": {
+        "elf": "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/neural-ai-opsx77.elf",
+        "reference_cycles": 20000,
+        "threshold_cycles": [
+          2000,
+          5000,
+          10000,
+          20000
+        ],
+        "summary": {
+          "min": 2000,
+          "avg": 2000,
+          "max": 2000
+        }
+      },
+      "speedup_summary": {
+        "min": 1500.0,
+        "avg": 1500.0,
+        "max": 1500.0
+      },
+      "per_char": [
+        {
+          "char_code": 65,
+          "char": "A",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 66,
+          "char": "B",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 67,
+          "char": "C",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 68,
+          "char": "D",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 69,
+          "char": "E",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 70,
+          "char": "F",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 71,
+          "char": "G",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 72,
+          "char": "H",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 73,
+          "char": "I",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 74,
+          "char": "J",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 75,
+          "char": "K",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 76,
+          "char": "L",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 77,
+          "char": "M",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 78,
+          "char": "N",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 79,
+          "char": "O",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 80,
+          "char": "P",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 81,
+          "char": "Q",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 82,
+          "char": "R",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 83,
+          "char": "S",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 84,
+          "char": "T",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 85,
+          "char": "U",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 86,
+          "char": "V",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 87,
+          "char": "W",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 88,
+          "char": "X",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 89,
+          "char": "Y",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 90,
+          "char": "Z",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 48,
+          "char": "0",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 49,
+          "char": "1",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 50,
+          "char": "2",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 51,
+          "char": "3",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 52,
+          "char": "4",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 53,
+          "char": "5",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 54,
+          "char": "6",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 55,
+          "char": "7",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 56,
+          "char": "8",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        },
+        {
+          "char_code": 57,
+          "char": "9",
+          "baseline_cycles": 3000000,
+          "optimized_cycles": 2000,
+          "speedup": 1500.0
+        }
+      ]
+    },
+    {
+      "backend": "verilator",
+      "runner": "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/verilator_runner",
+      "baseline": {
+        "elf": "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/neural.elf",
+        "reference_cycles": 5000000,
+        "threshold_cycles": [
+          2000000,
+          3000000,
+          4000000,
+          5000000
+        ],
+        "summary": {
+          "min": 4000000,
+          "avg": 4000000,
+          "max": 4000000
+        }
+      },
+      "optimized": {
+        "elf": "/home/nice/Uni/Master/ASE2026/ASE2026/projects/emulator/build/neural-ai-opsx77.elf",
+        "reference_cycles": 5000000,
+        "threshold_cycles": [
+          1000000,
+          2000000,
+          3000000,
+          4000000
+        ],
+        "summary": {
+          "min": 1000000,
+          "avg": 1000000,
+          "max": 1000000
+        }
+      },
+      "speedup_summary": {
+        "min": 4.0,
+        "avg": 4.0,
+        "max": 4.0
+      },
+      "per_char": [
+        {
+          "char_code": 65,
+          "char": "A",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 66,
+          "char": "B",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 67,
+          "char": "C",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 68,
+          "char": "D",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 69,
+          "char": "E",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 70,
+          "char": "F",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 71,
+          "char": "G",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 72,
+          "char": "H",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 73,
+          "char": "I",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 74,
+          "char": "J",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 75,
+          "char": "K",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 76,
+          "char": "L",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 77,
+          "char": "M",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 78,
+          "char": "N",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 79,
+          "char": "O",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 80,
+          "char": "P",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 81,
+          "char": "Q",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 82,
+          "char": "R",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 83,
+          "char": "S",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 84,
+          "char": "T",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 85,
+          "char": "U",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 86,
+          "char": "V",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 87,
+          "char": "W",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 88,
+          "char": "X",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 89,
+          "char": "Y",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 90,
+          "char": "Z",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 48,
+          "char": "0",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 49,
+          "char": "1",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 50,
+          "char": "2",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 51,
+          "char": "3",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 52,
+          "char": "4",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 53,
+          "char": "5",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 54,
+          "char": "6",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 55,
+          "char": "7",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 56,
+          "char": "8",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        },
+        {
+          "char_code": 57,
+          "char": "9",
+          "baseline_cycles": 4000000,
+          "optimized_cycles": 1000000,
+          "speedup": 4.0
+        }
+      ]
+    }
+  ]
+}

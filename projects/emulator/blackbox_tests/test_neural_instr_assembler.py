@@ -59,25 +59,45 @@ def _assemble_and_extract_word(asm_file: Path) -> int:
         return struct.unpack("<I", data)[0]
 
 
-def _expected_word(opid: int, rd: int, rs1: int, rs2: int, rs3: int) -> int:
-    return ((opid & 0x1F) << 27) | ((rs3 & 0x1F) << 22) | ((rs2 & 0x1F) << 17) | ((rs1 & 0x1F) << 12) | ((rd & 0x1F) << 7) | 0x77
+def _expected_word(opid: int, rd: int, rs1: int, rs2: int, rs3: int, opcode: int) -> int:
+    return ((opid & 0x1F) << 27) | ((rs3 & 0x1F) << 22) | ((rs2 & 0x1F) << 17) | ((rs1 & 0x1F) << 12) | ((rd & 0x1F) << 7) | opcode
 
 
 def test_nmatvec_encoding():
     word = _assemble_and_extract_word(ASM_ROOT / "nmatvec" / "test.s")
-    assert word == _expected_word(0, 6, 5, 0, 0)
+    assert word == _expected_word(0, 6, 5, 0, 0, 0x77)
 
 
 def test_nvrelu_encoding():
     word = _assemble_and_extract_word(ASM_ROOT / "nvrelu" / "test.s")
-    assert word == _expected_word(1, 10, 11, 12, 13)
+    assert word == _expected_word(1, 10, 11, 12, 13, 0x77)
 
 
 def test_nvsigpwl_encoding():
     word = _assemble_and_extract_word(ASM_ROOT / "nvsigpwl" / "test.s")
-    assert word == _expected_word(2, 5, 18, 19, 20)
+    assert word == _expected_word(2, 5, 18, 19, 20, 0x77)
 
 
 def test_nvclampu8_encoding():
     word = _assemble_and_extract_word(ASM_ROOT / "nvclampu8" / "test.s")
-    assert word == _expected_word(3, 8, 10, 11, 12)
+    assert word == _expected_word(3, 8, 10, 11, 12, 0x77)
+
+
+def test_nmatvecx_encoding():
+    word = _assemble_and_extract_word(ASM_ROOT / "nmatvecx" / "test.s")
+    assert word == _expected_word(0, 6, 5, 0, 0, 0x7B)
+
+
+def test_nvrelux_encoding():
+    word = _assemble_and_extract_word(ASM_ROOT / "nvrelux" / "test.s")
+    assert word == _expected_word(1, 10, 11, 12, 13, 0x7B)
+
+
+def test_nvsigpwlx_encoding():
+    word = _assemble_and_extract_word(ASM_ROOT / "nvsigpwlx" / "test.s")
+    assert word == _expected_word(2, 5, 18, 19, 20, 0x7B)
+
+
+def test_nvclampu8x_encoding():
+    word = _assemble_and_extract_word(ASM_ROOT / "nvclampu8x" / "test.s")
+    assert word == _expected_word(3, 8, 10, 11, 12, 0x7B)

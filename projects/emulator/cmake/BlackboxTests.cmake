@@ -108,7 +108,7 @@ function(add_blackbox_asm_tests)
         # Add ctest test
         add_test(
             NAME "${FULL_TEST_NAME}"
-            COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/emulator_runner ${TEST_BIN} > /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt 2>&1; cat /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt"
+            COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/emulator_runner ${TEST_BIN} > /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt 2>&1; test_rc=$?; cat /tmp/test_output_${TEST_CATEGORY}_${TEST_NAME}.txt; [ \"$test_rc\" -eq ${EXPECTED_EXIT_CODE} ]"
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
         
