@@ -208,6 +208,11 @@ module cpu (
     localparam ST_NVEC_STORE_REQ       = 6'd18;
     localparam ST_NVEC_STORE_COMMIT    = 6'd19;
     localparam ST_NEURAL_FINISH        = 6'd20;
+    localparam ST_NMATVEC_LOAD_BIAS_PAIR   = 6'd21;
+    localparam ST_NMATVEC_LOAD_WEIGHT_PAIR = 6'd22;
+    localparam ST_NMATVEC_MAC_PAIR         = 6'd23;
+    localparam ST_NMATVEC_STORE2_REQ       = 6'd24;
+    localparam ST_NMATVEC_STORE2_COMMIT    = 6'd25;
     wire load_pending = (state == ST_LOAD) || (state == ST_LOAD_FP);
 
     // Neural custom-op constants/state
@@ -228,6 +233,7 @@ module cpu (
     reg [4:0] neural_rd_hold;
     reg [4:0] neural_op_hold;
     reg [31:0] neural_status;
+    reg neural_is_v2_hold;
 
     reg [31:0] n_desc_addr;
     reg [2:0]  n_desc_idx;
@@ -235,7 +241,10 @@ module cpu (
     reg [31:0] n_input_len, n_output_len, n_flags;
     reg [31:0] n_i, n_j;
     reg [31:0] n_acc_bits;
+    reg [31:0] n_acc1_bits;
     reg [31:0] n_tmp_in_bits, n_tmp_w_bits;
+    reg [31:0] n_tmp_w1_bits;
+    reg        n_pair_active;
 
     reg [31:0] n_dst_ptr, n_src_ptr, n_len, n_idx;
     reg [31:0] n_src_bits, n_dst_bits;
@@ -275,6 +284,7 @@ module cpu (
             neural_rd_hold <= 5'd0;
             neural_op_hold <= 5'd0;
             neural_status <= NEURAL_ERR_OK;
+            neural_is_v2_hold <= 1'b0;
             n_desc_addr <= 32'd0;
             n_desc_idx <= 3'd0;
             n_input_ptr <= 32'd0;
@@ -287,8 +297,11 @@ module cpu (
             n_i <= 32'd0;
             n_j <= 32'd0;
             n_acc_bits <= 32'd0;
+            n_acc1_bits <= 32'd0;
             n_tmp_in_bits <= 32'd0;
             n_tmp_w_bits <= 32'd0;
+            n_tmp_w1_bits <= 32'd0;
+            n_pair_active <= 1'b0;
             n_dst_ptr <= 32'd0;
             n_src_ptr <= 32'd0;
             n_len <= 32'd0;
@@ -457,6 +470,8 @@ module cpu (
                             neural_rd_hold <= neural_rd;
                             neural_op_hold <= neural_op_id;
                             neural_status <= NEURAL_ERR_OK;
+                            neural_is_v2_hold <= (opcode == OP_CUSTOM3);
+                            n_pair_active <= 1'b0;
 
                             if (neural_op_id == 5'd0) begin
                                 // NMATVEC.F32: rs1 points to descriptor
@@ -594,6 +609,7 @@ module cpu (
                         neural_status <= NEURAL_ERR_OK;
                         state <= ST_NEURAL_FINISH;
                     end else begin
+                        n_pair_active <= neural_is_v2_hold && ((n_j + 32'd1) < n_output_len);
                         mem_addr_reg <= n_bias_ptr + (n_j << 2);
                         state <= ST_NMATVEC_LOAD_BIAS;
                     end
@@ -601,6 +617,17 @@ module cpu (
 
                 ST_NMATVEC_LOAD_BIAS: begin
                     n_acc_bits <= mem_rdata;
+                    if (neural_is_v2_hold && n_pair_active) begin
+                        mem_addr_reg <= n_bias_ptr + ((n_j + 32'd1) << 2);
+                        state <= ST_NMATVEC_LOAD_BIAS_PAIR;
+                    end else begin
+                        n_i <= 32'd0;
+                        state <= ST_NMATVEC_INNER_CHECK;
+                    end
+                end
+
+                ST_NMATVEC_LOAD_BIAS_PAIR: begin
+                    n_acc1_bits <= mem_rdata;
                     n_i <= 32'd0;
                     state <= ST_NMATVEC_INNER_CHECK;
                 end
@@ -611,7 +638,11 @@ module cpu (
                         mem_wdata_reg <= n_acc_bits;
                         mem_size_reg <= 2'b10;
                         mem_we_reg <= 1'b1;
-                        state <= ST_NMATVEC_STORE_REQ;
+                        if (neural_is_v2_hold) begin
+                            state <= ST_NMATVEC_STORE_COMMIT;
+                        end else begin
+                            state <= ST_NMATVEC_STORE_REQ;
+                        end
                     end else begin
                         mem_addr_reg <= n_input_ptr + (n_i << 2);
                         state <= ST_NMATVEC_LOAD_INPUT;
@@ -631,6 +662,22 @@ module cpu (
 
                 ST_NMATVEC_MAC: begin
                     n_acc_bits <= fp_add(n_acc_bits, fp_mul(n_tmp_in_bits, n_tmp_w_bits));
+                    if (neural_is_v2_hold && n_pair_active) begin
+                        mem_addr_reg <= n_weights_ptr + (((n_i * n_output_len) + (n_j + 32'd1)) << 2);
+                        state <= ST_NMATVEC_LOAD_WEIGHT_PAIR;
+                    end else begin
+                        n_i <= n_i + 32'd1;
+                        state <= ST_NMATVEC_INNER_CHECK;
+                    end
+                end
+
+                ST_NMATVEC_LOAD_WEIGHT_PAIR: begin
+                    n_tmp_w1_bits <= mem_rdata;
+                    state <= ST_NMATVEC_MAC_PAIR;
+                end
+
+                ST_NMATVEC_MAC_PAIR: begin
+                    n_acc1_bits <= fp_add(n_acc1_bits, fp_mul(n_tmp_in_bits, n_tmp_w1_bits));
                     n_i <= n_i + 32'd1;
                     state <= ST_NMATVEC_INNER_CHECK;
                 end
@@ -640,7 +687,28 @@ module cpu (
                 end
 
                 ST_NMATVEC_STORE_COMMIT: begin
-                    n_j <= n_j + 32'd1;
+                    if (neural_is_v2_hold && n_pair_active) begin
+                        mem_addr_reg <= n_output_ptr + ((n_j + 32'd1) << 2);
+                        mem_wdata_reg <= n_acc1_bits;
+                        mem_size_reg <= 2'b10;
+                        mem_we_reg <= 1'b1;
+                        if (neural_is_v2_hold) begin
+                            state <= ST_NMATVEC_STORE2_COMMIT;
+                        end else begin
+                            state <= ST_NMATVEC_STORE2_REQ;
+                        end
+                    end else begin
+                        n_j <= n_j + 32'd1;
+                        state <= ST_NMATVEC_OUTER_CHECK;
+                    end
+                end
+
+                ST_NMATVEC_STORE2_REQ: begin
+                    state <= ST_NMATVEC_STORE2_COMMIT;
+                end
+
+                ST_NMATVEC_STORE2_COMMIT: begin
+                    n_j <= n_j + 32'd2;
                     state <= ST_NMATVEC_OUTER_CHECK;
                 end
 
@@ -702,7 +770,11 @@ module cpu (
                         mem_addr_reg <= n_dst_ptr + (n_idx << 2);
                         mem_size_reg <= 2'b10;
                         mem_we_reg <= 1'b1;
-                        state <= ST_NVEC_STORE_REQ;
+                        if (neural_is_v2_hold) begin
+                            state <= ST_NVEC_STORE_COMMIT;
+                        end else begin
+                            state <= ST_NVEC_STORE_REQ;
+                        end
                     end else if (neural_op_hold == 5'd2) begin
                         // Sigmoid PWL:
                         // x <= -4 => 0, x >= 4 => 1, else 0.5 + x*0.125
@@ -719,7 +791,11 @@ module cpu (
                         mem_addr_reg <= n_dst_ptr + (n_idx << 2);
                         mem_size_reg <= 2'b10;
                         mem_we_reg <= 1'b1;
-                        state <= ST_NVEC_STORE_REQ;
+                        if (neural_is_v2_hold) begin
+                            state <= ST_NVEC_STORE_COMMIT;
+                        end else begin
+                            state <= ST_NVEC_STORE_REQ;
+                        end
                     end else begin
                         // Clamp+scale to u8, NaN -> 0
                         if (n_src_bits[30:23] == 8'hFF && n_src_bits[22:0] != 23'd0) begin
@@ -738,7 +814,11 @@ module cpu (
                         mem_addr_reg <= n_dst_ptr + n_idx;
                         mem_size_reg <= 2'b00;
                         mem_we_reg <= 1'b1;
-                        state <= ST_NVEC_STORE_REQ;
+                        if (neural_is_v2_hold) begin
+                            state <= ST_NVEC_STORE_COMMIT;
+                        end else begin
+                            state <= ST_NVEC_STORE_REQ;
+                        end
                     end
                 end
 
