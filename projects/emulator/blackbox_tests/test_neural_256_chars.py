@@ -82,8 +82,8 @@ class NeuralCharTest:
         self._build_dir = tempfile.TemporaryDirectory(prefix="neural256_")
         build_dir = Path(self._build_dir.name)
         lane_mode = os.environ.get("NEURAL_LANE_MODE", "base").strip().lower()
-        if lane_mode not in ("base", "4x", "8x"):
-            raise RuntimeError(f"Unsupported NEURAL_LANE_MODE '{lane_mode}' (expected base, 4x, or 8x)")
+        if lane_mode not in ("base", "4x", "8x", "8xpmac"):
+            raise RuntimeError(f"Unsupported NEURAL_LANE_MODE '{lane_mode}' (expected base, 4x, 8x, or 8xpmac)")
 
         asm_path = build_dir / f"neural_{lane_mode}.s"
         obj_path = build_dir / f"neural_{lane_mode}.o"
