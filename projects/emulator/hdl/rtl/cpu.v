@@ -216,6 +216,8 @@ module cpu (
     localparam ST_NMATVEC_SCRATCH_INIT     = 6'd26;
     localparam ST_NMATVEC_SCRATCH_PREFETCH = 6'd27;
     localparam ST_NMATVEC_SCRATCH_READY    = 6'd28;
+    localparam ST_NMATVEC_SCRATCH_LOADW    = 6'd29;
+    localparam ST_NMATVEC_SCRATCH_MAC      = 6'd30;
     wire load_pending = (state == ST_LOAD) || (state == ST_LOAD_FP);
 
     // Neural custom-op constants/state
@@ -224,7 +226,7 @@ module cpu (
     localparam [31:0] NEURAL_ERR_INVALID_PTR = 32'd1;
     localparam [31:0] NEURAL_ERR_INVALID_LEN = 32'd2;
     localparam [31:0] NEURAL_ERR_UNALIGNED = 32'd3;
-    localparam SCRATCHPAD_ENABLE = 1'b0;
+    localparam SCRATCHPAD_ENABLE = 1'b1;
 
     localparam [31:0] F32_NEG4   = 32'hC0800000;
     localparam [31:0] F32_POS4   = 32'h40800000;
@@ -703,7 +705,7 @@ module cpu (
                             n_lane_count <= 4'd1;
                         end
                         n_lane_idx <= 3'd0;
-                        if (SCRATCHPAD_ENABLE && neural_is_v2_hold) begin
+                        if (SCRATCHPAD_ENABLE && neural_is_v2_hold && neural_lane_width_hold == 4'd4) begin
                             state <= ST_NMATVEC_SCRATCH_INIT;
                         end else begin
                             mem_addr_reg <= n_bias_ptr + (n_j << 2);
@@ -782,12 +784,45 @@ module cpu (
 
                 ST_NMATVEC_LOAD_INPUT: begin
                     n_tmp_in_bits <= mem_rdata;
-                    if (n_scratch_valid) begin
-                        n_scratch_hits <= n_scratch_hits + 32'd1;
+                    if (SCRATCHPAD_ENABLE && neural_is_v2_hold && neural_lane_width_hold == 4'd4 && n_lane_count != 4'd0) begin
+                        n_scratch_prefetch_idx <= 32'd0;
+                        n_scratch_prefetch_count <= n_lane_count_u32;
+                        n_scratch_weight_row_base <= n_weights_ptr + (((n_i * n_output_len) + n_j) << 2);
+                        n_scratch_refills <= n_scratch_refills + 32'd1;
+                        mem_addr_reg <= n_weights_ptr + (((n_i * n_output_len) + n_j) << 2);
+                        state <= ST_NMATVEC_SCRATCH_LOADW;
+                    end else begin
+                        if (n_scratch_valid) begin
+                            n_scratch_hits <= n_scratch_hits + 32'd1;
+                        end
+                        n_lane_idx <= 3'd0;
+                        mem_addr_reg <= n_weights_ptr + (((n_i * n_output_len) + n_j) << 2);
+                        state <= ST_NMATVEC_LOAD_WEIGHT;
                     end
-                    n_lane_idx <= 3'd0;
-                    mem_addr_reg <= n_weights_ptr + (((n_i * n_output_len) + n_j) << 2);
-                    state <= ST_NMATVEC_LOAD_WEIGHT;
+                end
+
+                ST_NMATVEC_SCRATCH_LOADW: begin
+                    n_scratch_bank[n_scratch_prefetch_idx[2:0]] <= mem_rdata;
+                    if ((n_scratch_prefetch_idx + 32'd1) < n_scratch_prefetch_count) begin
+                        n_scratch_prefetch_idx <= n_scratch_prefetch_idx + 32'd1;
+                        mem_addr_reg <= n_scratch_weight_row_base + ((n_scratch_prefetch_idx + 32'd1) << 2);
+                        state <= ST_NMATVEC_SCRATCH_LOADW;
+                    end else begin
+                        n_lane_idx <= 3'd0;
+                        state <= ST_NMATVEC_SCRATCH_MAC;
+                    end
+                end
+
+                ST_NMATVEC_SCRATCH_MAC: begin
+                    n_acc_lanes[n_lane_idx] <= fp_add(n_acc_lanes[n_lane_idx], fp_mul(n_tmp_in_bits, n_scratch_bank[n_lane_idx]));
+                    n_scratch_hits <= n_scratch_hits + 32'd1;
+                    if ((n_lane_idx + 4'd1) < n_lane_count) begin
+                        n_lane_idx <= n_lane_idx + 3'd1;
+                        state <= ST_NMATVEC_SCRATCH_MAC;
+                    end else begin
+                        n_i <= n_i + 32'd1;
+                        state <= ST_NMATVEC_INNER_CHECK;
+                    end
                 end
 
                 ST_NMATVEC_LOAD_WEIGHT: begin
