@@ -1,5 +1,42 @@
 #include "NeuralOps.h"
 
+namespace {
+bool checked_mul_u32(uint32_t a, uint32_t b, uint32_t* out) {
+    const uint64_t prod = static_cast<uint64_t>(a) * static_cast<uint64_t>(b);
+    if (prod > 0xFFFFFFFFull) {
+        return false;
+    }
+    *out = static_cast<uint32_t>(prod);
+    return true;
+}
+
+bool checked_mul4_u32(uint32_t elems, uint32_t* out) {
+    if (elems > (0xFFFFFFFFu >> 2)) {
+        return false;
+    }
+    *out = elems << 2;
+    return true;
+}
+
+bool compute_matvec_sizes(
+    uint32_t input_len,
+    uint32_t output_len,
+    uint32_t* input_size,
+    uint32_t* weights_size,
+    uint32_t* bias_size,
+    uint32_t* output_size
+) {
+    uint32_t weight_elems = 0;
+    if (!checked_mul_u32(input_len, output_len, &weight_elems)) {
+        return false;
+    }
+    return checked_mul4_u32(input_len, input_size) &&
+           checked_mul4_u32(weight_elems, weights_size) &&
+           checked_mul4_u32(output_len, bias_size) &&
+           checked_mul4_u32(output_len, output_size);
+}
+}  // namespace
+
 // Helper: read float32 from memory
 float NeuralOps::read_f32(const std::vector<uint8_t>& mem, uint32_t addr) {
     if (addr + 4 > mem.size()) return 0.0f;
@@ -29,8 +66,10 @@ bool NeuralOps::is_aligned(uint32_t addr, uint32_t align) {
 }
 
 bool NeuralOps::is_valid_ptr(const std::vector<uint8_t>& mem, uint32_t addr, uint32_t size) {
-    if (addr > mem.size()) return false;
-    return (addr + size) <= mem.size();
+    const size_t base = static_cast<size_t>(addr);
+    const size_t bytes = static_cast<size_t>(size);
+    if (base > mem.size()) return false;
+    return bytes <= (mem.size() - base);
 }
 
 // NMATVEC.F32 implementation
@@ -50,19 +89,23 @@ uint32_t NeuralOps::matvec_f32(
     uint32_t input_len = read_u32(memory, desc_addr + 0x10);
     uint32_t output_len = read_u32(memory, desc_addr + 0x14);
     uint32_t flags = read_u32(memory, desc_addr + 0x18);
+    uint32_t reserved = read_u32(memory, desc_addr + 0x1C);
     
     // Validate
-    if (flags != 0) return ERR_INVALID_PTR;
+    if (flags != 0 || reserved != 0) return ERR_INVALID_PTR;
     if (input_len == 0 || output_len == 0) return ERR_INVALID_LEN;
     if (!is_aligned(input_ptr, 4) || !is_aligned(weights_ptr, 4) ||
         !is_aligned(bias_ptr, 4) || !is_aligned(output_ptr, 4)) {
         return ERR_UNALIGNED;
     }
     
-    uint32_t input_size = input_len * 4;
-    uint32_t weights_size = input_len * output_len * 4;
-    uint32_t bias_size = output_len * 4;
-    uint32_t output_size = output_len * 4;
+    uint32_t input_size = 0;
+    uint32_t weights_size = 0;
+    uint32_t bias_size = 0;
+    uint32_t output_size = 0;
+    if (!compute_matvec_sizes(input_len, output_len, &input_size, &weights_size, &bias_size, &output_size)) {
+        return ERR_INVALID_PTR;
+    }
     
     if (!is_valid_ptr(memory, input_ptr, input_size) ||
         !is_valid_ptr(memory, weights_ptr, weights_size) ||
@@ -208,18 +251,22 @@ uint32_t NeuralOps::matvec_f32_v2(
     const uint32_t input_len = read_u32(memory, desc_addr + 0x10);
     const uint32_t output_len = read_u32(memory, desc_addr + 0x14);
     const uint32_t flags = read_u32(memory, desc_addr + 0x18);
+    const uint32_t reserved = read_u32(memory, desc_addr + 0x1C);
 
-    if (flags != 0) return ERR_INVALID_PTR;
+    if (flags != 0 || reserved != 0) return ERR_INVALID_PTR;
     if (input_len == 0 || output_len == 0) return ERR_INVALID_LEN;
     if (!is_aligned(input_ptr, 4) || !is_aligned(weights_ptr, 4) ||
         !is_aligned(bias_ptr, 4) || !is_aligned(output_ptr, 4)) {
         return ERR_UNALIGNED;
     }
 
-    const uint32_t input_size = input_len * 4;
-    const uint32_t weights_size = input_len * output_len * 4;
-    const uint32_t bias_size = output_len * 4;
-    const uint32_t output_size = output_len * 4;
+    uint32_t input_size = 0;
+    uint32_t weights_size = 0;
+    uint32_t bias_size = 0;
+    uint32_t output_size = 0;
+    if (!compute_matvec_sizes(input_len, output_len, &input_size, &weights_size, &bias_size, &output_size)) {
+        return ERR_INVALID_PTR;
+    }
 
     if (!is_valid_ptr(memory, input_ptr, input_size) ||
         !is_valid_ptr(memory, weights_ptr, weights_size) ||
@@ -287,18 +334,22 @@ uint32_t NeuralOps::matvec_f32_v2_lane8(
     const uint32_t input_len = read_u32(memory, desc_addr + 0x10);
     const uint32_t output_len = read_u32(memory, desc_addr + 0x14);
     const uint32_t flags = read_u32(memory, desc_addr + 0x18);
+    const uint32_t reserved = read_u32(memory, desc_addr + 0x1C);
 
-    if (flags != 0) return ERR_INVALID_PTR;
+    if (flags != 0 || reserved != 0) return ERR_INVALID_PTR;
     if (input_len == 0 || output_len == 0) return ERR_INVALID_LEN;
     if (!is_aligned(input_ptr, 4) || !is_aligned(weights_ptr, 4) ||
         !is_aligned(bias_ptr, 4) || !is_aligned(output_ptr, 4)) {
         return ERR_UNALIGNED;
     }
 
-    const uint32_t input_size = input_len * 4;
-    const uint32_t weights_size = input_len * output_len * 4;
-    const uint32_t bias_size = output_len * 4;
-    const uint32_t output_size = output_len * 4;
+    uint32_t input_size = 0;
+    uint32_t weights_size = 0;
+    uint32_t bias_size = 0;
+    uint32_t output_size = 0;
+    if (!compute_matvec_sizes(input_len, output_len, &input_size, &weights_size, &bias_size, &output_size)) {
+        return ERR_INVALID_PTR;
+    }
 
     if (!is_valid_ptr(memory, input_ptr, input_size) ||
         !is_valid_ptr(memory, weights_ptr, weights_size) ||

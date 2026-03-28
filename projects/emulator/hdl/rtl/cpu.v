@@ -239,7 +239,7 @@ module cpu (
     reg [31:0] n_desc_addr;
     reg [2:0]  n_desc_idx;
     reg [31:0] n_input_ptr, n_weights_ptr, n_bias_ptr, n_output_ptr;
-    reg [31:0] n_input_len, n_output_len, n_flags;
+    reg [31:0] n_input_len, n_output_len, n_flags, n_reserved;
     reg [31:0] n_i, n_j;
     reg [31:0] n_tmp_in_bits, n_tmp_w_bits;
     reg [31:0] n_tmp_w1_bits;
@@ -248,6 +248,14 @@ module cpu (
     reg [31:0] n_acc_lanes [0:7];
     wire [31:0] n_lane_idx_u32 = {29'd0, n_lane_idx};
     wire [31:0] n_lane_count_u32 = {28'd0, n_lane_count};
+    wire [63:0] n_input_size_u64 = ({32'd0, n_input_len} << 2);
+    wire [63:0] n_output_size_u64 = ({32'd0, n_output_len} << 2);
+    wire [63:0] n_weights_elems_u64 = ({32'd0, n_input_len} * {32'd0, n_output_len});
+    wire [63:0] n_weights_size_u64 = (n_weights_elems_u64 << 2);
+    wire [63:0] n_input_end_u64 = ({32'd0, n_input_ptr} + n_input_size_u64);
+    wire [63:0] n_weights_end_u64 = ({32'd0, n_weights_ptr} + n_weights_size_u64);
+    wire [63:0] n_bias_end_u64 = ({32'd0, n_bias_ptr} + n_output_size_u64);
+    wire [63:0] n_output_end_u64 = ({32'd0, n_output_ptr} + n_output_size_u64);
 
     reg [31:0] n_dst_ptr, n_src_ptr, n_len, n_idx;
     reg [31:0] n_src_bits, n_dst_bits;
@@ -298,6 +306,7 @@ module cpu (
             n_input_len <= 32'd0;
             n_output_len <= 32'd0;
             n_flags <= 32'd0;
+            n_reserved <= 32'd0;
             n_i <= 32'd0;
             n_j <= 32'd0;
             n_tmp_in_bits <= 32'd0;
@@ -477,6 +486,7 @@ module cpu (
                             neural_op_hold <= neural_op_id;
                             neural_status <= NEURAL_ERR_OK;
                             neural_is_v2_hold <= (opcode == OP_CUSTOM3);
+                            n_reserved <= 32'd0;
                             if (opcode == OP_CUSTOM3 && neural_op_id == 5'd5) begin
                                 neural_lane_width_hold <= 4'd8;
                             end else if (opcode == OP_CUSTOM3 && neural_op_id == 5'd4) begin
@@ -589,6 +599,11 @@ module cpu (
                         end
                         3'd6: begin
                             n_flags <= mem_rdata;
+                            mem_addr_reg <= n_desc_addr + 32'd28;
+                            n_desc_idx <= 3'd7;
+                        end
+                        3'd7: begin
+                            n_reserved <= mem_rdata;
                             state <= ST_NMATVEC_VALIDATE;
                         end
                         default: state <= ST_NMATVEC_VALIDATE;
@@ -596,7 +611,7 @@ module cpu (
                 end
 
                 ST_NMATVEC_VALIDATE: begin
-                    if (n_flags != 32'd0) begin
+                    if (n_flags != 32'd0 || n_reserved != 32'd0) begin
                         neural_status <= NEURAL_ERR_INVALID_PTR;
                         state <= ST_NEURAL_FINISH;
                     end else if (n_input_len == 32'd0 || n_output_len == 32'd0) begin
@@ -606,10 +621,10 @@ module cpu (
                                  n_bias_ptr[1:0] != 2'b00 || n_output_ptr[1:0] != 2'b00) begin
                         neural_status <= NEURAL_ERR_UNALIGNED;
                         state <= ST_NEURAL_FINISH;
-                    end else if ((n_input_ptr + (n_input_len << 2)) > MEM_SIZE ||
-                                 (n_weights_ptr + ((n_input_len * n_output_len) << 2)) > MEM_SIZE ||
-                                 (n_bias_ptr + (n_output_len << 2)) > MEM_SIZE ||
-                                 (n_output_ptr + (n_output_len << 2)) > MEM_SIZE) begin
+                    end else if (n_input_end_u64 > MEM_SIZE ||
+                                 n_weights_end_u64 > MEM_SIZE ||
+                                 n_bias_end_u64 > MEM_SIZE ||
+                                 n_output_end_u64 > MEM_SIZE) begin
                         neural_status <= NEURAL_ERR_INVALID_PTR;
                         state <= ST_NEURAL_FINISH;
                     end else begin
