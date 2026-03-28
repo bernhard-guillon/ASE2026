@@ -103,6 +103,11 @@ def test_nmatvec8xp_encoding():
     assert word == _expected_word(6, 6, 5, 0, 0, 0x7B)
 
 
+def test_nmatvec8xp2_encoding():
+    word = _assemble_and_extract_word(ASM_ROOT / "nmatvec8xp2" / "test.s")
+    assert word == _expected_word(7, 6, 5, 0, 0, 0x7B)
+
+
 def test_nvrelux_encoding():
     word = _assemble_and_extract_word(ASM_ROOT / "nvrelux" / "test.s")
     assert word == _expected_word(1, 10, 11, 12, 13, 0x7B)

@@ -52,6 +52,7 @@ def test_verilator_neural_op_enhance_runs_and_matches_cpp():
         "4x": "neural-op-enhance4.elf",
         "8x": "neural-op-enhance8.elf",
         "8xpmac": "neural-op-enhance8pmac.elf",
+        "8xpmac2": "neural-op-enhance8pmac2.elf",
     }
     variants_env = os.environ.get("NEURAL_ENHANCE_VARIANTS", "base").strip()
     variants = [v.strip() for v in variants_env.split(",") if v.strip()]

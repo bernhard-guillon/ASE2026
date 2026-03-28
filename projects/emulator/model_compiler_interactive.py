@@ -172,9 +172,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--neural-lane-mode",
-        choices=["base", "4x", "8x", "8xpmac"],
+        choices=["base", "4x", "8x", "8xpmac", "8xpmac2"],
         default="base",
-        help="For x7b neural ops: matvec variant to emit (base=nmatvecx, 4x=nmatvec4x, 8x=nmatvec8x, 8xpmac=nmatvec8xp)",
+        help="For x7b neural ops: matvec variant to emit (base=nmatvecx, 4x=nmatvec4x, 8x=nmatvec8x, 8xpmac=nmatvec8xp, 8xpmac2=nmatvec8xp2)",
     )
     
     args = parser.parse_args()
