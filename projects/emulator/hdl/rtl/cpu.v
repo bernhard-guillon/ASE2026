@@ -705,7 +705,8 @@ module cpu (
                             n_lane_count <= 4'd1;
                         end
                         n_lane_idx <= 3'd0;
-                        if (SCRATCHPAD_ENABLE && neural_is_v2_hold && neural_lane_width_hold == 4'd4) begin
+                        if (SCRATCHPAD_ENABLE && neural_is_v2_hold &&
+                            (neural_lane_width_hold == 4'd4 || neural_lane_width_hold == 4'd8)) begin
                             state <= ST_NMATVEC_SCRATCH_INIT;
                         end else begin
                             mem_addr_reg <= n_bias_ptr + (n_j << 2);
@@ -784,7 +785,9 @@ module cpu (
 
                 ST_NMATVEC_LOAD_INPUT: begin
                     n_tmp_in_bits <= mem_rdata;
-                    if (SCRATCHPAD_ENABLE && neural_is_v2_hold && neural_lane_width_hold == 4'd4 && n_lane_count != 4'd0) begin
+                    if (SCRATCHPAD_ENABLE && neural_is_v2_hold &&
+                        (neural_lane_width_hold == 4'd4 || neural_lane_width_hold == 4'd8) &&
+                        n_lane_count != 4'd0) begin
                         n_scratch_prefetch_idx <= 32'd0;
                         n_scratch_prefetch_count <= n_lane_count_u32;
                         n_scratch_weight_row_base <= n_weights_ptr + (((n_i * n_output_len) + n_j) << 2);
