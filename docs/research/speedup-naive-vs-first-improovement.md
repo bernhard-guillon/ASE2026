@@ -12,7 +12,10 @@ We measured character-generation latency in emulator cycles for:
 
 On charset `A-Z0-9` (36 characters), x7B lane variants preserve deterministic output and improve over x77 on Verilator, but 4-lane and 8-lane currently show identical threshold-cycle results (no linear 2x scaling yet).
 
-Reference artifact: `docs/research/phase14-neural-lane-cycle-comparison.json`.
+Reference artifacts:
+
+- `docs/research/phase14-neural-lane-cycle-comparison.json`
+- `docs/research/phase21-neural-lane-cycle-comparison.json`
 
 ## Experimental setup
 
@@ -95,7 +98,7 @@ That explains why absolute speedups remain far smaller in HDL than C++ despite I
 
 ## Conclusion
 
-Phase 14 confirms:
+Phase 21 confirms:
 
 - Strong gains over baseline and x77 remain intact.
 - Lane-enabled x7B variants improve HDL further versus x7B base.

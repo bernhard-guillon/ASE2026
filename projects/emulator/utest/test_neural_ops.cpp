@@ -153,6 +153,47 @@ TEST_F(NeuralOpsTest, MatvecUnaligned) {
     EXPECT_EQ(err, NeuralOps::ERR_UNALIGNED);
 }
 
+TEST_F(NeuralOpsTest, MatvecRejectsNonZeroReservedWord) {
+    const uint32_t desc_ptr = 0x0;
+    const uint32_t input_ptr = 0x2000;
+    const uint32_t weights_ptr = 0x2100;
+    const uint32_t bias_ptr = 0x2200;
+    const uint32_t output_ptr = 0x2300;
+
+    write_u32(desc_ptr + 0x00, input_ptr);
+    write_u32(desc_ptr + 0x04, weights_ptr);
+    write_u32(desc_ptr + 0x08, bias_ptr);
+    write_u32(desc_ptr + 0x0C, output_ptr);
+    write_u32(desc_ptr + 0x10, 1);
+    write_u32(desc_ptr + 0x14, 1);
+    write_u32(desc_ptr + 0x18, 0);  // flags
+    write_u32(desc_ptr + 0x1C, 1);  // reserved must be zero
+
+    write_f32(input_ptr, 1.0f);
+    write_f32(weights_ptr, 1.0f);
+    write_f32(bias_ptr, 0.0f);
+
+    EXPECT_EQ(NeuralOps::matvec_f32(memory, desc_ptr), NeuralOps::ERR_INVALID_PTR);
+    EXPECT_EQ(NeuralOps::matvec_f32_v2(memory, desc_ptr), NeuralOps::ERR_INVALID_PTR);
+    EXPECT_EQ(NeuralOps::matvec_f32_v2_lane8(memory, desc_ptr), NeuralOps::ERR_INVALID_PTR);
+}
+
+TEST_F(NeuralOpsTest, MatvecRejectsDescriptorSizeOverflow) {
+    const uint32_t desc_ptr = 0x0;
+    write_u32(desc_ptr + 0x00, 0x1000);
+    write_u32(desc_ptr + 0x04, 0x2000);
+    write_u32(desc_ptr + 0x08, 0x3000);
+    write_u32(desc_ptr + 0x0C, 0x4000);
+    write_u32(desc_ptr + 0x10, 0x40000000u);  // input_len*4 overflows 32-bit
+    write_u32(desc_ptr + 0x14, 8);
+    write_u32(desc_ptr + 0x18, 0);
+    write_u32(desc_ptr + 0x1C, 0);
+
+    EXPECT_EQ(NeuralOps::matvec_f32(memory, desc_ptr), NeuralOps::ERR_INVALID_PTR);
+    EXPECT_EQ(NeuralOps::matvec_f32_v2(memory, desc_ptr), NeuralOps::ERR_INVALID_PTR);
+    EXPECT_EQ(NeuralOps::matvec_f32_v2_lane8(memory, desc_ptr), NeuralOps::ERR_INVALID_PTR);
+}
+
 // ============================================================================
 // NVRELU.F32 Tests
 // ============================================================================
