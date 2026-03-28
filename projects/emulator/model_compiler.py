@@ -199,7 +199,8 @@ class ModelCompiler:
             neural_opcode: Neural custom opcode variant: "x77" (legacy CUSTOM0)
                 or "x7b" (enhanced CUSTOM3).
             neural_lane_mode: For x7b custom ops, selects matvec mnemonic family:
-                "base" -> nmatvecx.f32, "4x" -> nmatvec4x.f32, "8x" -> nmatvec8x.f32.
+                "base" -> nmatvecx.f32, "4x" -> nmatvec4x.f32,
+                "8x" -> nmatvec8x.f32, "8xpmac" -> nmatvec8xp.f32.
         
         Returns:
             Path to generated assembly file
@@ -212,12 +213,12 @@ class ModelCompiler:
         if self.neural_opcode not in ("x77", "x7b"):
             raise ValueError(f"Unsupported neural_opcode '{neural_opcode}'; expected x77 or x7b")
         self.neural_lane_mode = neural_lane_mode.lower()
-        if self.neural_lane_mode not in ("base", "4x", "8x"):
+        if self.neural_lane_mode not in ("base", "4x", "8x", "8xpmac"):
             raise ValueError(
-                f"Unsupported neural_lane_mode '{neural_lane_mode}'; expected base, 4x or 8x"
+                f"Unsupported neural_lane_mode '{neural_lane_mode}'; expected base, 4x, 8x, or 8xpmac"
             )
         if self.neural_opcode == "x77" and self.neural_lane_mode != "base":
-            raise ValueError("neural_lane_mode 4x/8x is only valid with neural_opcode x7b")
+            raise ValueError("neural_lane_mode 4x/8x/8xpmac is only valid with neural_opcode x7b")
         
         # Load JSON
         self.load_json_intermediate(json_path)
@@ -779,6 +780,7 @@ sigmoid_piecewise:
                     "base": "nmatvecx.f32",
                     "4x": "nmatvec4x.f32",
                     "8x": "nmatvec8x.f32",
+                    "8xpmac": "nmatvec8xp.f32",
                 }[self.neural_lane_mode]
             else:
                 matvec_mnemonic = "nmatvec.f32"

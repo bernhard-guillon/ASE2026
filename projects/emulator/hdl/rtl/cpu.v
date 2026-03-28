@@ -12,8 +12,10 @@ module cpu (
     
     // Data memory interface
     output wire [31:0] mem_addr,
+    output wire [31:0] mem_addr2,
     output wire [31:0] mem_wdata,
     input  wire [31:0] mem_rdata,
+    input  wire [31:0] mem_rdata2,
     output wire        mem_we,
     output wire [1:0]  mem_size,
     
@@ -143,6 +145,7 @@ module cpu (
     
     // Memory interface
     reg [31:0] mem_addr_reg;
+    reg [31:0] mem_addr2_reg;
     reg [31:0] mem_wdata_reg;
     reg        mem_we_reg;
     reg [1:0]  mem_size_reg;
@@ -157,6 +160,7 @@ module cpu (
     // does not redirect that write to the load address.
     assign mem_addr  = (mem_we_reg || load_pending) ? mem_addr_reg
                                   : (is_load ? load_addr : (is_store ? store_addr : mem_addr_reg));
+    assign mem_addr2 = mem_addr2_reg;
     assign mem_wdata = mem_wdata_reg;
     assign mem_we    = mem_we_reg;
     assign mem_size  = (mem_we_reg || load_pending) ? mem_size_reg
@@ -217,6 +221,7 @@ module cpu (
     localparam ST_NMATVEC_SCRATCH_PREFETCH = 6'd27;
     localparam ST_NMATVEC_SCRATCH_READY    = 6'd28;
     localparam ST_NMATVEC_SCRATCH_STREAM   = 6'd29;
+    localparam ST_NMATVEC_SCRATCH_STREAM_PMAC = 6'd30;
     wire load_pending = (state == ST_LOAD) || (state == ST_LOAD_FP);
 
     // Neural custom-op constants/state
@@ -239,6 +244,7 @@ module cpu (
     reg [4:0] neural_op_hold;
     reg [31:0] neural_status;
     reg neural_is_v2_hold;
+    reg neural_parallel_mac_hold;
     reg [3:0] neural_lane_width_hold;
 
     reg [31:0] n_desc_addr;
@@ -301,6 +307,7 @@ module cpu (
             state <= ST_EXEC;
             mem_we_reg <= 1'b0;
             mem_addr_reg <= 32'd0;
+            mem_addr2_reg <= 32'd0;
             mem_wdata_reg <= 32'd0;
             mem_size_reg <= 2'b10;
             load_rd <= 5'd0;
@@ -309,6 +316,7 @@ module cpu (
             neural_op_hold <= 5'd0;
             neural_status <= NEURAL_ERR_OK;
             neural_is_v2_hold <= 1'b0;
+            neural_parallel_mac_hold <= 1'b0;
             neural_lane_width_hold <= 4'd1;
             n_desc_addr <= 32'd0;
             n_desc_idx <= 3'd0;
@@ -507,8 +515,9 @@ module cpu (
                             neural_op_hold <= neural_op_id;
                             neural_status <= NEURAL_ERR_OK;
                             neural_is_v2_hold <= (opcode == OP_CUSTOM3);
+                            neural_parallel_mac_hold <= (opcode == OP_CUSTOM3 && neural_op_id == 5'd6);
                             n_reserved <= 32'd0;
-                            if (opcode == OP_CUSTOM3 && neural_op_id == 5'd5) begin
+                            if (opcode == OP_CUSTOM3 && (neural_op_id == 5'd5 || neural_op_id == 5'd6)) begin
                                 neural_lane_width_hold <= 4'd8;
                             end else if (opcode == OP_CUSTOM3 && neural_op_id == 5'd4) begin
                                 neural_lane_width_hold <= 4'd4;
@@ -518,7 +527,7 @@ module cpu (
                                 neural_lane_width_hold <= 4'd1;
                             end
                             if (neural_op_id == 5'd0 ||
-                                (opcode == OP_CUSTOM3 && (neural_op_id == 5'd4 || neural_op_id == 5'd5))) begin
+                                (opcode == OP_CUSTOM3 && (neural_op_id == 5'd4 || neural_op_id == 5'd5 || neural_op_id == 5'd6))) begin
                                 // NMATVEC.F32: rs1 points to descriptor
                                 n_desc_addr <= neural_rs1_val;
                                 if (neural_rs1_val + 32 > MEM_SIZE) begin
@@ -784,12 +793,19 @@ module cpu (
                         n_scratch_weight_row_base <= n_weights_ptr + (((n_i * n_output_len) + n_j) << 2);
                         n_lane_idx <= 3'd0;
                         mem_addr_reg <= n_weights_ptr + (((n_i * n_output_len) + n_j) << 2);
-                        state <= ST_NMATVEC_SCRATCH_STREAM;
+                        if (neural_parallel_mac_hold && n_lane_count >= 4'd2) begin
+                            mem_addr2_reg <= n_weights_ptr + ((((n_i * n_output_len) + n_j) << 2) + 32'd4);
+                            state <= ST_NMATVEC_SCRATCH_STREAM_PMAC;
+                        end else begin
+                            mem_addr2_reg <= 32'd0;
+                            state <= ST_NMATVEC_SCRATCH_STREAM;
+                        end
                     end else begin
                         if (n_scratch_valid) begin
                             n_scratch_hits <= n_scratch_hits + 32'd1;
                         end
                         n_lane_idx <= 3'd0;
+                        mem_addr2_reg <= 32'd0;
                         mem_addr_reg <= n_weights_ptr + (((n_i * n_output_len) + n_j) << 2);
                         state <= ST_NMATVEC_LOAD_WEIGHT;
                     end
@@ -805,6 +821,35 @@ module cpu (
                         state <= ST_NMATVEC_SCRATCH_STREAM;
                     end else begin
                         n_i <= n_i + 32'd1;
+                        state <= ST_NMATVEC_INNER_CHECK;
+                    end
+                end
+
+                ST_NMATVEC_SCRATCH_STREAM_PMAC: begin
+                    n_scratch_bank[n_lane_idx] <= mem_rdata;
+                    n_acc_lanes[n_lane_idx] <= fp_add(n_acc_lanes[n_lane_idx], fp_mul(n_tmp_in_bits, mem_rdata));
+                    if ((n_lane_idx + 4'd1) < n_lane_count) begin
+                        n_scratch_bank[n_lane_idx + 3'd1] <= mem_rdata2;
+                        n_acc_lanes[n_lane_idx + 3'd1] <= fp_add(n_acc_lanes[n_lane_idx + 3'd1], fp_mul(n_tmp_in_bits, mem_rdata2));
+                        n_scratch_hits <= n_scratch_hits + 32'd2;
+                        if ((n_lane_idx + 4'd2) < n_lane_count) begin
+                            n_lane_idx <= n_lane_idx + 3'd2;
+                            mem_addr_reg <= n_scratch_weight_row_base + ((n_lane_idx_u32 + 32'd2) << 2);
+                            if ((n_lane_idx + 4'd3) < n_lane_count) begin
+                                mem_addr2_reg <= n_scratch_weight_row_base + ((n_lane_idx_u32 + 32'd3) << 2);
+                            end else begin
+                                mem_addr2_reg <= n_scratch_weight_row_base + ((n_lane_idx_u32 + 32'd2) << 2);
+                            end
+                            state <= ST_NMATVEC_SCRATCH_STREAM_PMAC;
+                        end else begin
+                            n_i <= n_i + 32'd1;
+                            mem_addr2_reg <= 32'd0;
+                            state <= ST_NMATVEC_INNER_CHECK;
+                        end
+                    end else begin
+                        n_scratch_hits <= n_scratch_hits + 32'd1;
+                        n_i <= n_i + 32'd1;
+                        mem_addr2_reg <= 32'd0;
                         state <= ST_NMATVEC_INNER_CHECK;
                     end
                 end
@@ -874,7 +919,7 @@ module cpu (
                 end
 
                 ST_NVEC_VALIDATE: begin
-                    if (neural_op_hold < 5'd1 || neural_op_hold > 5'd3) begin
+                    if (!(neural_op_hold == 5'd1 || neural_op_hold == 5'd2 || neural_op_hold == 5'd3)) begin
                         // Fail loud on unsupported neural opcode (matches C++ throw path).
                         halted <= 1'b1;
                         exit_code <= 32'd1;
