@@ -163,6 +163,8 @@ class DifferentialValidator:
                     or "nmatvec8x_invalid_flags" in case_name
                     or "nmatvec4x_invalid_reserved" in case_name
                     or "nmatvec8x_invalid_reserved" in case_name
+                    or "nmatvec4x_overflow_ptr" in case_name
+                    or "nmatvec8x_overflow_ptr" in case_name
                 ):
                     assert cpp_res.returncode == 0 and vlt_res.returncode == 0, (
                         f"{case_name}: expected status-coded failure path, got "
