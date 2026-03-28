@@ -1,0 +1,3 @@
+exit_code=0
+timeout_ms=1000
+march=rv32if
