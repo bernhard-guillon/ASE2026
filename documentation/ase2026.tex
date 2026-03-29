@@ -1,11 +1,10 @@
 % Options for packages loaded elsewhere
 \PassOptionsToPackage{unicode}{hyperref}
 \PassOptionsToPackage{hyphens}{url}
+%
 \documentclass[
   conference]{IEEEtran}
-\usepackage{xcolor}
 \usepackage{amsmath,amssymb}
-\setcounter{secnumdepth}{5}
 \usepackage{iftex}
 \ifPDFTeX
   \usepackage[T1]{fontenc}
@@ -36,10 +35,15 @@
 }{% if KOMA class
   \KOMAoptions{parskip=half}}
 \makeatother
+\usepackage{xcolor}
 \setlength{\emergencystretch}{3em} % prevent overfull lines
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-\usepackage{bookmark}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same}
 \hypersetup{
@@ -51,12 +55,14 @@
 
 \begin{document}
 
+\hypertarget{ase-2026-neural-driven-computing}{%
 \section{ASE 2026 --- Neural-driven
-Computing}\label{ase-2026-neural-driven-computing}
+Computing}\label{ase-2026-neural-driven-computing}}
 
 Bernhard Guillon
 
-\subsection{Introduction}\label{introduction}
+\hypertarget{introduction}{%
+\subsection{Introduction}\label{introduction}}
 
 Modern large language models and AI toolchains typically run inside
 heavy software stacks (OS + browser + runtime). Many applications will
@@ -71,7 +77,8 @@ small trained networks directly in the emulator. The effort covers ISA
 design, assembler/loader, model-to-ROM/memory serialization, and
 verification tooling (including automated black‑box tests).
 
-\subsection{Vision}\label{vision}
+\hypertarget{vision}{%
+\subsection{Vision}\label{vision}}
 
 Create a compact, demonstrable platform where:
 
@@ -90,7 +97,8 @@ character input and produces a corresponding framebuffer output (e.g.,
 render text or glyphs). The emulator should be capable of loading the
 model into memory and running inference using the extended ISA.
 
-\subsubsection{Use of AI}\label{use-of-ai}
+\hypertarget{use-of-ai}{%
+\subsubsection{Use of AI}\label{use-of-ai}}
 
 Use LLM to help with research on the ISA, create AI training data. Also
 write the emulator for the ISA a bootloader and an assembler. We might
