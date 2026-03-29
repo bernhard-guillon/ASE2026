@@ -11,12 +11,15 @@ $endif$
 \usepackage{ifthen}
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb}
+\usepackage{longtable,booktabs,array}
 \IfFileExists{hyperref.sty}{\usepackage[hidelinks]{hyperref}}{}
 % Pandoc may emit hyperlink helpers (e.g. \hypertarget) depending on version/options.
 % Keep no-op fallbacks so IEEE builds do not fail if hyperref is unavailable.
 \providecommand{\hypertarget}[2]{#2}
 \providecommand{\hyperlink}[2]{#2}
 \providecommand{\texorpdfstring}[2]{#1}
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
 \hyphenation{op-tical net-works semi-conduc-tor}
 
