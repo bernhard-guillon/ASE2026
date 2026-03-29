@@ -559,6 +559,27 @@ void CPU::executeNeural(const Instruction& instr, Memory& memory) {
             // C++ oracle keeps semantics identical to lane8; PMAC is RTL-only speed path.
             status = NeuralOps::matvec_f32_v2_lane8(raw_mem, getReg(instr.rs1));
             break;
+        case 7: // NMATVEC8XP2.F32 rd_status, rs_desc (CUSTOM3 only)
+            if (!is_v2) {
+                throw std::runtime_error("Unsupported neural custom operation");
+            }
+            // C++ oracle keeps semantics identical to lane8; PMAC2 is RTL-only speed path.
+            status = NeuralOps::matvec_f32_v2_lane8(raw_mem, getReg(instr.rs1));
+            break;
+        case 8: // NMATVEC8XP3.F32 rd_status, rs_desc (CUSTOM3 only)
+            if (!is_v2) {
+                throw std::runtime_error("Unsupported neural custom operation");
+            }
+            // C++ oracle keeps semantics identical to lane8; PMAC3 is RTL-only speed path.
+            status = NeuralOps::matvec_f32_v2_lane8(raw_mem, getReg(instr.rs1));
+            break;
+        case 9: // NMATVEC8XP4.F32 rd_status, rs_desc (CUSTOM3 only)
+            if (!is_v2) {
+                throw std::runtime_error("Unsupported neural custom operation");
+            }
+            // C++ oracle keeps semantics identical to lane8; PMAC4 is RTL-only speed path.
+            status = NeuralOps::matvec_f32_v2_lane8(raw_mem, getReg(instr.rs1));
+            break;
         case 1: // NVRELU.F32 rd_status, rs_dst, rs_src, rs_len
             status = is_v2
                 ? NeuralOps::vec_relu_f32_v2(

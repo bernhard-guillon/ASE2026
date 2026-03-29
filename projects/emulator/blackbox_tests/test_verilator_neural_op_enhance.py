@@ -52,8 +52,11 @@ def test_verilator_neural_op_enhance_runs_and_matches_cpp():
         "4x": "neural-op-enhance4.elf",
         "8x": "neural-op-enhance8.elf",
         "8xpmac": "neural-op-enhance8pmac.elf",
+        "8xpmac2": "neural-op-enhance8pmac2.elf",
+        "8xpmac3": "neural-op-enhance8pmac3.elf",
+        "8xpmac4": "neural-op-enhance8pmac4.elf",
     }
-    variants_env = os.environ.get("NEURAL_ENHANCE_VARIANTS", "base").strip()
+    variants_env = os.environ.get("NEURAL_ENHANCE_VARIANTS", "base,4x,8x,8xpmac,8xpmac2,8xpmac3,8xpmac4").strip()
     variants = [v.strip() for v in variants_env.split(",") if v.strip()]
     assert variants, "NEURAL_ENHANCE_VARIANTS resolved to empty list"
 

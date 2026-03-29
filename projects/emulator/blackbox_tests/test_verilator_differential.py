@@ -79,7 +79,7 @@ class DifferentialValidator:
 
     def _resolve_neural_enhance_variants(self):
         variants = []
-        for name in ("neural-op-enhance.elf", "neural-op-enhance4.elf", "neural-op-enhance8.elf", "neural-op-enhance8pmac.elf"):
+        for name in ("neural-op-enhance.elf", "neural-op-enhance4.elf", "neural-op-enhance8.elf", "neural-op-enhance8pmac.elf", "neural-op-enhance8pmac2.elf", "neural-op-enhance8pmac3.elf", "neural-op-enhance8pmac4.elf"):
             candidate = self.build_dir / name
             if candidate.exists():
                 variants.append(candidate)
