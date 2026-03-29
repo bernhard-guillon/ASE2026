@@ -4,14 +4,7 @@ A complete end-to-end AI pipeline for generating 20×20 pixel character images f
 
 ## Overview
 
-This project trains a neural network to **generate** character images from ASCII input codes. It is the inverse of the character recognition model: given an ASCII code, the model outputs a 20×20 grayscale pixel image of that character.
-
-## Bidirectional Pipeline
-
-```
-Character Recognition:  Image (20×20 px)  →  ASCII code
-Character Generation:   ASCII code        →  Image (20×20 px)
-```
+This project trains a neural network to **generate** character images from ASCII input codes. Given an ASCII code, the model outputs a 20×20 grayscale pixel image of that character.
 
 ## Features
 
@@ -156,12 +149,6 @@ The model automatically detects and uses CUDA if available:
 ```bash
 cd src
 python train.py  # Uses GPU if available, CPU otherwise
-```
-
-### Connect Both Directions
-Use both models together to form an autoencoder-like pipeline:
-```
-ASCII code → [Generator] → 20×20 image → [Recognizer] → ASCII code
 ```
 
 ---

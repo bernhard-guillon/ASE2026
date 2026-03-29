@@ -1,7 +1,6 @@
 """
 Main training script for character generation model.
 Generates dataset, trains model, and saves results.
-Inverse of character recognition: ASCII input -> 20x20 pixel image output
 """
 
 import torch
