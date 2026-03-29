@@ -141,7 +141,7 @@ The enhanced neural opcode flow includes these lane variants:
 
 Latest Verilator cycle comparison artifact:
 
-- `../../docs/research/phase25-neural-lane-cycle-comparison.json`
+- `../../documentation/collected-data/phase25-neural-lane-cycle-comparison.json`
 - PMAC4 result: `150k` cycles vs `200k` (PMAC/PMAC2/PMAC3) and `400k` (8-lane)
 
 ### Build and run PMAC4 in Verilator GUI mode
@@ -202,31 +202,7 @@ emulator/
 ├── test_bootloader_phase5.py # Phase 5 unit tests
 ├── test_bootloader_phase6_integration.py # Phase 6 comprehensive tests (500+ lines)
 │
-├── DOCUMENTATION
-├── ──────────────
-├── docs/
-│   ├── guides/                        # Implementation guides and references
-│   │   ├── BOOTLOADER_IMPLEMENTATION.md # Complete implementation guide (13KB)
-│   │   ├── BOOTLOADER_QUICK_START.md   # Quick reference and getting started (7KB)
-│   │   ├── PHASE5_CMAKE_GUIDE.md       # CMake usage guide (3.6KB)
-│   │   ├── PHASE6_TESTING_GUIDE.md     # Testing documentation (5.9KB)
-│   │   ├── C_PROGRAM_GUIDE.md          # C program execution guide
-│   │   └── LINUX_SYSCALLS.md           # Supported syscalls reference
-│   ├── planning/                      # Design and planning documents
-│   │   ├── BOOTLOADER_PLAN.md          # 7-phase architecture plan
-│   │   ├── emulator-plan.md            # Emulator design plan
-│   │   └── chatlog.md                  # Design discussion history
-│   ├── summaries/                     # Phase reports and verification summaries
-│   │   ├── PHASE1_VERIFICATION_COMPLETE.md
-│   │   ├── PHASE2_SUMMARY.md
-│   │   ├── PHASE3_SUMMARY.md
-│   │   ├── PHASE4_SUMMARY.md
-│   │   ├── STATIC_CHAR_GEN_REPORT.md
-│   │   ├── MODEL_LOADING_REPORT.md
-│   │   ├── SESSION_SUMMARY.md
-│   │   ├── TEST_ORGANIZATION.md
-│   │   └── UNIT_TEST_GAPS.md
-│   └── summary.md                     # Overview summary
+├── documentation/                     # Consolidated repo-level docs (see below)
 
 ## Blackbox Testing
 
@@ -299,23 +275,12 @@ add_model_bootloader(my_model "model.json")
 
 ### Documentation
 
-**Guides & References:**
-- **[docs/guides/BOOTLOADER_IMPLEMENTATION.md](docs/guides/BOOTLOADER_IMPLEMENTATION.md)** - Complete implementation guide (13 KB)
-  - Architecture, components, memory layout, file formats, usage examples
-- **[docs/guides/BOOTLOADER_QUICK_START.md](docs/guides/BOOTLOADER_QUICK_START.md)** - Quick reference (7 KB)
-  - One-minute overview, common commands, troubleshooting
-- **[docs/guides/PHASE5_CMAKE_GUIDE.md](docs/guides/PHASE5_CMAKE_GUIDE.md)** - CMake integration (3.6 KB)
-- **[docs/guides/PHASE6_TESTING_GUIDE.md](docs/guides/PHASE6_TESTING_GUIDE.md)** - Testing documentation (5.9 KB)
-- **[docs/guides/C_PROGRAM_GUIDE.md](docs/guides/C_PROGRAM_GUIDE.md)** - C program execution guide
-- **[docs/guides/LINUX_SYSCALLS.md](docs/guides/LINUX_SYSCALLS.md)** - Supported syscalls reference
+Repository documentation was consolidated into top-level `documentation/`:
 
-**Design & Planning:**
-- **[docs/planning/BOOTLOADER_PLAN.md](docs/planning/BOOTLOADER_PLAN.md)** - 7-phase architecture plan
-- **[docs/planning/emulator-plan.md](docs/planning/emulator-plan.md)** - Emulator design plan
-- **[docs/planning/chatlog.md](docs/planning/chatlog.md)** - Design discussion history
-
-**Summaries & Verification:**
-- **[docs/summaries/](docs/summaries/)** - Phase verification and test reports
+- **`../../documentation/project-log.md`** - Project history, phase log, summaries, and planning outcomes
+- **`../../documentation/neural-risc-v-machine.md`** - Neural ISA + memory map + execution machine reference
+- **`../../documentation/collected-data/`** - Research and benchmark JSON artifacts
+- **`../../documentation/ase2026.md`** - IEEE paper draft
 
 ### Example: Compile and Load Bootloader
 
