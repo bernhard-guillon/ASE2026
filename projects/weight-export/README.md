@@ -41,18 +41,9 @@ Binary format for fast C loading:
 - Ready to load into emulator memory
 - Minimal overhead
 
-### character_recognition.json (1.8 MB)
-Intermediate format for character recognition model:
-- **Input:** 400 pixel values (20×20 image)
-- **Output:** 37 class scores (A-Z, 0-9, space, period)
-- **Layers:**
-  - Layer 0: 400→128 + ReLU
-  - Layer 1: 128→37 (no activation)
-- **Total Parameters:** 56,101
-- **Use Case:** Debugging, validation, reference implementation
-
-### character_recognition.bin (0.2 MB)
-Binary format for fast C loading.
+### Legacy recognizer artifacts
+Historical recognizer files and scripts may still exist in this directory for traceability,
+but they are outside the current ASE2026 project scope and are not used in the final build/validation path.
 
 ## JSON Intermediate Format Specification
 
@@ -136,13 +127,13 @@ cd projects/weight-export
 # Export character generator
 python3 export_generator.py
 
-# Export character recognition model
+# Optional: export legacy recognizer model (not part of current project scope)
 python3 export_recognizer.py
 ```
 
 This creates:
 - `character_generator.json` + `.bin`
-- `character_recognition.json` + `.bin`
+- (optional legacy) recognizer JSON + `.bin`
 
 ### Loading in Python (Verification)
 
@@ -238,15 +229,7 @@ When models are loaded into the RISC-V emulator at startup:
                └─ 0x000F3C80: Bias Data (3,648 bytes)
                   └─ Layer 0-2 biases, sequential
 
-0x000F4ABC - 0x0012B6FB: Character Recognizer Weights (224 KB)
-               ├─ 0x000F4ABC: Header (32 bytes)
-               │  └─ Magic: 0x4E52414E, Version: 1, Type: 1
-               ├─ 0x000F4ADC: Layer Table (64 bytes)
-               │  └─ 2 layers × 32 bytes each
-               ├─ 0x000F4B1C: Weight Data (223,744 bytes)
-               │  └─ Layer 0-1 weights, sequential
-               └─ 0x0012B51C: Bias Data (660 bytes)
-                  └─ Layer 0-1 biases, sequential
+0x000F4ABC - 0x0012B6FB: Reserved legacy model region (currently unused)
 
 0x00200000 - 0x003FFFFF: I/O and Framebuffer (2 MB)
                ├─ Framebuffer syscall operations
@@ -262,10 +245,10 @@ When models are loaded into the RISC-V emulator at startup:
 ```c
 // Base addresses
 #define GENERATOR_BASE    0x10000
-#define RECOGNIZER_BASE   0xF4ABC
+#define LEGACY_BASE       0xF4ABC
 
 // Calculate layer entry offset
-uint32_t layer_base = (model_type == GENERATOR) ? GENERATOR_BASE : RECOGNIZER_BASE;
+uint32_t layer_base = (model_type == GENERATOR) ? GENERATOR_BASE : LEGACY_BASE;
 uint32_t layer_offset = layer_base + 32 + (layer_id * 32);
 
 // Read layer parameters
@@ -301,8 +284,8 @@ float bias = memory.readFloat(bias_ptr + j * 4);
 | Component | Size | % of Emulator |
 |-----------|------|---------------|
 | Generator model | 936 KB | 0.36% |
-| Recognizer model | 224 KB | 0.09% |
-| **Total models** | **1.1 MB** | **0.43%** |
+| Reserved legacy region | 224 KB | 0.09% |
+| **Generator + reserved region** | **1.1 MB** | **0.43%** |
 | Available (256 MB) | **254.9 MB** | **99.57%** |
 
 ## Next Steps
@@ -326,11 +309,11 @@ float bias = memory.readFloat(bias_ptr + j * 4);
 
 - `model_formats.py` - Format definitions and converters
 - `export_generator.py` - Export character generator
-- `export_recognizer.py` - Export character recognizer
+- `export_recognizer.py` - Export legacy recognizer (optional, out of scope)
 - `character_generator.json` - Generator intermediate format
 - `character_generator.bin` - Generator binary format
-- `character_recognition.json` - Recognizer intermediate format
-- `character_recognition.bin` - Recognizer binary format
+- `character_recognition.json` - Legacy recognizer intermediate format
+- `character_recognition.bin` - Legacy recognizer binary format
 
 ## Statistics
 
@@ -340,13 +323,13 @@ float bias = memory.readFloat(bias_ptr + j * 4);
 - Biases: 3,648 bytes
 - Density: 4 bytes per parameter (float32)
 
-### Character Recognition
+### Legacy Recognizer (optional)
 - Total size: 224,500 bytes (0.2 MB)
 - Weights: 223,744 bytes
 - Biases: 660 bytes
 - Density: 4 bytes per parameter (float32)
 
 ### Combined
-- Total: ~1.1 MB for both models
+- Total: ~1.1 MB including reserved legacy region
 - Fits comfortably in 256 KB extended emulator memory + external storage
 - Can be loaded at startup or streamed on demand
