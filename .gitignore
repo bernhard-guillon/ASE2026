@@ -45,3 +45,6 @@ test_lex
 *.log
 *.out
 *.toc
+
+# Generated paper intermediate
+documentation/ase2026.tex
