@@ -8,12 +8,21 @@ on:
       - 'documentation/templates/ieee-conference/**'
       - '.github/workflows/build-pdf.yml'
   workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Artifact channel'
+        required: true
+        default: 'wip'
+        type: choice
+        options:
+          - wip
+          - release
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -51,9 +60,41 @@ jobs:
             --template documentation/templates/ieee-conference/ieee-paper.latex \
             -o documentation/ase2026.pdf
 
-      - name: Commit and push PDF
+      - name: Prepare artifact metadata
+        id: meta
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add documentation/idea.pdf documentation/ase2026.pdf
-          git diff --staged --quiet || (git commit -m "docs: update generated PDFs [skip ci]" && git push)
+          DATE_UTC="$(date -u +%Y%m%d)"
+          SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-7)"
+          CHANNEL="wip"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            CHANNEL="${{ github.event.inputs.channel }}"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            CHANNEL="release"
+          fi
+
+          if [ "$CHANNEL" = "release" ]; then
+            ARTIFACT_NAME="release-${DATE_UTC}-${GITHUB_REF_NAME}"
+          else
+            ARTIFACT_NAME="wip-${DATE_UTC}-${SHORT_SHA}"
+          fi
+
+          echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
+          echo "date_utc=${DATE_UTC}" >> "$GITHUB_OUTPUT"
+          echo "suffix=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload idea PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: idea-${{ steps.meta.outputs.suffix }}
+          path: documentation/idea.pdf
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload ase2026 PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ase2026-${{ steps.meta.outputs.suffix }}
+          path: documentation/ase2026.pdf
+          if-no-files-found: error
+          retention-days: 30
