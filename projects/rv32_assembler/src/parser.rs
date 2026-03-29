@@ -96,7 +96,7 @@ impl Parser {
             // RV32F FMV (int to float reg)
             "fmv.w.x" => Self::parse_f_move_rev_type(mnemonic, tokens).map(Some),
             // Neural custom ops v1 (0x77) and v2-preview (0x7B)
-            "nmatvec.f32" | "nmatvecx.f32" | "nmatvec4x.f32" | "nmatvec8x.f32" | "nmatvec8xp.f32" | "nmatvec8xp2.f32" => {
+            "nmatvec.f32" | "nmatvecx.f32" | "nmatvec4x.f32" | "nmatvec8x.f32" | "nmatvec8xp.f32" | "nmatvec8xp2.f32" | "nmatvec8xp3.f32" => {
                 Self::parse_n_desc_type(mnemonic, tokens).map(Some)
             }
             "nvrelu.f32" | "nvsigpwl.f32" | "nvclampu8.f32"
@@ -963,6 +963,29 @@ mod tests {
                 rs3,
             }) => {
                 assert_eq!(mnemonic, "nmatvec8xp2.f32");
+                assert_eq!(rd, Register::X6);
+                assert_eq!(rs1, Register::X5);
+                assert_eq!(rs2, Register::X0);
+                assert_eq!(rs3, Register::X0);
+            }
+            _ => panic!("expected NType"),
+        }
+    }
+
+    #[test]
+    fn test_parse_nmatvec8xp3_f32() {
+        let tokens = crate::lexer::tokenize("NMATVEC8XP3.F32 t1, t0").unwrap();
+        let instr = Parser::parse_instruction(&tokens).unwrap();
+
+        match instr {
+            Some(Instruction::NType {
+                mnemonic,
+                rd,
+                rs1,
+                rs2,
+                rs3,
+            }) => {
+                assert_eq!(mnemonic, "nmatvec8xp3.f32");
                 assert_eq!(rd, Register::X6);
                 assert_eq!(rs1, Register::X5);
                 assert_eq!(rs2, Register::X0);

@@ -340,7 +340,6 @@ module cpu (
             n_tmp_in_bits <= 32'd0;
             n_tmp_w_bits <= 32'd0;
             n_tmp_w1_bits <= 32'd0;
-            mem_addr3_reg <= 32'd0;
             n_lane_count <= 4'd0;
             n_lane_idx <= 3'd0;
             n_scratch_valid <= 1'b0;
@@ -524,9 +523,9 @@ module cpu (
                             neural_status <= NEURAL_ERR_OK;
                             neural_is_v2_hold <= (opcode == OP_CUSTOM3);
                             neural_parallel_mac_hold <= (opcode == OP_CUSTOM3 && neural_op_id == 5'd6);
-                            neural_parallel_mac2_hold <= (opcode == OP_CUSTOM3 && neural_op_id == 5'd7);
+                            neural_parallel_mac2_hold <= (opcode == OP_CUSTOM3 && (neural_op_id == 5'd7 || neural_op_id == 5'd8));
                             n_reserved <= 32'd0;
-                            if (opcode == OP_CUSTOM3 && (neural_op_id == 5'd5 || neural_op_id == 5'd6 || neural_op_id == 5'd7)) begin
+                            if (opcode == OP_CUSTOM3 && (neural_op_id == 5'd5 || neural_op_id == 5'd6 || neural_op_id == 5'd7 || neural_op_id == 5'd8)) begin
                                 neural_lane_width_hold <= 4'd8;
                             end else if (opcode == OP_CUSTOM3 && neural_op_id == 5'd4) begin
                                 neural_lane_width_hold <= 4'd4;
@@ -536,7 +535,7 @@ module cpu (
                                 neural_lane_width_hold <= 4'd1;
                             end
                             if (neural_op_id == 5'd0 ||
-                                (opcode == OP_CUSTOM3 && (neural_op_id == 5'd4 || neural_op_id == 5'd5 || neural_op_id == 5'd6 || neural_op_id == 5'd7))) begin
+                                (opcode == OP_CUSTOM3 && (neural_op_id == 5'd4 || neural_op_id == 5'd5 || neural_op_id == 5'd6 || neural_op_id == 5'd7 || neural_op_id == 5'd8))) begin
                                 // NMATVEC.F32: rs1 points to descriptor
                                 n_desc_addr <= neural_rs1_val;
                                 if (neural_rs1_val + 32 > MEM_SIZE) begin

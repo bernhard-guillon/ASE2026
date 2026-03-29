@@ -413,6 +413,10 @@ if(RISCV_TOOLCHAIN_FOUND)
         set(NEURAL_OP_ENHANCE8PMAC2_OBJ "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac2.o")
         set(NEURAL_OP_ENHANCE8PMAC2_ELF "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac2.elf")
         set(NEURAL_OP_ENHANCE8PMAC2_BIN "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac2.bin")
+        set(NEURAL_OP_ENHANCE8PMAC3_ASM "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac3.s")
+        set(NEURAL_OP_ENHANCE8PMAC3_OBJ "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac3.o")
+        set(NEURAL_OP_ENHANCE8PMAC3_ELF "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac3.elf")
+        set(NEURAL_OP_ENHANCE8PMAC3_BIN "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac3.bin")
         set(NEURAL_MODEL_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
         set(NEURAL_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_interactive.py")
 
@@ -598,6 +602,32 @@ if(RISCV_TOOLCHAIN_FOUND)
             )
 
             add_custom_target(neural_op_enhance8pmac2_elf ALL DEPENDS ${NEURAL_OP_ENHANCE8PMAC2_ELF})
+
+            add_custom_command(
+                OUTPUT ${NEURAL_OP_ENHANCE8PMAC3_ASM}
+                COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8xpmac3 -o ${NEURAL_OP_ENHANCE8PMAC3_ASM} -b ${NEURAL_OP_ENHANCE8PMAC3_BIN} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                COMMENT "Generating neural-op-enhance8pmac3.s from model JSON"
+                VERBATIM
+            )
+
+            add_custom_command(
+                OUTPUT ${NEURAL_OP_ENHANCE8PMAC3_OBJ}
+                COMMAND ${RV32AS_EXECUTABLE} ${NEURAL_OP_ENHANCE8PMAC3_ASM} -march rv32if -mabi ilp32f -o ${NEURAL_OP_ENHANCE8PMAC3_OBJ}
+                DEPENDS ${NEURAL_OP_ENHANCE8PMAC3_ASM} rv32as_build
+                COMMENT "Assembling neural-op-enhance8pmac3.o with rv32as"
+                VERBATIM
+            )
+
+            add_custom_command(
+                OUTPUT ${NEURAL_OP_ENHANCE8PMAC3_ELF}
+                COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${NEURAL_OP_ENHANCE8PMAC3_ELF} ${NEURAL_OP_ENHANCE8PMAC3_OBJ}
+                DEPENDS ${NEURAL_OP_ENHANCE8PMAC3_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+                COMMENT "Linking neural-op-enhance8pmac3.elf"
+                VERBATIM
+            )
+
+            add_custom_target(neural_op_enhance8pmac3_elf ALL DEPENDS ${NEURAL_OP_ENHANCE8PMAC3_ELF})
         else()
             message(WARNING "rv32as not found - neural_opsx77_elf and neural_op_enhance* targets disabled")
         endif()
@@ -706,7 +736,7 @@ add_test(
 set_tests_properties(python/verilator/neural_op_enhance PROPERTIES
     LABELS "verilator;neural;enhance;validation"
     TIMEOUT 180
-    ENVIRONMENT "NEURAL_ENHANCE_VARIANTS=base,4x,8x,8xpmac,8xpmac2"
+    ENVIRONMENT "NEURAL_ENHANCE_VARIANTS=base,4x,8x,8xpmac,8xpmac2,8xpmac3"
 )
 
 # ============================================================================

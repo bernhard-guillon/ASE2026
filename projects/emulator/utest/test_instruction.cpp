@@ -348,3 +348,16 @@ TEST_F(InstructionDecoderTest, DecodeNeuralCustom3_NMATVEC8XP2) {
     EXPECT_EQ(instr.rs2, 0);
     EXPECT_EQ(instr.rs3, 0);
 }
+
+TEST_F(InstructionDecoderTest, DecodeNeuralCustom3_NMATVEC8XP3) {
+    // opid=8, rd=x6, rs1=x5, rs2=0, rs3=0, opcode=0x7B
+    uint32_t instruction = (8u << 27) | (0u << 22) | (0u << 17) | (5u << 12) | (6u << 7) | 0x7Bu;
+    Instruction instr = InstructionDecoder::decode(instruction);
+    EXPECT_EQ(instr.opcode, Opcode::CUSTOM3);
+    EXPECT_EQ(instr.format, InstructionFormat::N_TYPE);
+    EXPECT_EQ(instr.neural_op, 8);
+    EXPECT_EQ(instr.rd, 6);
+    EXPECT_EQ(instr.rs1, 5);
+    EXPECT_EQ(instr.rs2, 0);
+    EXPECT_EQ(instr.rs3, 0);
+}

@@ -389,7 +389,7 @@ class TestModelCompiler(unittest.TestCase):
         self.assertAlmostEqual(len(binary), expected_size, delta=10)
 
     def test_generate_assembly_rejects_invalid_lane_mode(self):
-        """Lane mode must be one of base/4x/8x/8xpmac/8xpmac2."""
+        """Lane mode must be one of base/4x/8x/8xpmac/8xpmac2/8xpmac3."""
         json_path = self._save_json(self.simple_model)
         asm_path = os.path.join(self.temp_dir.name, "lane_invalid.s")
         with self.assertRaises(ValueError) as ctx:
@@ -403,7 +403,7 @@ class TestModelCompiler(unittest.TestCase):
         self.assertIn("neural_lane_mode", str(ctx.exception))
 
     def test_generate_assembly_rejects_lane_mode_for_x77(self):
-        """Lane mode 4x/8x/8xpmac/8xpmac2 is invalid on x77 opcode path."""
+        """Lane mode 4x/8x/8xpmac/8xpmac2/8xpmac3 is invalid on x77 opcode path."""
         json_path = self._save_json(self.simple_model)
         asm_path = os.path.join(self.temp_dir.name, "lane_x77_invalid.s")
         with self.assertRaises(ValueError) as ctx:
@@ -479,6 +479,22 @@ class TestModelCompiler(unittest.TestCase):
         with open(asm_path, "r") as f:
             asm = f.read()
         self.assertIn("nmatvec8xp2.f32", asm)
+
+    def test_generate_assembly_emits_nmatvec8xp3(self):
+        """x7b + 8xpmac3 lane mode should emit nmatvec8xp3 mnemonic."""
+        json_path = self._save_json(self.simple_model)
+        asm_path = os.path.join(self.temp_dir.name, "lane8pmac3.s")
+        self.compiler.generate_assembly(
+            json_path,
+            asm_path,
+            use_neural_ops=True,
+            neural_opcode="x7b",
+            neural_lane_mode="8xpmac3",
+            with_execution=True,
+        )
+        with open(asm_path, "r") as f:
+            asm = f.read()
+        self.assertIn("nmatvec8xp3.f32", asm)
 
 
 if __name__ == '__main__':

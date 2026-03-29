@@ -165,6 +165,7 @@ def get_variant_catalog(backend: str) -> Dict[str, BinaryConfig]:
             "x7b-8lane": BinaryConfig("x7b-8lane", Path("neural-op-enhance8.elf"), 20_000, [500, 750, 1_000, 1_250, 1_500, 2_000, 3_000, 5_000, 10_000, 20_000]),
             "x7b-8lane-pmac": BinaryConfig("x7b-8lane-pmac", Path("neural-op-enhance8pmac.elf"), 20_000, [500, 750, 1_000, 1_250, 1_500, 2_000, 3_000, 5_000, 10_000, 20_000]),
             "x7b-8lane-pmac2": BinaryConfig("x7b-8lane-pmac2", Path("neural-op-enhance8pmac2.elf"), 20_000, [300, 400, 500, 600, 750, 1_000, 1_250, 1_500, 2_000, 3_000, 5_000, 10_000, 20_000]),
+            "x7b-8lane-pmac3": BinaryConfig("x7b-8lane-pmac3", Path("neural-op-enhance8pmac3.elf"), 20_000, [200, 300, 400, 500, 600, 750, 1_000, 1_250, 1_500, 2_000, 3_000, 5_000, 10_000, 20_000]),
         }
     if backend == "verilator":
         return {
@@ -173,6 +174,7 @@ def get_variant_catalog(backend: str) -> Dict[str, BinaryConfig]:
             "x7b-8lane": BinaryConfig("x7b-8lane", Path("neural-op-enhance8.elf"), 5_000_000, [150_000, 200_000, 250_000, 300_000, 400_000, 500_000, 600_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000]),
             "x7b-8lane-pmac": BinaryConfig("x7b-8lane-pmac", Path("neural-op-enhance8pmac.elf"), 5_000_000, [100_000, 150_000, 200_000, 250_000, 300_000, 400_000, 500_000, 600_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000]),
             "x7b-8lane-pmac2": BinaryConfig("x7b-8lane-pmac2", Path("neural-op-enhance8pmac2.elf"), 5_000_000, [60_000, 80_000, 100_000, 120_000, 150_000, 200_000, 250_000, 300_000, 400_000, 500_000, 600_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000]),
+            "x7b-8lane-pmac3": BinaryConfig("x7b-8lane-pmac3", Path("neural-op-enhance8pmac3.elf"), 5_000_000, [40_000, 60_000, 80_000, 100_000, 120_000, 150_000, 200_000, 250_000, 300_000, 400_000, 500_000, 600_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000]),
         }
     raise RuntimeError(f"Unsupported backend: {backend}")
 
@@ -313,7 +315,7 @@ def main() -> int:
     parser.add_argument(
         "--variants",
         default="x7b-4lane,x7b-8lane",
-        help="Comma-separated x7B variants: x7b-base,x7b-4lane,x7b-8lane,x7b-8lane-pmac,x7b-8lane-pmac2",
+        help="Comma-separated x7B variants: x7b-base,x7b-4lane,x7b-8lane,x7b-8lane-pmac,x7b-8lane-pmac2,x7b-8lane-pmac3",
     )
     parser.add_argument(
         "--with-enhanced",
