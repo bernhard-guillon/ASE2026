@@ -18,3 +18,8 @@ These files are distributed under the LaTeX Project Public License (LPPL), as do
 
 - Keep upstream attribution and copyright notices intact.
 - If modified locally, mark files clearly as modified and preserve original credits.
+
+## Repository-specific template
+
+- `ieee-paper.latex` is a repository-local Pandoc template that targets IEEE conference structure while consuming Markdown metadata from `documentation/ase2026.md`.
+- This local file is not an upstream IEEE file; it is maintained in this repository.

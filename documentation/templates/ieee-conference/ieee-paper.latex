@@ -1,0 +1,57 @@
+$if(documentclass)$
+\documentclass[$for(classoption)$$classoption$$sep$,$endfor$]{$documentclass$}
+$else$
+\documentclass[conference]{IEEEtran}
+$endif$
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{ifthen}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+\title{$if(project_title)$$project_title$$else$$title$$endif$}
+
+$if(authors)$
+\author{
+$for(authors)$
+\IEEEauthorblockN{$authors.name$}
+\IEEEauthorblockA{
+$if(authors.department)$$authors.department$\\$endif$
+$if(authors.university)$$authors.university$\\$endif$
+$if(authors.city)$$authors.city$$endif$$if(authors.country)$, $authors.country$$endif$\\
+$if(authors.email)$Email: $authors.email$$endif$
+}$sep$
+\and
+$endfor$
+}
+$else$
+\author{\IEEEauthorblockN{Author To Be Filled}}
+$endif$
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+$if(abstract)$$abstract$$else$Abstract to be filled.$endif$
+\end{abstract}
+
+\begin{IEEEkeywords}
+$if(keywords)$$for(keywords)$$keywords$$sep$, $endfor$$else$to be filled$endif$
+\end{IEEEkeywords}
+
+$if(supervisor)$
+\section*{Project Context}
+Supervisor: $supervisor$\\
+$if(course)$Course: $course$\\$endif$
+$if(university)$University: $university$\\$endif$
+$if(date)$Date: $date$$endif$
+$endif$
+
+$body$
+
+\end{document}
