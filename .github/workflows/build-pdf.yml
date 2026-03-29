@@ -2,27 +2,20 @@ name: Build PDF
 
 on:
   push:
+    branches:
+      - main
+      - 'release/**'
     paths:
-      - 'documentation/idea.md'
       - 'documentation/ase2026.md'
       - 'documentation/templates/ieee-conference/**'
       - '.github/workflows/build-pdf.yml'
   workflow_dispatch:
-    inputs:
-      channel:
-        description: 'Artifact channel'
-        required: true
-        default: 'wip'
-        type: choice
-        options:
-          - wip
-          - release
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -32,22 +25,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y pandoc texlive-latex-recommended texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra texlive-xetex
-
-      - name: Download eisvogel template
-        run: |
-          mkdir -p ~/.local/share/pandoc/templates
-          curl -sSL https://github.com/Wandmalfarbe/pandoc-latex-template/releases/download/v3.4.0/Eisvogel-3.4.0.tar.gz \
-            -o /tmp/eisvogel.tar.gz
-          tar -xzf /tmp/eisvogel.tar.gz -C /tmp/
-          find /tmp -name 'eisvogel.latex' | head -1 | xargs -I{} cp {} ~/.local/share/pandoc/templates/eisvogel.latex
-
-      - name: Convert idea.md to idea.pdf
-        run: |
-          pandoc documentation/idea.md \
-            -o documentation/idea.pdf \
-            --from markdown \
-            --template eisvogel \
-            --pdf-engine=xelatex
 
       - name: Convert ase2026.md directly to ase2026.pdf (IEEE conference)
         run: |
@@ -60,41 +37,42 @@ jobs:
             --template documentation/templates/ieee-conference/ieee-paper.latex \
             -o documentation/ase2026.pdf
 
-      - name: Prepare artifact metadata
+      - name: Prepare release metadata
         id: meta
         run: |
           DATE_UTC="$(date -u +%Y%m%d)"
-          SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-7)"
-          CHANNEL="wip"
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          REF_NAME="${GITHUB_REF_NAME}"
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            CHANNEL="${{ github.event.inputs.channel }}"
-          elif [ "${{ github.ref_type }}" = "tag" ]; then
-            CHANNEL="release"
-          fi
-
-          if [ "$CHANNEL" = "release" ]; then
-            ARTIFACT_NAME="release-${DATE_UTC}-${GITHUB_REF_NAME}"
+          if [ "${REF_NAME}" = "main" ]; then
+            TAG_NAME="ase2026-wip-${DATE_UTC}-${SHORT_SHA}"
+            RELEASE_NAME="ASE2026 WIP ${DATE_UTC}"
+            PRERELEASE="true"
+            ASSET_NAME="ase2026-bernhard-guillon-wip-${DATE_UTC}.pdf"
+          elif [[ "${REF_NAME}" == release/* ]]; then
+            BRANCH_LABEL="${REF_NAME#release/}"
+            TAG_SAFE="$(echo "${BRANCH_LABEL}" | tr '/ ' '--')"
+            TAG_NAME="ase2026-${TAG_SAFE}-${DATE_UTC}-${SHORT_SHA}"
+            RELEASE_NAME="ASE2026 ${BRANCH_LABEL} ${DATE_UTC}"
+            PRERELEASE="false"
+            ASSET_NAME="ase2026-bernhard-guillon-${DATE_UTC}.pdf"
           else
-            ARTIFACT_NAME="wip-${DATE_UTC}-${SHORT_SHA}"
+            echo "Unsupported branch: ${REF_NAME}"
+            exit 1
           fi
 
-          echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
-          echo "date_utc=${DATE_UTC}" >> "$GITHUB_OUTPUT"
-          echo "suffix=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
+          cp documentation/ase2026.pdf "documentation/${ASSET_NAME}"
+          echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "prerelease=${PRERELEASE}" >> "$GITHUB_OUTPUT"
+          echo "asset_path=documentation/${ASSET_NAME}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload idea PDF artifact
-        uses: actions/upload-artifact@v4
+      - name: Publish GitHub release with PDF asset
+        uses: softprops/action-gh-release@v2
         with:
-          name: idea-${{ steps.meta.outputs.suffix }}
-          path: documentation/idea.pdf
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload ase2026 PDF artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ase2026-${{ steps.meta.outputs.suffix }}
-          path: documentation/ase2026.pdf
-          if-no-files-found: error
-          retention-days: 30
+          tag_name: ${{ steps.meta.outputs.tag_name }}
+          name: ${{ steps.meta.outputs.release_name }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          prerelease: ${{ steps.meta.outputs.prerelease }}
+          files: ${{ steps.meta.outputs.asset_path }}
