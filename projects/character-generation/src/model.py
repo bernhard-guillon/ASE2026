@@ -1,7 +1,6 @@
 """
 PyTorch neural network for character generation.
 Architecture: 255 inputs (one-hot ASCII) -> 256 hidden -> 256 hidden -> 400 outputs (20x20 pixel image)
-This is the inverse of the character recognition model.
 """
 
 import torch

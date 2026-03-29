@@ -21,12 +21,12 @@ build/
 *.swo
 *~
 
-# Generated model outputs (for the character recognition project)
-projects/character-recognition/src/model.pth
-projects/character-recognition/src/dataset.npz
-projects/character-recognition/src/metrics.json
-projects/character-recognition/src/char_map.json
-projects/character-recognition/src/debug_chars/
+# Generated model outputs (for the character generation project)
+projects/character-generation/src/model.pth
+projects/character-generation/src/dataset.npz
+projects/character-generation/src/metrics.json
+projects/character-generation/src/char_map.json
+projects/character-generation/src/debug_chars/
 
 # OS
 .DS_Store
