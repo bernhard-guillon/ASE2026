@@ -50,10 +50,12 @@ module emulator_top #(
     wire [31:0] mem_addr;
     wire [31:0] mem_addr2;
     wire [31:0] mem_addr3;
+    wire [31:0] mem_addr4;
     wire [31:0] mem_wdata;
     wire [31:0] mem_rdata;
     wire [31:0] mem_rdata2;
     wire [31:0] mem_rdata3;
+    wire [31:0] mem_rdata4;
     wire        mem_we;
     wire [1:0]  mem_size;  // 00=byte, 01=half, 10=word
     
@@ -77,10 +79,12 @@ module emulator_top #(
         .mem_addr(mem_addr),
         .mem_addr2(mem_addr2),
         .mem_addr3(mem_addr3),
+        .mem_addr4(mem_addr4),
         .mem_wdata(mem_wdata),
         .mem_rdata(mem_rdata),
         .mem_rdata2(mem_rdata2),
         .mem_rdata3(mem_rdata3),
+        .mem_rdata4(mem_rdata4),
         .mem_we(mem_we),
         .mem_size(mem_size),
         
@@ -122,10 +126,12 @@ module emulator_top #(
         .d_addr(mem_addr),
         .d_addr2(mem_addr2),
         .d_addr3(mem_addr3),
+        .d_addr4(mem_addr4),
         .d_wdata(mem_wdata),
         .d_rdata(mem_rdata),
         .d_rdata2(mem_rdata2),
         .d_rdata3(mem_rdata3),
+        .d_rdata4(mem_rdata4),
         .d_we(mem_we && running),
         .d_size(mem_size),
         

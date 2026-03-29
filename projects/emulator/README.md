@@ -127,6 +127,38 @@ riscv64-elf-objcopy -O binary program.elf program.bin
 ./build/emulator_runner program.bin --verbose
 ```
 
+## Neural PMAC variants (x7B) and Verilator GUI
+
+The enhanced neural opcode flow includes these lane variants:
+
+- `x7b-base` (`nmatvec.f32`)
+- `x7b-4lane` (`nmatvec4.f32`)
+- `x7b-8lane` (`nmatvec8.f32`)
+- `x7b-8lane-pmac` (`nmatvec8xp.f32`)
+- `x7b-8lane-pmac2` (`nmatvec8xp2.f32`)
+- `x7b-8lane-pmac3` (`nmatvec8xp3.f32`)
+- `x7b-8lane-pmac4` (`nmatvec8xp4.f32`, opid 9)
+
+Latest Verilator cycle comparison artifact:
+
+- `../../docs/research/phase25-neural-lane-cycle-comparison.json`
+- PMAC4 result: `150k` cycles vs `200k` (PMAC/PMAC2/PMAC3) and `400k` (8-lane)
+
+### Build and run PMAC4 in Verilator GUI mode
+
+```bash
+cd projects/emulator/build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --target verilator_runner neural_op_enhance8pmac4_elf
+./verilator_runner ./neural-op-enhance8pmac4.elf --gui --char-code 65
+```
+
+Notes:
+
+- Use `--char-code <0..255>` to force a specific input character.
+- Press any key while GUI mode is running to update the input character.
+- Add `--trace` to emit `trace.vcd` for GTKWave debugging.
+
 ## Project Structure
 
 ```

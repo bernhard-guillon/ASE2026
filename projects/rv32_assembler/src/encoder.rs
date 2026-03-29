@@ -380,6 +380,7 @@ impl Encoder {
             "nmatvec8xp.f32" => (6u32, OPCODE_CUSTOM3, true),
             "nmatvec8xp2.f32" => (7u32, OPCODE_CUSTOM3, true),
             "nmatvec8xp3.f32" => (8u32, OPCODE_CUSTOM3, true),
+            "nmatvec8xp4.f32" => (9u32, OPCODE_CUSTOM3, true),
             "nvrelux.f32" => (1u32, OPCODE_CUSTOM3, false),
             "nvsigpwlx.f32" => (2u32, OPCODE_CUSTOM3, false),
             "nvclampu8x.f32" => (3u32, OPCODE_CUSTOM3, false),
@@ -691,6 +692,25 @@ mod tests {
         let word = u32::from_le_bytes(bytes);
         assert_eq!(word & 0x7f, 0x7b);
         assert_eq!((word >> 27) & 0x1f, 8);
+        assert_eq!((word >> 12) & 0x1f, 5);
+        // Canonical descriptor form: rs2/rs3 must be zeroed.
+        assert_eq!((word >> 17) & 0x1f, 0);
+        assert_eq!((word >> 22) & 0x1f, 0);
+    }
+
+    #[test]
+    fn test_encode_nmatvec8xp4_opcode_and_opid() {
+        let instr = Instruction::NType {
+            mnemonic: "nmatvec8xp4.f32".to_string(),
+            rd: Register::X6,
+            rs1: Register::X5,
+            rs2: Register::X31,
+            rs3: Register::X31,
+        };
+        let bytes = Encoder::encode(&instr).unwrap();
+        let word = u32::from_le_bytes(bytes);
+        assert_eq!(word & 0x7f, 0x7b);
+        assert_eq!((word >> 27) & 0x1f, 9);
         assert_eq!((word >> 12) & 0x1f, 5);
         // Canonical descriptor form: rs2/rs3 must be zeroed.
         assert_eq!((word >> 17) & 0x1f, 0);

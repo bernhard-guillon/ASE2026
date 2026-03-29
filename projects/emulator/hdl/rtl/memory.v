@@ -15,10 +15,12 @@ module memory #(
     input  wire [31:0] d_addr,
     input  wire [31:0] d_addr2,
     input  wire [31:0] d_addr3,
+    input  wire [31:0] d_addr4,
     input  wire [31:0] d_wdata,
     output wire [31:0] d_rdata,
     output wire [31:0] d_rdata2,
     output wire [31:0] d_rdata3,
+    output wire [31:0] d_rdata4,
     input  wire        d_we,
     input  wire [1:0]  d_size,  // 00=byte, 01=half, 10=word
     
@@ -42,9 +44,11 @@ module memory #(
     wire [31:0] d_word = {mem[d_addr+3], mem[d_addr+2], mem[d_addr+1], mem[d_addr]};
     wire [31:0] d_word2 = {mem[d_addr2+3], mem[d_addr2+2], mem[d_addr2+1], mem[d_addr2]};
     wire [31:0] d_word3 = {mem[d_addr3+3], mem[d_addr3+2], mem[d_addr3+1], mem[d_addr3]};
+    wire [31:0] d_word4 = {mem[d_addr4+3], mem[d_addr4+2], mem[d_addr4+1], mem[d_addr4]};
     assign d_rdata = d_word;
     assign d_rdata2 = d_word2;
     assign d_rdata3 = d_word3;
+    assign d_rdata4 = d_word4;
     
     // Testbench read
     assign tb_data = mem[tb_addr];
