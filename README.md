@@ -7,9 +7,7 @@
 [![Build PDF](https://github.com/bernhard-guillon/ASE2026/actions/workflows/build-pdf.yml/badge.svg)](https://github.com/bernhard-guillon/ASE2026/actions/workflows/build-pdf.yml)
 
 [📄 Latest Paper PDF](https://github.com/bernhard-guillon/ASE2026/releases/download/ase2026-paper-latest/ase2026-latest.pdf)  
-Fallbacks:
-[latest release notes](https://github.com/bernhard-guillon/ASE2026/releases/latest) ·
-[repository PDF copy](documentation/ase2026.pdf)
+Fallback: [latest release notes](https://github.com/bernhard-guillon/ASE2026/releases/latest)
 
 ## What this project builds
 
@@ -106,3 +104,60 @@ cd projects/emulator/build
 ```bash
 python3 documentation/scripts/generate_readme_assets.py
 ```
+
+## Next experiments (roadmap)
+
+We now have a stable base (toolchain + parity + regression + Verilator differential) and can shift toward system-level experiments.
+
+### 1) Interrupt-driven neural execution
+
+Goal: introduce timer/input interrupts so neural workloads can react to events instead of running only in straight-line loops.
+
+- Add minimal interrupt controller model in emulator + RTL.
+- Define interrupt entry/return conventions for our runtime.
+- Use interrupts to trigger neural update steps (e.g., frame tick, input event).
+
+### 2) Single-player Neural Pong (squash mode)
+
+Goal: prove interactive closed-loop behavior using the neural path in real time.
+
+- One paddle, one wall bounce, increasing ball speed.
+- Neural policy updates paddle movement from framebuffer/state input.
+- Measure determinism and frame-cycle budgets on emulator vs Verilator.
+
+#### Mockup (concept)
+
+```text
++------------------------------------------------+
+| SCORE: 07                                      |
+|                                                |
+|                         o  <- ball             |
+|                                                |
+|                                                |
+|                                        |       |
+|                                        |       |
+|                                        |       |
+|                                   PADDLE       |
+|                                                |
+| WALL (left)                                    |
++------------------------------------------------+
+ Input IRQs -> game state update -> neural step -> paddle action
+```
+
+### 3) Dual-emulator networking
+
+Goal: connect two emulator instances and exchange state/tokens each frame.
+
+- Start with simple packet protocol over host sockets.
+- Validate deterministic lockstep and desync handling.
+- First target: multiplayer pong (left/right paddles, synchronized ball state).
+
+### 4) Hardware I/O interface model
+
+Goal: bridge neural inputs/outputs to realistic device semantics.
+
+- Model char-device and MMIO/register style interfaces.
+- Add a small driver boundary (SW driver in runtime, HW model in emulator/RTL).
+- Map device events to neural input tensors and neural outputs back to actuator registers/framebuffer.
+
+These items define the next phase toward interactive, multi-agent, hardware-facing neural systems.
