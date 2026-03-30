@@ -63,10 +63,12 @@ jobs:
           fi
 
           cp documentation/ase2026.pdf "documentation/${ASSET_NAME}"
+          cp documentation/ase2026.pdf "documentation/ase2026-latest.pdf"
           echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
           echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
           echo "prerelease=${PRERELEASE}" >> "$GITHUB_OUTPUT"
           echo "asset_path=documentation/${ASSET_NAME}" >> "$GITHUB_OUTPUT"
+          echo "latest_asset_path=documentation/ase2026-latest.pdf" >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub release with PDF asset
         uses: softprops/action-gh-release@v2
@@ -76,4 +78,6 @@ jobs:
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           prerelease: ${{ steps.meta.outputs.prerelease }}
-          files: ${{ steps.meta.outputs.asset_path }}
+          files: |
+            ${{ steps.meta.outputs.asset_path }}
+            ${{ steps.meta.outputs.latest_asset_path }}
