@@ -81,3 +81,14 @@ jobs:
           files: |
             ${{ steps.meta.outputs.asset_path }}
             ${{ steps.meta.outputs.latest_asset_path }}
+
+      - name: Publish stable latest-paper release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ase2026-paper-latest
+          name: ASE2026 Latest Paper
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: false
+          prerelease: false
+          overwrite_files: true
+          files: ${{ steps.meta.outputs.latest_asset_path }}

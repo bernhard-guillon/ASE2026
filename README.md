@@ -6,8 +6,10 @@
 [![Emulator Build & Tests](https://github.com/bernhard-guillon/ASE2026/actions/workflows/emulator-tests.yml/badge.svg)](https://github.com/bernhard-guillon/ASE2026/actions/workflows/emulator-tests.yml)
 [![Build PDF](https://github.com/bernhard-guillon/ASE2026/actions/workflows/build-pdf.yml/badge.svg)](https://github.com/bernhard-guillon/ASE2026/actions/workflows/build-pdf.yml)
 
-[📄 Latest Paper PDF](https://github.com/bernhard-guillon/ASE2026/releases/latest/download/ase2026-latest.pdf)  
-Release page: [latest release notes](https://github.com/bernhard-guillon/ASE2026/releases/latest)
+[📄 Latest Paper PDF](https://github.com/bernhard-guillon/ASE2026/releases/download/ase2026-paper-latest/ase2026-latest.pdf)  
+Fallbacks:
+[latest release notes](https://github.com/bernhard-guillon/ASE2026/releases/latest) ·
+[repository PDF copy](documentation/ase2026.pdf)
 
 ## What this project builds
 
