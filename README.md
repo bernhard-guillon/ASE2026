@@ -18,7 +18,9 @@ are represented as first-class ISA extensions. The objective
 is not to compete with full ML frameworks, but to design
 and validate a minimal, inspectable path from trained model
 weights to executable program behavior on a custom compute
-substrate.
+substrate. We also want to research how far we can get rid of
+a typical operating system and use "neural driven computing"
+for interactive computing workloads.
 
 ## What this project builds
 
