@@ -63,4 +63,8 @@ Replay hook in emulator test suite:
 ```bash
 cd ../../emulator
 python3 -m pytest blackbox_tests/test_game_movement_replay.py -v
+
+# Or via CTest targets:
+cd build
+ctest -R game_movement --output-on-failure
 ```

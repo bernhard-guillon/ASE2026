@@ -301,7 +301,14 @@ if(PYTHON_EXECUTABLE)
     # Game movement replay test (packed a0 input mapping)
     add_test(
         NAME python/game_movement/replay_subset
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_replay.py -v
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_replay.py -k replay_subset -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    # Game movement readiness gate (determinism, border safety, repeated-loop stability)
+    add_test(
+        NAME python/game_movement/readiness_gate
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_replay.py -k readiness_gate -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
      

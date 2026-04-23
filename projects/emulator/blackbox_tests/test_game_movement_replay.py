@@ -25,7 +25,7 @@ LINKER_SCRIPT = EMULATOR_DIR / "linker.ld"
 
 FRAMEBUFFER_PREFIX = "FRAMEBUFFER_HEX:"
 FRAMEBUFFER_SIZE = 400
-REPLAY_CYCLES = 5_000_000
+REPLAY_CYCLES = 1_500_000
 
 
 def _pack_a0(state_index: int, action_id: int) -> int:
@@ -69,6 +69,36 @@ def _select_subset(samples: list[dict]) -> list[dict]:
             break
 
     return selected
+
+
+def _run_step(compiled_movement_elf: Path, state_index: int, action_id: int) -> int:
+    packed_code = _pack_a0(state_index, action_id)
+    cmd = [
+        str(RUNNER),
+        str(compiled_movement_elf),
+        "--char-code",
+        str(packed_code),
+        "--cycles",
+        str(REPLAY_CYCLES),
+        "--dump-framebuffer",
+    ]
+    result = subprocess.run(
+        cmd,
+        cwd=EMULATOR_DIR,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, (
+        f"Replay execution failed for state={state_index} action={action_id}.\n"
+        f"stdout:\n{result.stdout}\n"
+        f"stderr:\n{result.stderr}"
+    )
+    return _parse_framebuffer_index(result.stdout)
+
+
+def _is_border_sample(sample: dict) -> bool:
+    return sample["x"] in (0, 19) or sample["y"] in (0, 19)
 
 
 def _require_env() -> None:
@@ -144,32 +174,59 @@ def test_game_movement_replay_subset(compiled_movement_elf: Path) -> None:
     assert len(replay_cases) >= 50, "Replay subset unexpectedly small"
 
     for sample in replay_cases:
-        packed_code = _pack_a0(sample["state_index"], sample["action_id"])
-        cmd = [
-            str(RUNNER),
-            str(compiled_movement_elf),
-            "--char-code",
-            str(packed_code),
-            "--cycles",
-            str(REPLAY_CYCLES),
-            "--dump-framebuffer",
-        ]
-        result = subprocess.run(
-            cmd,
-            cwd=EMULATOR_DIR,
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        assert result.returncode == 0, (
-            f"Replay execution failed for state={sample['state_index']} action={sample['action_id']}.\n"
-            f"stdout:\n{result.stdout}\n"
-            f"stderr:\n{result.stderr}"
-        )
-        predicted_idx = _parse_framebuffer_index(result.stdout)
+        predicted_idx = _run_step(compiled_movement_elf, sample["state_index"], sample["action_id"])
         expected_idx = int(sample["next_state_index"])
         assert predicted_idx == expected_idx, (
             "Replay mismatch: "
             f"state={sample['state_index']} action={sample['action_id']} ({sample['action']}) "
             f"expected={expected_idx}, got={predicted_idx}"
         )
+
+
+def test_game_movement_readiness_gate(compiled_movement_elf: Path) -> None:
+    payload = json.loads(TRANSITIONS_JSON.read_text(encoding="utf-8"))
+    samples = payload["samples"]
+    transition = {(s["state_index"], s["action_id"]): s["next_state_index"] for s in samples}
+
+    # 1) Deterministic replay check (run each case twice, must be identical and exact)
+    deterministic_cases = _select_subset(samples)[:64]
+    for sample in deterministic_cases:
+        state_idx = int(sample["state_index"])
+        action_id = int(sample["action_id"])
+        expected = int(sample["next_state_index"])
+        first = _run_step(compiled_movement_elf, state_idx, action_id)
+        second = _run_step(compiled_movement_elf, state_idx, action_id)
+        assert first == second == expected, (
+            f"Determinism mismatch for state={state_idx}, action={action_id}: "
+            f"first={first}, second={second}, expected={expected}"
+        )
+
+    # 2) Border safety gate: all border-origin transitions must match corpus exactly
+    border_cases = [s for s in samples if _is_border_sample(s)]
+    assert len(border_cases) == 380, f"Unexpected border case count: {len(border_cases)}"
+    for sample in border_cases:
+        state_idx = int(sample["state_index"])
+        action_id = int(sample["action_id"])
+        expected = int(sample["next_state_index"])
+        predicted = _run_step(compiled_movement_elf, state_idx, action_id)
+        assert 0 <= predicted < FRAMEBUFFER_SIZE, f"Out-of-range predicted index: {predicted}"
+        assert predicted == expected, (
+            f"Border gate mismatch for state={state_idx}, action={action_id}: "
+            f"predicted={predicted}, expected={expected}"
+        )
+
+    # 3) Stable frame-update loop gate under repeated action sequence
+    action_pattern = [0, 3, 1, 2, 4, 3, 1, 0, 2]
+    start_states = [0, 19, 380, 399, 210]
+    steps_per_start = 80
+    for start in start_states:
+        current = start
+        for step in range(steps_per_start):
+            action_id = action_pattern[step % len(action_pattern)]
+            expected = transition[(current, action_id)]
+            predicted = _run_step(compiled_movement_elf, current, action_id)
+            assert predicted == expected, (
+                f"Loop gate mismatch at start={start}, step={step}, state={current}, action={action_id}: "
+                f"predicted={predicted}, expected={expected}"
+            )
+            current = predicted
