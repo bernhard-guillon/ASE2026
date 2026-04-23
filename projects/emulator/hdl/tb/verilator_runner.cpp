@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <string>
 #include <unordered_map>
+#include <limits>
 #include <termios.h>
 #include <unistd.h>
 #include <csignal>
@@ -684,7 +685,7 @@ void printUsage(const char* prog) {
               << "Options:\n"
               << "  --gui                 Interactive GUI mode\n"
               << "  --char <char>         Set a0 to ASCII code of character\n"
-              << "  --char-code <code>    Set a0 to numeric code (0-255)\n"
+              << "  --char-code <code>    Set a0 to numeric code (uint32)\n"
               << "  --cycles <count>      Max cycles (default: 1000000)\n"
               << "  --verbose / -v        Print debug info\n"
               << "  --render-framebuffer  Render 20x20 framebuffer\n"
@@ -726,8 +727,15 @@ int main(int argc, char** argv) {
             char_specified = true;
             char_code = static_cast<uint8_t>(argv[++i][0]);
         } else if (strcmp(argv[i], "--char-code") == 0 && i + 1 < argc) {
+            char* end = nullptr;
+            unsigned long long parsed = std::strtoull(argv[++i], &end, 0);
+            if (end == argv[i] || *end != '\0' ||
+                parsed > static_cast<unsigned long long>(std::numeric_limits<uint32_t>::max())) {
+                std::cerr << "Error: --char-code must be an integer in [0, 4294967295]" << std::endl;
+                return 1;
+            }
             char_specified = true;
-            char_code = std::strtoul(argv[++i], nullptr, 0);
+            char_code = static_cast<uint32_t>(parsed);
         } else if (strcmp(argv[i], "--cycles") == 0 && i + 1 < argc) {
             max_cycles = std::strtoul(argv[++i], nullptr, 0);
         }

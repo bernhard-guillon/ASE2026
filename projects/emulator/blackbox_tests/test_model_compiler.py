@@ -480,6 +480,42 @@ class TestModelCompiler(unittest.TestCase):
             asm = f.read()
         self.assertIn("nmatvec8xp2.f32", asm)
 
+    def test_generate_assembly_emits_movement_packed_mapping(self):
+        """Movement mapping mode should emit packed-a0 input decode and argmax framebuffer output."""
+        movement_model = {
+            "metadata": {
+                "model_type": "generator",
+                "version": 1,
+                "architecture": "fully-connected",
+                "precision": "float32",
+                "framework": "pytorch",
+                "input_mapping": "movement_packed_a0",
+            },
+            "layers": [
+                {
+                    "name": "layer_0",
+                    "input_size": 405,
+                    "output_size": 400,
+                    "activation": "none",
+                    "weights_shape": [405, 400],
+                    "weights": [[0.0 for _ in range(400)] for _ in range(405)],
+                    "biases_shape": [400],
+                    "biases": [0.0 for _ in range(400)],
+                }
+            ],
+        }
+        json_path = self._save_json(movement_model, "movement_mapping.json")
+        asm_path = os.path.join(self.temp_dir.name, "movement_mapping.s")
+        self.compiler.generate_assembly(json_path, asm_path, with_execution=True)
+        with open(asm_path, "r") as f:
+            asm = f.read()
+        self.assertIn("Input mapping: packed movement code (a0)", asm)
+        self.assertIn("li t1, 0x1FF", asm)
+        self.assertIn("li t4, 400", asm)
+        self.assertIn("li t4, 5", asm)
+        self.assertIn("Output mapping: movement argmax", asm)
+        self.assertIn(".Largmax_done_movement", asm)
+
     def test_generate_assembly_emits_nmatvec8xp3(self):
         """x7b + 8xpmac3 lane mode should emit nmatvec8xp3 mnemonic."""
         json_path = self._save_json(self.simple_model)

@@ -959,7 +959,59 @@ layer_{layer_idx}_forward:
     
     def _generate_input_mapping(self, model_type: str, input_size: int) -> str:
         """Generate code to map character input to network input."""
+        input_mapping = (self.metadata or {}).get("input_mapping", "")
         if model_type == "generator":
+            if input_mapping == "movement_packed_a0":
+                return f"""
+# Input mapping: packed movement code (a0) -> [board one-hot + action one-hot]
+# a0 bits:
+#   [8:0]   state index (0..399 for 20x20 board)
+#   [11:9]  action id (0..4) = up/down/left/right/stay
+map_input_generator:
+    lui t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) >> 12}
+    addi t0, t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) & 0xFFF}
+
+    # Zero out entire input buffer
+    li t1, {input_size * 4}
+    xor t2, t2, t2
+.Lclear_input_movement:
+    beq t2, t1, .Ldecode_input_movement
+    add t3, t0, t2
+    sw zero, 0(t3)
+    addi t2, t2, 4
+    j .Lclear_input_movement
+
+.Ldecode_input_movement:
+    # state_idx = a0 & 0x1FF
+    # action_id = (a0 >> 9) & 0x7
+    li t1, 0x1FF
+    and t2, a0, t1
+    srli t3, a0, 9
+    andi t3, t3, 0x7
+
+    # Validate state_idx < 400 and action_id < 5
+    li t4, 400
+    bgeu t2, t4, .Linput_done_movement
+    li t4, 5
+    bgeu t3, t4, .Linput_done_movement
+
+    # input[state_idx] = 1.0
+    slli t4, t2, 2
+    add t4, t0, t4
+    lui t5, 0x3F800
+    sw t5, 0(t4)
+
+    # input[400 + action_id] = 1.0
+    li t4, 400
+    add t4, t4, t3
+    slli t4, t4, 2
+    add t4, t0, t4
+    sw t5, 0(t4)
+
+.Linput_done_movement:
+    ret
+
+"""
             # For generator: map character code (a0) to 255-dimensional input
             # Simple approach: one-hot encoding
             return f"""
@@ -1041,7 +1093,59 @@ map_input_recognizer:
 
     def _generate_output_mapping(self, model_type: str, output_size: int) -> str:
         """Generate code to map network output to framebuffer."""
+        input_mapping = (self.metadata or {}).get("input_mapping", "")
         if model_type == "generator":
+            if input_mapping == "movement_packed_a0":
+                return f"""
+# Output mapping: movement argmax -> single active framebuffer cell
+map_output_generator:
+    li t0, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
+    li t1, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
+
+    # Clear framebuffer
+    li t2, 0
+    li t3, {output_size}
+.Lclear_fb_movement:
+    bge t2, t3, .Largmax_start_movement
+    add t5, t0, t2
+    sb zero, 0(t5)
+    addi t2, t2, 1
+    j .Lclear_fb_movement
+
+.Largmax_start_movement:
+    # max_idx = 0, i = 1
+    li t4, 0
+    li t2, 1
+
+.Largmax_loop_movement:
+    bge t2, t3, .Largmax_done_movement
+
+    # current_max = output[max_idx]
+    slli t5, t4, 2
+    add t6, t1, t5
+    flw fa0, 0(t6)
+
+    # candidate = output[i]
+    slli t5, t2, 2
+    add t6, t1, t5
+    flw fa1, 0(t6)
+
+    # if candidate > current_max: max_idx = i
+    flt.s t6, fa0, fa1
+    beq t6, zero, .Largmax_skip_update_movement
+    addi t4, t2, 0
+
+.Largmax_skip_update_movement:
+    addi t2, t2, 1
+    j .Largmax_loop_movement
+
+.Largmax_done_movement:
+    add t5, t0, t4
+    li t6, 255
+    sb t6, 0(t5)
+    ret
+
+"""
             if self.use_neural_ops:
                 op_suffix = "x" if self.neural_opcode == "x7b" else ""
                 op_tag = self.neural_opcode.upper()

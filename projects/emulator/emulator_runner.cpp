@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstring>
 #include <iomanip>
+#include <limits>
 #include <termios.h>
 #include <unistd.h>
 #include <signal.h>
@@ -110,7 +111,7 @@ void process_gui_input(Emulator& emulator) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--cycles <count>] [--render-framebuffer] [--dump-framebuffer] [--verbose]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--char-code <uint32>] [--cycles <count>] [--render-framebuffer] [--dump-framebuffer] [--verbose]" << std::endl;
         return 1;
     }
     
@@ -158,9 +159,10 @@ int main(int argc, char** argv) {
         } else if (std::strcmp(argv[i], "--char-code") == 0) {
             if (i + 1 < argc) {
                 char* end = nullptr;
-                unsigned long parsed = std::strtoul(argv[i + 1], &end, 0);
-                if (end == argv[i + 1] || *end != '\0' || parsed > 255) {
-                    std::cerr << "Error: --char-code must be an integer in [0, 255]" << std::endl;
+                unsigned long long parsed = std::strtoull(argv[i + 1], &end, 0);
+                if (end == argv[i + 1] || *end != '\0' ||
+                    parsed > static_cast<unsigned long long>(std::numeric_limits<uint32_t>::max())) {
+                    std::cerr << "Error: --char-code must be an integer in [0, 4294967295]" << std::endl;
                     return 1;
                 }
                 char_specified = true;

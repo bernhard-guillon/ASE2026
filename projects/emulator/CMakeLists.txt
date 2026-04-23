@@ -297,7 +297,14 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_static_char_gen_basic.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
-    
+
+    # Game movement replay test (packed a0 input mapping)
+    add_test(
+        NAME python/game_movement/replay_subset
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_replay.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+     
     # ELF Loader Tests
     add_test(
         NAME python/elf_loader/blackbox

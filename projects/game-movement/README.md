@@ -35,6 +35,7 @@ cd src
 python test_oracle.py
 python train.py 150 64
 python evaluate.py
+python export_intermediate.py
 ```
 
 ## Produced artifacts
@@ -42,6 +43,7 @@ python evaluate.py
 - `movement_dataset.npz`: training arrays + transition labels
 - `movement_transitions.json`: explicit transition table (replay-friendly)
 - `movement_model.pth`: trained checkpoint
+- `movement_generator.json`: emulator intermediate model (packed movement input)
 - `movement_metrics.json`: training metrics
 - `movement_eval.json`: evaluation summary
 - `movement_mismatches.json`: failed transitions (if any)
@@ -55,3 +57,10 @@ The same transition corpus is intended to be reused in emulator blackbox tests:
 3. assert exact match to expected `(next_state)`
 
 That gives one shared source of truth for training, offline validation, and runtime replay.
+
+Replay hook in emulator test suite:
+
+```bash
+cd ../../emulator
+python3 -m pytest blackbox_tests/test_game_movement_replay.py -v
+```
