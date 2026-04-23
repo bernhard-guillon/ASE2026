@@ -9,6 +9,17 @@
 [📄 Latest Paper PDF](https://github.com/bernhard-guillon/ASE2026/releases/download/ase2026-paper-latest/ase2026-latest.pdf)  
 Fallback: [latest release notes](https://github.com/bernhard-guillon/ASE2026/releases/latest)
 
+## Problem statement
+
+Modern AI deployments are commonly embedded in large
+software stacks. In contrast, this project investigates how far a
+compact execution stack can be pushed when neural operations
+are represented as first-class ISA extensions. The objective
+is not to compete with full ML frameworks, but to design
+and validate a minimal, inspectable path from trained model
+weights to executable program behavior on a custom compute
+substrate.
+
 ## What this project builds
 
 This repository implements an end-to-end neural execution toolchain:
