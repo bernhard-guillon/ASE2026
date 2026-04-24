@@ -680,10 +680,95 @@ void process_gui_input(VerilatorRunner& runner, uint32_t initial_char) {
     std::cout << "\nGUI mode closed." << std::endl;
 }
 
+void process_movement_input(VerilatorRunner& runner) {
+    TerminalMode terminal;
+    std::signal(SIGINT, signal_handler);
+    g_should_exit = 0;
+
+    uint32_t current_state = 200;  // Center position (10,10 on 20x20 board)
+    bool waiting_for_prediction = false;
+    uint32_t pending_action = 4;  // No pending action initially
+    uint32_t pending_state = current_state;
+
+    std::cout << "Movement mode active. Use hjkl to move, 'q' to quit." << std::endl;
+    std::cout << "h: left, j: down, k: up, l: right, space: stay" << std::endl;
+
+    while (!g_should_exit) {
+        unsigned char ch = 0;
+        if (read(STDIN_FILENO, &ch, 1) == 1) {
+            if (ch == 'q') {
+                g_should_exit = 1;
+                break;
+            }
+
+            if (!waiting_for_prediction) {
+                // Map hjkl keys to movement actions
+                uint32_t action_id = 4;  // Default: stay (action 4)
+                if (ch == 'h') action_id = 2;  // left
+                else if (ch == 'j') action_id = 1;  // down
+                else if (ch == 'k') action_id = 0;  // up
+                else if (ch == 'l') action_id = 3;  // right
+                else if (ch == ' ') action_id = 4;  // stay
+
+                // Store pending action and current state
+                pending_action = action_id;
+                pending_state = current_state;
+                waiting_for_prediction = true;
+
+                std::cout << "Key: '" << ch << "' Action: " << action_id;
+                std::cout << " State: " << current_state << " (waiting for neural prediction)" << std::endl;
+            }
+        }
+
+        // Pack state and action into a0 register for neural network
+        uint32_t packed_code = pending_state | (pending_action << 9);
+        runner.run(500000, true, packed_code);
+
+        // Check if neural network produced output
+        uint8_t fb[FRAMEBUFFER_SIZE];
+        runner.getFramebuffer(fb);
+
+        uint32_t new_state = current_state;
+        uint8_t max_brightness = 0;
+        uint32_t bright_pixel_count = 0;
+
+        for (uint32_t i = 0; i < FRAMEBUFFER_SIZE; ++i) {
+            if (fb[i] > 0) {
+                bright_pixel_count++;
+            }
+            if (fb[i] > max_brightness) {
+                max_brightness = fb[i];
+                new_state = i;
+            }
+        }
+
+        std::cout << "Framebuffer stats: " << bright_pixel_count << " bright pixels, max brightness: " << (int)max_brightness << std::endl;
+
+        // If we were waiting for a prediction and got valid output, process it
+        if (waiting_for_prediction && max_brightness > 0 && new_state != current_state) {
+            current_state = new_state;
+            waiting_for_prediction = false;
+            std::cout << "Neural prediction: moved to " << current_state;
+            std::cout << " (x:" << (current_state % 20) << ", y:" << (current_state / 20) << ")" << std::endl;
+        }
+
+        std::cout << "\033[2J\033[H";
+        runner.renderFramebuffer();
+
+        if (runner.isHalted() || runner.hasSyscallError()) {
+            break;
+        }
+        usleep(50000);
+    }
+
+    std::cout << "\nMovement mode closed." << std::endl;
+}
+
 void printUsage(const char* prog) {
     std::cerr << "Usage: " << prog << " <binary_file> [options]\n"
               << "Options:\n"
               << "  --gui                 Interactive GUI mode\n"
+              << "  --movement            Interactive movement mode (hjkl keys)\n"
               << "  --char <char>         Set a0 to ASCII code of character\n"
               << "  --char-code <code>    Set a0 to numeric code (uint32)\n"
               << "  --cycles <count>      Max cycles (default: 1000000)\n"
@@ -704,6 +789,7 @@ int main(int argc, char** argv) {
     const char* binary_file = argv[1];
     bool verbose = false;
     bool gui_mode = false;
+    bool movement_mode = false;
     bool render_fb = false;
     bool dump_fb = false;
     bool char_specified = false;
@@ -717,6 +803,8 @@ int main(int argc, char** argv) {
             verbose = true;
         } else if (strcmp(argv[i], "--gui") == 0) {
             gui_mode = true;
+        } else if (strcmp(argv[i], "--movement") == 0) {
+            movement_mode = true;
         } else if (strcmp(argv[i], "--render-framebuffer") == 0) {
             render_fb = true;
         } else if (strcmp(argv[i], "--dump-framebuffer") == 0) {
@@ -802,7 +890,9 @@ int main(int argc, char** argv) {
     }
     
     runner.start();
-    if (gui_mode) {
+    if (movement_mode) {
+        process_movement_input(runner);
+    } else if (gui_mode) {
         process_gui_input(runner, char_code);
     } else {
         runner.run(max_cycles, char_specified, char_code);
