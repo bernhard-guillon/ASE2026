@@ -437,6 +437,12 @@ if(RISCV_TOOLCHAIN_FOUND)
         set(NEURAL_OP_ENHANCE8PMAC4_BIN "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac4.bin")
         set(NEURAL_MODEL_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
         set(NEURAL_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_interactive.py")
+        set(MOVEMENT_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/export_intermediate.py")
+        set(MOVEMENT_MODEL_CHECKPOINT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/movement_model.pth")
+        set(MOVEMENT_JSON "${CMAKE_CURRENT_BINARY_DIR}/movement_generator.json")
+        set(MOVEMENT_ASM "${CMAKE_CURRENT_BINARY_DIR}/movement.s")
+        set(MOVEMENT_OBJ "${CMAKE_CURRENT_BINARY_DIR}/movement.o")
+        set(MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/movement.elf")
 
         add_custom_command(
             OUTPUT ${NEURAL_ASM}
@@ -463,6 +469,42 @@ if(RISCV_TOOLCHAIN_FOUND)
         )
 
         add_custom_target(neural_elf ALL DEPENDS ${NEURAL_ELF})
+
+        add_custom_command(
+            OUTPUT ${MOVEMENT_JSON}
+            COMMAND ${PYTHON_EXECUTABLE} ${MOVEMENT_EXPORT_SCRIPT}
+                --checkpoint ${MOVEMENT_MODEL_CHECKPOINT}
+                --output ${MOVEMENT_JSON}
+            DEPENDS ${MOVEMENT_EXPORT_SCRIPT} ${MOVEMENT_MODEL_CHECKPOINT}
+            COMMENT "Exporting movement_generator.json from movement model checkpoint"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${MOVEMENT_ASM}
+            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${MOVEMENT_ASM} ${MOVEMENT_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${MOVEMENT_JSON}
+            COMMENT "Generating movement.s from movement model JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${MOVEMENT_OBJ}
+            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${MOVEMENT_OBJ} ${MOVEMENT_ASM}
+            DEPENDS ${MOVEMENT_ASM}
+            COMMENT "Assembling movement.o"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${MOVEMENT_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${MOVEMENT_ELF} ${MOVEMENT_OBJ}
+            DEPENDS ${MOVEMENT_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            COMMENT "Linking movement.elf"
+            VERBATIM
+        )
+
+        add_custom_target(movement_elf ALL DEPENDS ${MOVEMENT_ELF})
 
         if(RV32AS_EXECUTABLE)
             add_custom_command(

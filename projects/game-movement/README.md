@@ -68,3 +68,13 @@ python3 -m pytest blackbox_tests/test_game_movement_replay.py -v
 cd build
 ctest -R game_movement --output-on-failure
 ```
+
+Build-ready movement ELF (easy target):
+
+```bash
+cd ../../emulator
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target movement_elf -j4
+```
+
+Output: `projects/emulator/build/movement.elf`
