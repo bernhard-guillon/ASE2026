@@ -106,6 +106,16 @@ cd projects/emulator/build
 - Neural machine reference: `documentation/neural-risc-v-machine.md`
 - Benchmark data: `documentation/collected-data/`
 
+## 🔍 Project Audit
+
+A comprehensive audit of this project is available in [AUDIT.md](AUDIT.md) including:
+- **Research Evaluation**: Academic assessment of novelty, practical value, and impact
+- **Strengths/Weaknesses**: Detailed checklist of project qualities
+- **Professor's Rating**: Objective grading (8.5/10 research, 7.5/10 presentation)
+- **Improvement Roadmap**: Prioritized recommendations for enhancement
+
+This audit provides both a snapshot of current project health and a roadmap for future development. Ideal for new contributors, researchers evaluating the work, or maintainers planning next steps.
+
 ## Subproject READMEs
 
 - [Character Generation](projects/character-generation/README.md)
