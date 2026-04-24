@@ -297,7 +297,21 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_static_char_gen_basic.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
-    
+
+    # Game movement replay test (packed a0 input mapping)
+    add_test(
+        NAME python/game_movement/replay_subset
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_replay.py -k replay_subset -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    # Game movement readiness gate (determinism, border safety, repeated-loop stability)
+    add_test(
+        NAME python/game_movement/readiness_gate
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_replay.py -k readiness_gate -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+     
     # ELF Loader Tests
     add_test(
         NAME python/elf_loader/blackbox
@@ -423,6 +437,19 @@ if(RISCV_TOOLCHAIN_FOUND)
         set(NEURAL_OP_ENHANCE8PMAC4_BIN "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac4.bin")
         set(NEURAL_MODEL_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
         set(NEURAL_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_interactive.py")
+        set(MOVEMENT_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/export_intermediate.py")
+        set(MOVEMENT_MODEL_CHECKPOINT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/movement_model.pth")
+        # Use pre-exported JSON if available, otherwise generate in build directory
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/movement_generator.json")
+            set(MOVEMENT_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/movement_generator.json")
+            message(STATUS "Using pre-exported movement model JSON from source directory")
+        else()
+            set(MOVEMENT_JSON "${CMAKE_CURRENT_BINARY_DIR}/movement_generator.json")
+            message(STATUS "Will generate movement model JSON in build directory")
+        endif()
+        set(MOVEMENT_ASM "${CMAKE_CURRENT_BINARY_DIR}/movement.s")
+        set(MOVEMENT_OBJ "${CMAKE_CURRENT_BINARY_DIR}/movement.o")
+        set(MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/movement.elf")
 
         add_custom_command(
             OUTPUT ${NEURAL_ASM}
@@ -449,6 +476,48 @@ if(RISCV_TOOLCHAIN_FOUND)
         )
 
         add_custom_target(neural_elf ALL DEPENDS ${NEURAL_ELF})
+
+        # Custom command to ensure movement model exists and export JSON
+        set(MOVEMENT_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_movement_model.py")
+        add_custom_command(
+            OUTPUT ${MOVEMENT_JSON}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src
+            COMMAND ${CMAKE_COMMAND} -E env 
+                MOVEMENT_MODEL_CHECKPOINT=${MOVEMENT_MODEL_CHECKPOINT} 
+                MOVEMENT_TRAIN_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/train.py 
+                MOVEMENT_EXPORT_SCRIPT=${MOVEMENT_EXPORT_SCRIPT} 
+                MOVEMENT_JSON_OUTPUT=${MOVEMENT_JSON} 
+                ${PYTHON_EXECUTABLE} ${MOVEMENT_BUILD_SCRIPT}
+            DEPENDS ${MOVEMENT_BUILD_SCRIPT} ${MOVEMENT_EXPORT_SCRIPT}
+            COMMENT "Building movement model (training if needed and exporting JSON)"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${MOVEMENT_ASM}
+            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${MOVEMENT_ASM} ${MOVEMENT_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${MOVEMENT_JSON}
+            COMMENT "Generating movement.s from movement model JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${MOVEMENT_OBJ}
+            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${MOVEMENT_OBJ} ${MOVEMENT_ASM}
+            DEPENDS ${MOVEMENT_ASM}
+            COMMENT "Assembling movement.o"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${MOVEMENT_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${MOVEMENT_ELF} ${MOVEMENT_OBJ}
+            DEPENDS ${MOVEMENT_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            COMMENT "Linking movement.elf"
+            VERBATIM
+        )
+
+        add_custom_target(movement_elf ALL DEPENDS ${MOVEMENT_ELF})
 
         if(RV32AS_EXECUTABLE)
             add_custom_command(

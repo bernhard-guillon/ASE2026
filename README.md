@@ -58,6 +58,7 @@ From `documentation/collected-data/phase25-neural-lane-cycle-comparison.json`:
 | Subproject | Path | Purpose |
 | --- | --- | --- |
 | Character generation | `projects/character-generation/` | Train and validate the PyTorch model (`255 -> 256 -> 256 -> 400`) |
+| Game movement | `projects/game-movement/` | Train deterministic `20x20` player-movement transitions (`state + action -> next state`) |
 | Weight export | `projects/weight-export/` | Convert PyTorch checkpoints into JSON + compact binary payloads |
 | RV32 assembler | `projects/rv32_assembler/` | Assemble RV32I/RV32F + project neural custom instructions |
 | Emulator + RTL flow | `projects/emulator/` | Execute binaries on C++ emulator and Verilator; run full validation |
@@ -108,6 +109,7 @@ cd projects/emulator/build
 ## Subproject READMEs
 
 - [Character Generation](projects/character-generation/README.md)
+- [Game Movement](projects/game-movement/README.md)
 - [Weight Export](projects/weight-export/README.md)
 - [RV32 Assembler](projects/rv32_assembler/README.md)
 - [Emulator](projects/emulator/README.md)

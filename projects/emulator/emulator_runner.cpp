@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstring>
 #include <iomanip>
+#include <limits>
 #include <termios.h>
 #include <unistd.h>
 #include <signal.h>
@@ -108,14 +109,126 @@ void process_gui_input(Emulator& emulator) {
     std::cout << "\nGUI mode closed." << std::endl;
 }
 
+// Process keyboard input for interactive movement mode
+void process_movement_input(Emulator& emulator) {
+    TerminalMode terminal;
+    FramebufferRenderer renderer;
+    signal(SIGINT, signal_handler);
+    
+    g_emulator = &emulator;
+    g_should_exit = false;
+    
+    std::cout << "Movement mode active. Use hjkl to move, 'q' to quit." << std::endl;
+    std::cout << "h: left, j: down, k: up, l: right, space: stay" << std::endl;
+    std::cout << std::endl;
+    
+    // Initial state: center of board (position 200 out of 400)
+    uint32_t current_state = 200;  // Center position (10,10 on 20x20 board)
+    
+    bool waiting_for_prediction = false;
+    uint32_t pending_action = 4;  // No pending action initially
+    uint32_t pending_state = current_state;
+    
+    while (!g_should_exit) {
+        // Try to read a key without blocking
+        unsigned char ch = 0;
+        if (read(STDIN_FILENO, &ch, 1) == 1) {
+            if (ch == 'q') {
+                g_should_exit = true;
+                break;
+            }
+            
+            if (!waiting_for_prediction) {
+                // Map hjkl keys to movement actions
+                uint32_t action_id = 4;  // Default: stay (action 4)
+                if (ch == 'h') action_id = 2;  // left
+                else if (ch == 'j') action_id = 1;  // down
+                else if (ch == 'k') action_id = 0;  // up
+                else if (ch == 'l') action_id = 3;  // right
+                else if (ch == ' ') action_id = 4;  // stay
+                
+                // Store pending action and current state
+                pending_action = action_id;
+                pending_state = current_state;
+                waiting_for_prediction = true;
+                
+                std::cout << "Key: '" << ch << "' Action: " << action_id;
+                std::cout << " State: " << current_state << " (waiting for neural prediction)" << std::endl;
+            }
+        }
+        
+        // Execute instructions per iteration (enough for neural network to process)
+        // Movement model needs significant cycles to complete forward pass
+        for (int i = 0; i < 500000 && !g_should_exit; ++i) {
+            try {
+                emulator.step();
+                if (emulator.isHalted()) {
+                    g_should_exit = true;
+                    break;
+                }
+            } catch (const std::exception& e) {
+                // Ignore unsupported instructions during movement mode
+                // Program may be in a loop waiting for input
+                break;
+            }
+        }
+        
+        // Update current state based on framebuffer (neural network output)
+        // Read framebuffer to find the new position of '#'
+        uint32_t framebuffer_base = 0x20000;
+        uint32_t new_state = current_state;  // Default: no change
+        
+        // Find the brightest pixel in framebuffer (neural network output)
+        uint8_t max_brightness = 0;
+        uint32_t bright_pixel_count = 0;
+        for (uint32_t i = 0; i < 400; ++i) {
+            uint8_t pixel = emulator.getMemory().read8(framebuffer_base + i);
+            if (pixel > 0) {
+                bright_pixel_count++;
+            }
+            if (pixel > max_brightness) {
+                max_brightness = pixel;
+                new_state = i;
+            }
+        }
+        
+        std::cout << "Framebuffer stats: " << bright_pixel_count << " bright pixels, max brightness: " << (int)max_brightness << std::endl;
+        
+        // If we were waiting for a prediction and got valid output, process it
+        if (waiting_for_prediction && max_brightness > 0 && new_state != current_state) {
+            current_state = new_state;
+            waiting_for_prediction = false;
+            std::cout << "Neural prediction: moved to " << current_state;
+            std::cout << " (x:" << (current_state % 20) << ", y:" << (current_state / 20) << ")" << std::endl;
+            
+            // Update a0 register with new state for next prediction
+            uint32_t packed_code = current_state | (pending_action << 9);
+            emulator.getCPU().setReg(10, packed_code);
+        } else if (waiting_for_prediction && max_brightness == 0) {
+            // Neural network still warming up, keep the pending input
+            uint32_t packed_code = pending_state | (pending_action << 9);
+            emulator.getCPU().setReg(10, packed_code);
+        }
+        
+        // Render framebuffer to terminal
+        renderer.render(emulator.getMemory());
+        
+        // Small sleep to prevent busy-waiting
+        usleep(50000);  // 50ms for smoother movement
+    }
+    
+    std::cout << "\nMovement mode closed." << std::endl;
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--char <char>] [--cycles <count>] [--render-framebuffer] [--dump-framebuffer] [--verbose]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--movement] [--char <char>] [--char-code <uint32>] [--cycles <count>] [--render-framebuffer] [--dump-framebuffer] [--verbose]" << std::endl;
         return 1;
     }
     
     bool verbose = false;
     bool gui_mode = false;
+    bool movement_mode = false;
     bool render_fb = false;
     bool dump_fb = false;
     bool char_specified = false;
@@ -133,6 +246,8 @@ int main(int argc, char** argv) {
     for (int i = 2; i < argc; ++i) {
         if (std::strcmp(argv[i], "--gui") == 0) {
             gui_mode = true;
+        } else if (std::strcmp(argv[i], "--movement") == 0) {
+            movement_mode = true;
         } else if (std::strcmp(argv[i], "--verbose") == 0 || std::strcmp(argv[i], "-v") == 0) {
             verbose = true;
         } else if (std::strcmp(argv[i], "--render-framebuffer") == 0) {
@@ -158,9 +273,10 @@ int main(int argc, char** argv) {
         } else if (std::strcmp(argv[i], "--char-code") == 0) {
             if (i + 1 < argc) {
                 char* end = nullptr;
-                unsigned long parsed = std::strtoul(argv[i + 1], &end, 0);
-                if (end == argv[i + 1] || *end != '\0' || parsed > 255) {
-                    std::cerr << "Error: --char-code must be an integer in [0, 255]" << std::endl;
+                unsigned long long parsed = std::strtoull(argv[i + 1], &end, 0);
+                if (end == argv[i + 1] || *end != '\0' ||
+                    parsed > static_cast<unsigned long long>(std::numeric_limits<uint32_t>::max())) {
+                    std::cerr << "Error: --char-code must be an integer in [0, 4294967295]" << std::endl;
                     return 1;
                 }
                 char_specified = true;
@@ -297,7 +413,10 @@ int main(int argc, char** argv) {
     
     // Run the program
     try {
-        if (gui_mode) {
+        if (movement_mode) {
+            // Interactive movement mode
+            process_movement_input(emulator);
+        } else if (gui_mode) {
             // Interactive GUI mode
             process_gui_input(emulator);
         } else {

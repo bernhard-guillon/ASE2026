@@ -22,6 +22,21 @@ cmake --build build -j4
 ctest --test-dir build --output-on-failure
 ```
 
+## Build model ELF targets
+
+```bash
+# Character generator baseline
+cmake --build build --target neural_elf -j4
+
+# Game movement model (exports JSON + compiles movement.elf)
+cmake --build build --target movement_elf -j4
+```
+
+Generated files:
+
+- `build/neural.elf`
+- `build/movement.elf`
+
 ## Useful targeted tests
 
 ```bash
