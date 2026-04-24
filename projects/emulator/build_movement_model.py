@@ -34,7 +34,21 @@ def main():
         ], cwd=train_dir)
         
         if result.returncode != 0:
-            print('ERROR: Failed to train movement model')
+            # Check if this is a dependency error (common in CI environments)
+            if "No module named 'torch'" in result.stderr.decode() or "No module named 'numpy'" in result.stderr.decode():
+                print('ERROR: Python dependencies missing (torch/numpy)')
+                print('To fix this, install dependencies with:')
+                print('  pip install torch numpy')
+                print('  or')
+                print('  python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt')
+                print()
+                print('For CI environments, either:')
+                print('  1. Pre-install dependencies in CI setup')
+                print('  2. Use a pre-trained model checkpoint')
+                print('  3. Skip movement_elf target if not needed')
+            else:
+                print('ERROR: Failed to train movement model')
+                print('STDERR:', result.stderr.decode())
             return 1
     
     # Export the model to JSON format
@@ -47,6 +61,7 @@ def main():
     
     if result.returncode != 0:
         print('ERROR: Failed to export movement model')
+        print('STDERR:', result.stderr.decode())
         return 1
     
     print('Successfully generated movement model JSON')
