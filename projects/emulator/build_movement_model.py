@@ -35,7 +35,8 @@ def main():
         
         if result.returncode != 0:
             # Check if this is a dependency error (common in CI environments)
-            if "No module named 'torch'" in result.stderr.decode() or "No module named 'numpy'" in result.stderr.decode():
+            stderr_str = result.stderr.decode() if result.stderr else ""
+            if "No module named 'torch'" in stderr_str or "No module named 'numpy'" in stderr_str:
                 print('ERROR: Python dependencies missing (torch/numpy)')
                 print('To fix this, install dependencies with:')
                 print('  pip install torch numpy')
@@ -48,7 +49,8 @@ def main():
                 print('  3. Skip movement_elf target if not needed')
             else:
                 print('ERROR: Failed to train movement model')
-                print('STDERR:', result.stderr.decode())
+                if stderr_str:
+                    print('STDERR:', stderr_str)
             return 1
     
     # Export the model to JSON format
@@ -60,8 +62,18 @@ def main():
     ])
     
     if result.returncode != 0:
-        print('ERROR: Failed to export movement model')
-        print('STDERR:', result.stderr.decode())
+        stderr_str = result.stderr.decode() if result.stderr else ""
+        if "No module named 'torch'" in stderr_str or "No module named 'numpy'" in stderr_str:
+            print('ERROR: Python dependencies missing (torch/numpy) for export script')
+            print('The export_intermediate.py script requires PyTorch to convert the model.')
+            print('Solutions:')
+            print('  1. Install PyTorch in CI: pip install torch numpy')
+            print('  2. Commit a pre-exported movement_generator.json file')
+            print('  3. Skip movement_elf target if not essential')
+        else:
+            print('ERROR: Failed to export movement model')
+            if stderr_str:
+                print('STDERR:', stderr_str)
         return 1
     
     print('Successfully generated movement model JSON')
