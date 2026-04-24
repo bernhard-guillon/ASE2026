@@ -471,46 +471,17 @@ if(RISCV_TOOLCHAIN_FOUND)
         add_custom_target(neural_elf ALL DEPENDS ${NEURAL_ELF})
 
         # Custom command to ensure movement model exists and export JSON
+        set(MOVEMENT_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_movement_model.py")
         add_custom_command(
             OUTPUT ${MOVEMENT_JSON}
             COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src
-            COMMAND ${PYTHON_EXECUTABLE} -c "
-import os
-import sys
-import subprocess
-
-checkpoint_path = '${MOVEMENT_MODEL_CHECKPOINT}'
-train_script = os.path.join('${CMAKE_CURRENT_SOURCE_DIR}', '..', 'game-movement', 'src', 'train.py')
-export_script = '${MOVEMENT_EXPORT_SCRIPT}'
-output_path = '${MOVEMENT_JSON}'
-
-# Check if checkpoint exists, if not train the model
-if not os.path.exists(checkpoint_path):
-    print('Movement model checkpoint not found. Training model...')
-    # Train the model (using default parameters: 150 epochs, batch size 64)
-    result = subprocess.run([
-        sys.executable, train_script, '150', '64'
-    ], cwd=os.path.join('${CMAKE_CURRENT_SOURCE_DIR}', '..', 'game-movement', 'src'))
-    
-    if result.returncode != 0:
-        print('ERROR: Failed to train movement model')
-        sys.exit(1)
-
-# Export the model to JSON format
-print('Exporting movement model to JSON...')
-result = subprocess.run([
-    sys.executable, export_script, 
-    '--checkpoint', checkpoint_path,
-    '--output', output_path
-])
-
-if result.returncode != 0:
-    print('ERROR: Failed to export movement model')
-    sys.exit(1)
-
-print('Successfully generated movement model JSON')
-" 
-            DEPENDS ${MOVEMENT_EXPORT_SCRIPT}
+            COMMAND ${CMAKE_COMMAND} -E env 
+                MOVEMENT_MODEL_CHECKPOINT=${MOVEMENT_MODEL_CHECKPOINT} 
+                MOVEMENT_TRAIN_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/train.py 
+                MOVEMENT_EXPORT_SCRIPT=${MOVEMENT_EXPORT_SCRIPT} 
+                MOVEMENT_JSON_OUTPUT=${MOVEMENT_JSON} 
+                ${PYTHON_EXECUTABLE} ${MOVEMENT_BUILD_SCRIPT}
+            DEPENDS ${MOVEMENT_BUILD_SCRIPT} ${MOVEMENT_EXPORT_SCRIPT}
             COMMENT "Building movement model (training if needed and exporting JSON)"
             VERBATIM
         )
