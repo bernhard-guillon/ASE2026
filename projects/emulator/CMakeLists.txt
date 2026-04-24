@@ -470,13 +470,48 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_target(neural_elf ALL DEPENDS ${NEURAL_ELF})
 
+        # Custom command to ensure movement model exists and export JSON
         add_custom_command(
             OUTPUT ${MOVEMENT_JSON}
-            COMMAND ${PYTHON_EXECUTABLE} ${MOVEMENT_EXPORT_SCRIPT}
-                --checkpoint ${MOVEMENT_MODEL_CHECKPOINT}
-                --output ${MOVEMENT_JSON}
-            DEPENDS ${MOVEMENT_EXPORT_SCRIPT} ${MOVEMENT_MODEL_CHECKPOINT}
-            COMMENT "Exporting movement_generator.json from movement model checkpoint"
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src
+            COMMAND ${PYTHON_EXECUTABLE} -c "
+import os
+import sys
+import subprocess
+
+checkpoint_path = '${MOVEMENT_MODEL_CHECKPOINT}'
+train_script = os.path.join('${CMAKE_CURRENT_SOURCE_DIR}', '..', 'game-movement', 'src', 'train.py')
+export_script = '${MOVEMENT_EXPORT_SCRIPT}'
+output_path = '${MOVEMENT_JSON}'
+
+# Check if checkpoint exists, if not train the model
+if not os.path.exists(checkpoint_path):
+    print('Movement model checkpoint not found. Training model...')
+    # Train the model (using default parameters: 150 epochs, batch size 64)
+    result = subprocess.run([
+        sys.executable, train_script, '150', '64'
+    ], cwd=os.path.join('${CMAKE_CURRENT_SOURCE_DIR}', '..', 'game-movement', 'src'))
+    
+    if result.returncode != 0:
+        print('ERROR: Failed to train movement model')
+        sys.exit(1)
+
+# Export the model to JSON format
+print('Exporting movement model to JSON...')
+result = subprocess.run([
+    sys.executable, export_script, 
+    '--checkpoint', checkpoint_path,
+    '--output', output_path
+])
+
+if result.returncode != 0:
+    print('ERROR: Failed to export movement model')
+    sys.exit(1)
+
+print('Successfully generated movement model JSON')
+" 
+            DEPENDS ${MOVEMENT_EXPORT_SCRIPT}
+            COMMENT "Building movement model (training if needed and exporting JSON)"
             VERBATIM
         )
 
