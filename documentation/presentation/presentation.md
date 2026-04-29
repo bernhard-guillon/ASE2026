@@ -20,6 +20,16 @@ Date: 2026-04-29
 
 ---
 
+# Why this matters
+
+* Current AI mostly requires heavy OS + Browser stack
+* Neural networks are universal function approximators - why not use them directly?
+* Perceptron-based computing could eliminate the "abstraction tax" of traditional OS
+* Enables AI-native hardware without legacy baggage
+* Could unlock orders-of-magnitude efficiency gains for specialized workloads
+
+---
+
 # Where we come from
 
 * 1940s-1950s: Punch Cards & Batch Processing
