@@ -8,14 +8,15 @@ theme: default
 Advanced Systems Engineering (ASE2026)
 Paris Lodron University of Salzburg
 Author: Bernhard Guillon
+Date: 2026-04-29
 
 ---
 
-## Research topics
+# Research topics
 
-* Have you ever wonderd why we need a full stack of Operating System and a Browser to run AI workloads?
-* Can't we just use LLMs to create "runable" perceptrons instead of writing tons of code with it?
-* Is it possible to use Perceptron based computing as an operating system?
+* Have you ever wondered why we need a full stack of Operating System and a Browser to run AI workloads?
+* Can't we just use LLMs to create "runnable" perceptrons instead of writing tons of code with it?
+* Is it possible to use Perceptron-based computing as an operating system?
 
 ---
 
@@ -33,9 +34,11 @@ Author: Bernhard Guillon
 # What an operating system does
 
 * Abstracts the hardware
-* Allows multible processes
-* Multible users
-* Tries hard to seperate processes and users from each other
+* Memory management
+* I/O handling
+* Allows multiple processes
+* Multiple users
+* Tries hard to separate processes and users from each other
 
 ---
 
@@ -52,10 +55,10 @@ Author: Bernhard Guillon
 * Assembler for the extensions                                                         [✓]
 * Minimalistic bootloader                                                              [✓]
 * Pytorch for training                                                                 [✓]
-* A "transpiler" for loadable and runable artifact out of the trainend network         [✓]
+* A "transpiler" for loadable and runnable artifact out of the trained network         [✓]
 
 ---
-# Simple character input [0..255] to framebuffer [20x20] output
+## Simple character input [0..255] to framebuffer [20x20] output
 ```
 
                     
@@ -81,7 +84,7 @@ Author: Bernhard Guillon
 ```
 
 ---
-# Moveable character from [h,j,k,l] input in a [20x20] framebuffer
+## Moveable character from [h,j,k,l] input in a [20x20] framebuffer
 ```
                     
                     
@@ -120,7 +123,6 @@ Author: Bernhard Guillon
 |                                                |
 | WALL (left)                                    |
 +------------------------------------------------+
- Input IRQs -> game state update -> neural step -> paddle action
 ```
 
 ---
@@ -135,6 +137,6 @@ Author: Bernhard Guillon
 
 # Thank you
 
-Thanks for your attention I hope you enjoed the presentation!
+Thanks for your attention I hope you've enjoyed the presentation!
 Feel free to ask me anything.
 ---
