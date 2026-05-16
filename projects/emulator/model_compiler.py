@@ -961,6 +961,60 @@ layer_{layer_idx}_forward:
         """Generate code to map character input to network input."""
         input_mapping = (self.metadata or {}).get("input_mapping", "")
         if model_type == "generator":
+            if input_mapping == "squash_fb_key_a0":
+                return f"""
+# Input mapping: squash framebuffer + key one-hot (a0 ASCII)
+# Layout:
+# - input[0..399]   = current framebuffer (0.0 or 1.0)
+# - input[400..654] = key one-hot by ASCII code from a0 (0..254)
+map_input_generator:
+    lui t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) >> 12}
+    addi t0, t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) & 0xFFF}
+
+    # Zero full input buffer
+    li t1, {input_size * 4}
+    xor t2, t2, t2
+.Lclear_input_squash:
+    beq t2, t1, .Lread_fb_squash
+    add t3, t0, t2
+    sw zero, 0(t3)
+    addi t2, t2, 4
+    j .Lclear_input_squash
+
+.Lread_fb_squash:
+    # Read current framebuffer bytes and encode as binary float input.
+    lui t1, {self.MEMORY_LAYOUT["framebuffer_base"] >> 12}
+    li t2, 0
+    li t3, 400
+    lui t6, 0x3F800                 # t6 = 1.0f bits
+
+.Lfb_loop_squash:
+    bge t2, t3, .Lkey_input_squash
+    add t4, t1, t2
+    lbu t5, 0(t4)
+    beq t5, zero, .Lfb_next_squash
+    slli t4, t2, 2
+    add t4, t0, t4
+    sw t6, 0(t4)
+
+.Lfb_next_squash:
+    addi t2, t2, 1
+    j .Lfb_loop_squash
+
+.Lkey_input_squash:
+    # key one-hot from ASCII code in a0
+    li t1, 255
+    bgeu a0, t1, .Linput_done_squash
+    li t2, 400
+    add t2, t2, a0
+    slli t2, t2, 2
+    add t2, t0, t2
+    sw t6, 0(t2)
+
+.Linput_done_squash:
+    ret
+
+"""
             if input_mapping == "movement_packed_a0":
                 return f"""
 # Input mapping: packed movement code (a0) -> [board one-hot + action one-hot]
@@ -1095,6 +1149,223 @@ map_input_recognizer:
         """Generate code to map network output to framebuffer."""
         input_mapping = (self.metadata or {}).get("input_mapping", "")
         if model_type == "generator":
+            if input_mapping == "squash_fb_key_a0":
+                return f"""
+# Output mapping: squash top-4 active cells -> framebuffer
+# Paddle (x=19) shown as '|', ball shown as '#'
+map_output_generator:
+    li t0, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
+    li t1, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
+
+    # Clear framebuffer
+    li t2, 0
+    li t3, {output_size}
+.Lclear_fb_squash:
+    bge t2, t3, .Ltop4_init_squash
+    add a1, t0, t2
+    sb zero, 0(a1)
+    addi t2, t2, 1
+    j .Lclear_fb_squash
+
+.Ltop4_init_squash:
+    # top indices: t4,t5,t6,a0 (best..4th)
+    li t4, 0
+    li t5, 0
+    li t6, 0
+    li a0, 0
+
+    # top values: fa1..fa4 initialized to -inf
+    li a1, 0xFF800000
+    fmv.w.x fa1, a1
+    fmv.w.x fa2, a1
+    fmv.w.x fa3, a1
+    fmv.w.x fa4, a1
+
+    li t2, 0
+.Ltop4_loop_squash:
+    bge t2, t3, .Ltop4_done_squash
+
+    slli a1, t2, 2
+    add a1, t1, a1
+    flw fa0, 0(a1)                  # candidate value
+
+    # if fa0 > fa1: insert at rank 1
+    flt.s a2, fa1, fa0
+    bne a2, zero, .Linsert_rank1_squash
+
+    # if fa0 > fa2: insert at rank 2
+    flt.s a2, fa2, fa0
+    bne a2, zero, .Linsert_rank2_squash
+
+    # if fa0 > fa3: insert at rank 3
+    flt.s a2, fa3, fa0
+    bne a2, zero, .Linsert_rank3_squash
+
+    # if fa0 > fa4: insert at rank 4
+    flt.s a2, fa4, fa0
+    bne a2, zero, .Linsert_rank4_squash
+    j .Ltop4_next_squash
+
+.Linsert_rank1_squash:
+    fsgnj.s fa4, fa3, fa3
+    addi a0, t6, 0
+    fsgnj.s fa3, fa2, fa2
+    addi t6, t5, 0
+    fsgnj.s fa2, fa1, fa1
+    addi t5, t4, 0
+    fsgnj.s fa1, fa0, fa0
+    addi t4, t2, 0
+    j .Ltop4_next_squash
+
+.Linsert_rank2_squash:
+    fsgnj.s fa4, fa3, fa3
+    addi a0, t6, 0
+    fsgnj.s fa3, fa2, fa2
+    addi t6, t5, 0
+    fsgnj.s fa2, fa0, fa0
+    addi t5, t2, 0
+    j .Ltop4_next_squash
+
+.Linsert_rank3_squash:
+    fsgnj.s fa4, fa3, fa3
+    addi a0, t6, 0
+    fsgnj.s fa3, fa0, fa0
+    addi t6, t2, 0
+    j .Ltop4_next_squash
+
+.Linsert_rank4_squash:
+    fsgnj.s fa4, fa0, fa0
+    addi a0, t2, 0
+
+.Ltop4_next_squash:
+    addi t2, t2, 1
+    j .Ltop4_loop_squash
+
+.Ltop4_done_squash:
+    # Mark top-4 cells as active
+    # Paddle is at x=19 (column 19), which means indices: 19, 39, 59, ..., 379
+    # (i.e., index = y*20 + 19 for y in 0..19)
+    # Use 127 for paddle (|), 255 for ball (#)
+
+    # Position 1 (t4) - check if t4 is a paddle position
+    li a1, 255
+    li a2, 19
+    beq t4, a2, .Lis_paddle1_squash
+    li a2, 39
+    beq t4, a2, .Lis_paddle1_squash
+    li a2, 59
+    beq t4, a2, .Lis_paddle1_squash
+    li a2, 79
+    beq t4, a2, .Lis_paddle1_squash
+    li a2, 99
+    beq t4, a2, .Lis_paddle1_squash
+    li a2, 119
+    beq t4, a2, .Lis_paddle1_squash
+    li a2, 139
+    beq t4, a2, .Lis_paddle1_squash
+    li a2, 159
+    beq t4, a2, .Lis_paddle1_squash
+    li a2, 179
+    beq t4, a2, .Lis_paddle1_squash
+    li a2, 199
+    beq t4, a2, .Lis_paddle1_squash
+    j .Lnot_paddle1_squash
+.Lis_paddle1_squash:
+    li a1, 127
+.Lnot_paddle1_squash:
+    add a2, t0, t4
+    sb a1, 0(a2)
+
+    # Position 2 (t5)
+    li a1, 255
+    li a2, 19
+    beq t5, a2, .Lis_paddle2_squash
+    li a2, 39
+    beq t5, a2, .Lis_paddle2_squash
+    li a2, 59
+    beq t5, a2, .Lis_paddle2_squash
+    li a2, 79
+    beq t5, a2, .Lis_paddle2_squash
+    li a2, 99
+    beq t5, a2, .Lis_paddle2_squash
+    li a2, 119
+    beq t5, a2, .Lis_paddle2_squash
+    li a2, 139
+    beq t5, a2, .Lis_paddle2_squash
+    li a2, 159
+    beq t5, a2, .Lis_paddle2_squash
+    li a2, 179
+    beq t5, a2, .Lis_paddle2_squash
+    li a2, 199
+    beq t5, a2, .Lis_paddle2_squash
+    j .Lnot_paddle2_squash
+.Lis_paddle2_squash:
+    li a1, 127
+.Lnot_paddle2_squash:
+    add a2, t0, t5
+    sb a1, 0(a2)
+
+    # Position 3 (t6)
+    li a1, 255
+    li a2, 19
+    beq t6, a2, .Lis_paddle3_squash
+    li a2, 39
+    beq t6, a2, .Lis_paddle3_squash
+    li a2, 59
+    beq t6, a2, .Lis_paddle3_squash
+    li a2, 79
+    beq t6, a2, .Lis_paddle3_squash
+    li a2, 99
+    beq t6, a2, .Lis_paddle3_squash
+    li a2, 119
+    beq t6, a2, .Lis_paddle3_squash
+    li a2, 139
+    beq t6, a2, .Lis_paddle3_squash
+    li a2, 159
+    beq t6, a2, .Lis_paddle3_squash
+    li a2, 179
+    beq t6, a2, .Lis_paddle3_squash
+    li a2, 199
+    beq t6, a2, .Lis_paddle3_squash
+    j .Lnot_paddle3_squash
+.Lis_paddle3_squash:
+    li a1, 127
+.Lnot_paddle3_squash:
+    add a2, t0, t6
+    sb a1, 0(a2)
+
+    # Position 4 (a0)
+    li a1, 255
+    li a2, 19
+    beq a0, a2, .Lis_paddle4_squash
+    li a2, 39
+    beq a0, a2, .Lis_paddle4_squash
+    li a2, 59
+    beq a0, a2, .Lis_paddle4_squash
+    li a2, 79
+    beq a0, a2, .Lis_paddle4_squash
+    li a2, 99
+    beq a0, a2, .Lis_paddle4_squash
+    li a2, 119
+    beq a0, a2, .Lis_paddle4_squash
+    li a2, 139
+    beq a0, a2, .Lis_paddle4_squash
+    li a2, 159
+    beq a0, a2, .Lis_paddle4_squash
+    li a2, 179
+    beq a0, a2, .Lis_paddle4_squash
+    li a2, 199
+    beq a0, a2, .Lis_paddle4_squash
+    j .Lnot_paddle4_squash
+.Lis_paddle4_squash:
+    li a1, 127
+.Lnot_paddle4_squash:
+    add a2, t0, a0
+    sb a1, 0(a2)
+
+    ret
+
+"""
             if input_mapping == "movement_packed_a0":
                 return f"""
 # Output mapping: movement argmax -> single active framebuffer cell

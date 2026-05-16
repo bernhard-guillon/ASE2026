@@ -311,6 +311,12 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_replay.py -k readiness_gate -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+
+    add_test(
+        NAME python/game_movement/squash_elf_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_elf_smoke.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
      
     # ELF Loader Tests
     add_test(
@@ -437,6 +443,9 @@ if(RISCV_TOOLCHAIN_FOUND)
         set(NEURAL_OP_ENHANCE8PMAC4_BIN "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac4.bin")
         set(NEURAL_MODEL_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
         set(NEURAL_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_interactive.py")
+        # model_compiler_interactive.py subclasses/imports model_compiler.py, so
+        # asm generation must also depend on the core compiler to avoid stale outputs.
+        set(NEURAL_COMPILER_CORE "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler.py")
         set(MOVEMENT_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/export_intermediate.py")
         set(MOVEMENT_MODEL_CHECKPOINT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/movement_model.pth")
         # Use pre-exported JSON if available, otherwise generate in build directory
@@ -450,11 +459,17 @@ if(RISCV_TOOLCHAIN_FOUND)
         set(MOVEMENT_ASM "${CMAKE_CURRENT_BINARY_DIR}/movement.s")
         set(MOVEMENT_OBJ "${CMAKE_CURRENT_BINARY_DIR}/movement.o")
         set(MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/movement.elf")
+            set(GAME_MOVEMENT_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/export_squash_intermediate.py")
+            set(GAME_MOVEMENT_MODEL_CHECKPOINT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/squash_model.pth")
+            set(GAME_MOVEMENT_JSON "${CMAKE_CURRENT_BINARY_DIR}/game-movement_generator.json")
+            set(GAME_MOVEMENT_ASM "${CMAKE_CURRENT_BINARY_DIR}/game-movement.s")
+            set(GAME_MOVEMENT_OBJ "${CMAKE_CURRENT_BINARY_DIR}/game-movement.o")
+            set(GAME_MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/game-movement.elf")
 
         add_custom_command(
             OUTPUT ${NEURAL_ASM}
             COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${NEURAL_ASM} ${NEURAL_MODEL_JSON}
-            DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
             COMMENT "Generating neural.s from model JSON"
             VERBATIM
         )
@@ -496,7 +511,7 @@ if(RISCV_TOOLCHAIN_FOUND)
         add_custom_command(
             OUTPUT ${MOVEMENT_ASM}
             COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${MOVEMENT_ASM} ${MOVEMENT_JSON}
-            DEPENDS ${NEURAL_COMPILER} ${MOVEMENT_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${MOVEMENT_JSON}
             COMMENT "Generating movement.s from movement model JSON"
             VERBATIM
         )
@@ -519,11 +534,53 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_target(movement_elf ALL DEPENDS ${MOVEMENT_ELF})
 
+        # Build game-movement.elf from squash model (j/k input + 20x20 framebuffer output)
+        set(GAME_MOVEMENT_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_game_movement_model.py")
+        add_custom_command(
+            OUTPUT ${GAME_MOVEMENT_JSON}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src
+            COMMAND ${CMAKE_COMMAND} -E env
+                GAME_MOVEMENT_MODEL_CHECKPOINT=${GAME_MOVEMENT_MODEL_CHECKPOINT}
+                GAME_MOVEMENT_TRAIN_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/train_squash.py
+                GAME_MOVEMENT_EXPORT_SCRIPT=${GAME_MOVEMENT_EXPORT_SCRIPT}
+                GAME_MOVEMENT_JSON_OUTPUT=${GAME_MOVEMENT_JSON}
+                ${PYTHON_EXECUTABLE} ${GAME_MOVEMENT_BUILD_SCRIPT}
+            DEPENDS ${GAME_MOVEMENT_BUILD_SCRIPT} ${GAME_MOVEMENT_EXPORT_SCRIPT}
+            COMMENT "Building game movement model (train if needed, then export JSON)"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${GAME_MOVEMENT_ASM}
+            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${GAME_MOVEMENT_ASM} ${GAME_MOVEMENT_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${GAME_MOVEMENT_JSON}
+            COMMENT "Generating game-movement.s from squash model JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${GAME_MOVEMENT_OBJ}
+            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${GAME_MOVEMENT_OBJ} ${GAME_MOVEMENT_ASM}
+            DEPENDS ${GAME_MOVEMENT_ASM}
+            COMMENT "Assembling game-movement.o"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${GAME_MOVEMENT_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${GAME_MOVEMENT_ELF} ${GAME_MOVEMENT_OBJ}
+            DEPENDS ${GAME_MOVEMENT_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            COMMENT "Linking game-movement.elf"
+            VERBATIM
+        )
+
+        add_custom_target(game_movement_elf DEPENDS ${GAME_MOVEMENT_ELF})
+
         if(RV32AS_EXECUTABLE)
             add_custom_command(
                 OUTPUT ${NEURAL_OPSX77_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops -o ${NEURAL_OPSX77_ASM} -b ${NEURAL_OPSX77_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-ai-opsx77.s from model JSON"
                 VERBATIM
             )
@@ -549,7 +606,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b -o ${NEURAL_OP_ENHANCE_ASM} -b ${NEURAL_OP_ENHANCE_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance.s from model JSON"
                 VERBATIM
             )
@@ -575,7 +632,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE4_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 4x -o ${NEURAL_OP_ENHANCE4_ASM} -b ${NEURAL_OP_ENHANCE4_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance4.s from model JSON"
                 VERBATIM
             )
@@ -601,7 +658,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE8_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8x -o ${NEURAL_OP_ENHANCE8_ASM} -b ${NEURAL_OP_ENHANCE8_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance8.s from model JSON"
                 VERBATIM
             )
@@ -627,7 +684,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE8PMAC_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8xpmac -o ${NEURAL_OP_ENHANCE8PMAC_ASM} -b ${NEURAL_OP_ENHANCE8PMAC_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance8pmac.s from model JSON"
                 VERBATIM
             )
@@ -653,7 +710,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE8PMAC2_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8xpmac2 -o ${NEURAL_OP_ENHANCE8PMAC2_ASM} -b ${NEURAL_OP_ENHANCE8PMAC2_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance8pmac2.s from model JSON"
                 VERBATIM
             )
@@ -679,7 +736,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE8PMAC3_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8xpmac3 -o ${NEURAL_OP_ENHANCE8PMAC3_ASM} -b ${NEURAL_OP_ENHANCE8PMAC3_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance8pmac3.s from model JSON"
                 VERBATIM
             )
@@ -705,7 +762,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE8PMAC4_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8xpmac4 -o ${NEURAL_OP_ENHANCE8PMAC4_ASM} -b ${NEURAL_OP_ENHANCE8PMAC4_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance8pmac4.s from model JSON"
                 VERBATIM
             )
