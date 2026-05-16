@@ -78,3 +78,28 @@ cmake --build build --target movement_elf -j4
 ```
 
 Output: `projects/emulator/build/movement.elf`
+
+## Throwaway terminal squash prototype
+
+Prototype path: `projects/game-movement/prototype/terminal_squash.py`
+
+```bash
+cd prototype
+python3 terminal_squash.py
+```
+
+Controls:
+
+- `up/down` arrows (or `w/s`): move paddle by one cell per tick
+- `p`: write ASCII screenshot to `prototype/screenshots/`
+- `r`: reset game
+- `space`: pause/resume
+- `q`: quit
+
+Quick non-interactive check:
+
+```bash
+cd prototype
+python3 test_squash_logic.py
+python3 terminal_squash.py --headless-ticks 80 --script "ddddddssssssuuuuuu" --seed 7
+```
