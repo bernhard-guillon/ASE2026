@@ -21,11 +21,29 @@ from counter255_oracle import COUNTER255_MODULUS
 
 
 def build_counter255_weights() -> tuple[np.ndarray, np.ndarray]:
+    """
+    Build counter255 weights that count starting from ASCII 'a' (97) and up.
+    
+    Maps: counter_tick_n -> chargen_input = (n + 97) % 255
+    
+    The permutation matrix maps:
+        output[j] = input[(j - 1 - 97) mod 255]
+        which computes: new_counter = (old_counter + 1) mod 255
+        and: chargen_input = (counter + 97) mod 255
+    """
     weights = np.zeros((COUNTER255_MODULUS, COUNTER255_MODULUS), dtype=np.float32)
     biases = np.zeros((COUNTER255_MODULUS,), dtype=np.float32)
+    
+    # Offset: ASCII 'a' = 97
+    OFFSET = 97
+    
     for out_idx in range(COUNTER255_MODULUS):
-        in_idx = (out_idx - 1) % COUNTER255_MODULUS
+        # out_idx represents the next counter state
+        # We want: output_idx = (input_idx + 1 + OFFSET) % 255
+        # So input_idx = (output_idx - 1 - OFFSET) % 255
+        in_idx = (out_idx - 1 - OFFSET) % COUNTER255_MODULUS
         weights[in_idx, out_idx] = 1.0
+    
     return weights, biases
 
 
@@ -40,7 +58,7 @@ def build_counter255_intermediate() -> dict:
             "framework": "oracle",
             "input_mapping": "counter255_a0_feedback",
             "counter_modulus": COUNTER255_MODULUS,
-            "description": "Deterministic modulo-255 counter network: n -> (n+1) mod 255",
+        "description": "Deterministic modulo-255 counter network: outputs chargen_index = (counter + 97) mod 255, starting at ASCII 'a'",
         },
         "layers": [
             {
