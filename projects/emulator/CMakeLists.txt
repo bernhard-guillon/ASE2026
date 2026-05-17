@@ -512,6 +512,16 @@ if(RISCV_TOOLCHAIN_FOUND)
             set(COUNTER_CHAR_COMBINED_ASM "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined.s")
             set(COUNTER_CHAR_COMBINED_OBJ "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined.o")
             set(COUNTER_CHAR_COMBINED_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined.elf")
+            set(COUNTER_CHAR_STATIC_OFFSET_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_static.py")
+            set(COUNTER_CHAR_STATIC_CHARGEN_BASE_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
+            set(COUNTER_CHAR_STATIC_COMPOSE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_static_compose.py")
+            set(COUNTER_CHAR_STATIC_OFFSET_JSON_TEMP "${CMAKE_CURRENT_BINARY_DIR}/counter_char_static_offset_temp.json")
+            set(COUNTER_CHAR_STATIC_CHARGEN_JSON_TEMP "${CMAKE_CURRENT_BINARY_DIR}/counter_char_static_chargen_temp.json")
+            set(COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/counter-char-static_generator.json")
+            set(COUNTER_CHAR_STATIC_COMBINED_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_counter_char_static.py")
+            set(COUNTER_CHAR_STATIC_ASM "${CMAKE_CURRENT_BINARY_DIR}/counter-char-static.s")
+            set(COUNTER_CHAR_STATIC_OBJ "${CMAKE_CURRENT_BINARY_DIR}/counter-char-static.o")
+            set(COUNTER_CHAR_STATIC_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter-char-static.elf")
 
         add_custom_command(
             OUTPUT ${NEURAL_ASM}
@@ -743,6 +753,48 @@ if(RISCV_TOOLCHAIN_FOUND)
         )
 
         add_custom_target(counter_char_combined_elf DEPENDS ${COUNTER_CHAR_COMBINED_ELF})
+
+        # Phase 5b: Static counter-chargen model (non-incrementing version for testing)
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT}
+            COMMAND ${CMAKE_COMMAND} -E env
+                COUNTER_CHAR_STATIC_OFFSET_EXPORT_SCRIPT=${COUNTER_CHAR_STATIC_OFFSET_EXPORT_SCRIPT}
+                COUNTER_CHAR_STATIC_CHARGEN_BASE_JSON=${COUNTER_CHAR_STATIC_CHARGEN_BASE_JSON}
+                COUNTER_CHAR_STATIC_COMPOSE_SCRIPT=${COUNTER_CHAR_STATIC_COMPOSE_SCRIPT}
+                COUNTER_CHAR_STATIC_OFFSET_JSON_TEMP=${COUNTER_CHAR_STATIC_OFFSET_JSON_TEMP}
+                COUNTER_CHAR_STATIC_CHARGEN_JSON_TEMP=${COUNTER_CHAR_STATIC_CHARGEN_JSON_TEMP}
+                COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT=${COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT}
+                ${PYTHON_EXECUTABLE} ${COUNTER_CHAR_STATIC_COMBINED_BUILD_SCRIPT}
+            DEPENDS ${COUNTER_CHAR_STATIC_COMBINED_BUILD_SCRIPT} ${COUNTER_CHAR_STATIC_COMPOSE_SCRIPT} ${COUNTER_CHAR_STATIC_OFFSET_EXPORT_SCRIPT} ${COUNTER_CHAR_STATIC_CHARGEN_BASE_JSON}
+            COMMENT "Building static counter-chargen model JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_STATIC_ASM}
+            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${COUNTER_CHAR_STATIC_ASM} ${COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT}
+            COMMENT "Generating counter-char-static.s from static model JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_STATIC_OBJ}
+            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${COUNTER_CHAR_STATIC_OBJ} ${COUNTER_CHAR_STATIC_ASM}
+            DEPENDS ${COUNTER_CHAR_STATIC_ASM}
+            COMMENT "Assembling counter-char-static.o"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_STATIC_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${COUNTER_CHAR_STATIC_ELF} ${COUNTER_CHAR_STATIC_OBJ}
+            DEPENDS ${COUNTER_CHAR_STATIC_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            COMMENT "Linking counter-char-static.elf"
+            VERBATIM
+        )
+
+        add_custom_target(counter_char_static_elf DEPENDS ${COUNTER_CHAR_STATIC_ELF})
 
         if(RV32AS_EXECUTABLE)
             add_custom_command(
