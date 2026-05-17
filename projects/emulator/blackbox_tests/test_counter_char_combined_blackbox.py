@@ -1,152 +1,74 @@
 #!/usr/bin/env python3
 """
-Phase 6: Comprehensive blackbox tests for combined counter-chargen model.
+Blackbox test for the combined counter-chargen model.
 
-Verifies:
-- Counter progression visible in model output
-- Character output changes as counter increments
-- Deterministic behavior on repeated runs
-- No framebuffer corruption or crashes
+Verifies that:
+- The first frame matches the neural reference glyph for input 65 ('A')
+- The counter advances to 66 ('B') after that first frame
 """
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 
-def run_emulator(elf: Path, cycle_limit: int) -> tuple[int, str, str]:
-    """Run emulator and return (exit_code, stdout, stderr)."""
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from neural_reference import NeuralNetworkReference
+
+
+def _run(elf: Path, cycles: int) -> tuple[list[int], int]:
     emulator = elf.parent / "emulator_runner"
     result = subprocess.run(
-        [str(emulator), str(elf), "--cycle-limit", str(cycle_limit)],
+        [str(emulator), str(elf), "--char-code", "65", "--cycles", str(cycles), "--dump-framebuffer", "--dump-memory", "0x153FE0", "4"],
         capture_output=True,
         text=True,
-        timeout=30
+        timeout=120,
     )
-    return result.returncode, result.stdout, result.stderr
+    assert result.returncode == 0, (
+        f"Run failed for {elf.name}.\n"
+        f"stdout:\n{result.stdout}\n"
+        f"stderr:\n{result.stderr}"
+    )
 
+    fb_line = next((ln for ln in result.stdout.splitlines() if ln.startswith("FRAMEBUFFER_HEX:")), None)
+    assert fb_line is not None, "Missing framebuffer dump"
+    fb_hex = fb_line[len("FRAMEBUFFER_HEX:"):].strip()
+    framebuffer = [int(fb_hex[i : i + 2], 16) for i in range(0, len(fb_hex), 2)]
 
-def test_combined_model_runs() -> bool:
-    """Test that combined model runs without crashing."""
-    elf = Path(__file__).parent.parent / "build" / "counter-char-combined.elf"
-    
-    if not elf.exists():
-        print(f"ERROR: ELF not found: {elf}")
-        return False
+    debug_line = next((ln for ln in result.stdout.splitlines() if ln.startswith("0x00153fe0:")), None)
+    assert debug_line is not None, "Missing debug word dump"
+    debug_word = int(debug_line.split()[1], 16)
 
-    try:
-        code, out, err = run_emulator(elf, 50)
-        if code != 0:
-            print(f"ERROR: Emulator exit code {code}")
-            if err:
-                print(f"Stderr: {err}")
-            return False
-        return True
-    except Exception as e:
-        print(f"ERROR: {e}")
-        return False
-
-
-def test_deterministic_behavior() -> bool:
-    """Test that identical cycle limits produce identical output."""
-    elf = Path(__file__).parent.parent / "build" / "counter-char-combined.elf"
-
-    try:
-        # Run twice with same cycle limit
-        code1, out1, err1 = run_emulator(elf, 30)
-        code2, out2, err2 = run_emulator(elf, 30)
-
-        if code1 != 0 or code2 != 0:
-            print(f"ERROR: Emulator exit codes {code1}, {code2}")
-            return False
-
-        # Both should produce same output (deterministic)
-        if out1 != out2:
-            print("WARNING: Non-deterministic output detected")
-            print(f"Run 1: {len(out1)} bytes")
-            print(f"Run 2: {len(out2)} bytes")
-            # Not fatal, but worth noting
-        
-        return True
-    except Exception as e:
-        print(f"ERROR: {e}")
-        return False
-
-
-def test_different_cycle_limits_produce_different_output() -> bool:
-    """Test that different cycle limits produce different results (counter progresses)."""
-    elf = Path(__file__).parent.parent / "build" / "counter-char-combined.elf"
-
-    try:
-        code1, out1, _ = run_emulator(elf, 10)
-        code2, out2, _ = run_emulator(elf, 50)
-
-        if code1 != 0 or code2 != 0:
-            print(f"ERROR: Emulator exit codes {code1}, {code2}")
-            return False
-
-        # Different cycle limits should (usually) produce different outputs
-        # because counter is incrementing each tick
-        if out1 == out2:
-            print("WARNING: Same output for different cycle limits (unexpected)")
-            # Not necessarily a failure, but worth noting
-        
-        return True
-    except Exception as e:
-        print(f"ERROR: {e}")
-        return False
-
-
-def test_no_framebuffer_corruption() -> bool:
-    """Test that framebuffer output is valid (no corruption)."""
-    elf = Path(__file__).parent.parent / "build" / "counter-char-combined.elf"
-
-    try:
-        code, out, err = run_emulator(elf, 100)
-        
-        if code != 0:
-            print(f"ERROR: Emulator exit code {code}")
-            return False
-
-        # If there's error output, it might indicate corruption
-        if "segfault" in err.lower() or "error" in err.lower():
-            print(f"WARNING: Error output detected: {err}")
-            # Not fatal if emulator still exited cleanly
-
-        return True
-    except Exception as e:
-        print(f"ERROR: {e}")
-        return False
+    return framebuffer, debug_word
 
 
 def main() -> int:
-    tests = [
-        ("Combined model runs", test_combined_model_runs),
-        ("Deterministic behavior", test_deterministic_behavior),
-        ("Different cycle limits", test_different_cycle_limits_produce_different_output),
-        ("No framebuffer corruption", test_no_framebuffer_corruption),
-    ]
+    build = Path(__file__).parent.parent / "build"
+    combined = build / "counter-char-combined.elf"
+    assert combined.exists(), f"Missing ELF: {combined}"
 
-    results = []
-    for name, test_fn in tests:
-        try:
-            passed = test_fn()
-            results.append((name, passed))
-            status = "✓ PASS" if passed else "✗ FAIL"
-            print(f"{status}: {name}")
-        except Exception as e:
-            results.append((name, False))
-            print(f"✗ ERROR: {name}: {e}")
+    ref = NeuralNetworkReference(str(Path(__file__).resolve().parents[2] / "weight-export" / "character_generator.json"))
+    inputs_a = np.zeros(255, dtype=np.float32)
+    inputs_a[65] = 1.0
+    ref_a = (ref.forward_pass(inputs_a) >= 0.5).astype(np.uint8).tolist()
 
-    passed_count = sum(1 for _, p in results if p)
-    total_count = len(results)
+    fb, debug_word = _run(combined, 5_000_000)
+    diff = sum(1 for a, b in zip(fb, ref_a) if (1 if b else 0) != (1 if a >= 200 else 0))
 
-    print(f"\n{passed_count}/{total_count} tests passed")
+    if diff > 40:
+        print(f"First frame is too far from the neural A glyph (diff={diff})")
+        return 1
 
-    return 0 if passed_count == total_count else 1
+    if debug_word != 66:
+        print(f"Counter did not advance to B: got {debug_word}")
+        return 1
+
+    print("✓ First frame matches neural A glyph closely")
+    print("✓ Counter advances to B after the frame")
+    return 0
 
 
 if __name__ == "__main__":

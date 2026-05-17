@@ -48,7 +48,7 @@ struct TerminalMode {
 };
 
 // Process keyboard input in GUI mode
-void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool is_squash_model) {
+void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool is_squash_model, uint32_t default_a0) {
     TerminalMode terminal;
     FramebufferRenderer renderer;
     signal(SIGINT, signal_handler);
@@ -82,7 +82,7 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool is_sq
         std::cout << "\nPress keys to change character:" << std::endl;
     }
     
-    uint32_t current_key_code = is_squash_model ? 106 : 0;
+    uint32_t current_key_code = is_squash_model ? 106 : default_a0;
     bool first_key = true;
     
     while (!g_should_exit) {
@@ -450,13 +450,23 @@ int main(int argc, char** argv) {
     // Initialize stack pointer to 512MB (high in address space for stack growth)
     emulator.getCPU().setReg(2, 512 * 1024 * 1024);
     
+    std::string binary_path = binary_file;
+
     // Set register x10 (a0, first function argument) with character code if provided
+    bool is_counter_char_model = binary_path.find("counter-char") != std::string::npos;
+
     if (char_specified) {
         // Use provided character code
         emulator.getCPU().setReg(10, char_code);
     } else if (gui_mode) {
-        // In GUI mode without explicit char, initialize with space character
-        emulator.getCPU().setReg(10, 32);
+        // Counter/char demos should start on 'a' so the first rendered frame
+        // matches the standalone character generator. Other GUI demos keep
+        // the previous space default.
+        if (is_counter_char_model) {
+            emulator.getCPU().setReg(10, 97);
+        } else {
+            emulator.getCPU().setReg(10, 32);
+        }
     }
     
     if (verbose) {
@@ -474,7 +484,6 @@ int main(int argc, char** argv) {
     
     // Detect if this is a squash model (game-movement)
     // Check if binary path contains "game-movement"
-    std::string binary_path = binary_file;
     bool is_squash_model = (binary_path.find("game-movement") != std::string::npos);
     
     // For squash model in GUI mode, use large default cycles if not specified
@@ -492,14 +501,15 @@ int main(int argc, char** argv) {
             process_movement_input(emulator);
         } else if (gui_mode) {
             // Interactive GUI mode
-            process_gui_input(emulator, gui_cycles, is_squash_model);
+            uint32_t gui_default_a0 = is_counter_char_model ? 65 : 32;
+            process_gui_input(emulator, gui_cycles, is_squash_model, gui_default_a0);
         } else {
             // Standard single-execution mode
             uint32_t executed_cycles = 0;
             for (; executed_cycles < max_cycles && !emulator.isHalted(); ++executed_cycles) {
-                if (char_specified) {
-                    // Keep the selected character stable across the full run.
-                    // Neural programs are cyclic and may clobber a0 internally.
+                if (char_specified && !is_counter_char_model) {
+                    // Keep the selected character stable across the full run
+                    // for static character demos.
                     emulator.getCPU().setReg(10, char_code);
                 }
                 emulator.step();

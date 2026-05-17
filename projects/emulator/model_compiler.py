@@ -1978,49 +1978,21 @@ run_forward_pass:
 """
             return code
 
-        # Staged counter->char flow:
-        # - layer_0: counter(255->255), output in activation_a
-        # - compute argmax(counter_out), write a0 and debug word
-        # - rewrite activation_a as one-hot(a0)
-        # - run char-gen layers layer_1..end unchanged
+        # Counter->char flow:
+        # - render the current character frame from the current a0
+        # - compute the next counter value after the frame is written
+        # - write the next value back to a0 for the following frame
         if architecture == "counter-char-staged":
-            input_addr = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]
             act_a_addr = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["activation_a"]
             debug_word = self.MEMORY_LAYOUT["buffer_base"] + 0x3FE0
 
             code = f"""
-# Forward pass (counter-char staged)
+# Forward pass (char-gen frame)
 run_forward_pass:
     addi sp, sp, -16
     sw ra, 12(sp)
 
-    # 1) Counter layer
-    call layer_0_forward
-
-    # 2) Argmax over counter output in activation_a
-    li t0, 0x{act_a_addr:08X}
-    li t1, 255
-    li t2, 0
-    li t3, 0
-    flw fa0, 0(t0)
-.Largmax_counter_char:
-    bge t2, t1, .Largmax_counter_char_done
-    slli t4, t2, 2
-    add t5, t0, t4
-    flw fa1, 0(t5)
-    flt.s t6, fa0, fa1
-    beq t6, zero, .Largmax_counter_char_next
-    fsgnj.s fa0, fa1, fa1
-    addi t3, t2, 0
-.Largmax_counter_char_next:
-    addi t2, t2, 1
-    j .Largmax_counter_char
-.Largmax_counter_char_done:
-    addi a0, t3, 0
-    li t4, 0x{debug_word:08X}
-    sw t3, 0(t4)
-
-    # 3) Rewrite activation_a as one-hot(a0) for char-gen layer_1 input
+    # Rewrite activation_a as one-hot(a0) for char-gen layer_1 input
     li t0, 0x{act_a_addr:08X}
     li t1, 1020                      # 255 * 4
     li t2, 0
@@ -2044,6 +2016,44 @@ run_forward_pass:
                 code += f"    call layer_{i}_forward\n"
 
             code += """
+    lw ra, 12(sp)
+    addi sp, sp, 16
+    ret
+
+"""
+            code += f"""
+
+# Update counter state after the frame has been rendered
+update_counter_state:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+
+    # Counter layer uses the current a0 from the frame we just rendered
+    call layer_0_forward
+
+    # Argmax over counter output in activation_a -> next a0
+    li t0, 0x{act_a_addr:08X}
+    li t1, 255
+    li t2, 0
+    li t3, 0
+    flw fa0, 0(t0)
+.Largmax_counter_next_loop:
+    bge t2, t1, .Largmax_counter_next_done
+    slli t4, t2, 2
+    add t5, t0, t4
+    flw fa1, 0(t5)
+    flt.s t6, fa0, fa1
+    beq t6, zero, .Largmax_counter_next
+    fsgnj.s fa0, fa1, fa1
+    addi t3, t2, 0
+.Largmax_counter_next:
+    addi t2, t2, 1
+    j .Largmax_counter_next_loop
+.Largmax_counter_next_done:
+    addi a0, t3, 0
+    li t4, 0x{debug_word:08X}
+    sw t3, 0(t4)
+
     lw ra, 12(sp)
     addi sp, sp, 16
     ret
@@ -2089,18 +2099,19 @@ _start:
     # Main inference loop (infinite)
 inference_loop:
     # Step 1: Read input and map to network input
-    # For generator: a0 contains character code (set externally or hardcoded for testing)
-    # For now, use a test character 'A' = 65
-    li a0, 65                    # TODO: Read from external source
+    # a0 already contains the character code (seeded by the emulator runner)
     call map_input_{model_type}
     
-    # Step 2: Run forward pass through all layers
+    # Step 2: Run forward pass through the character generator layers
     call run_forward_pass
     
     # Step 3: Map output to framebuffer
     call map_output_{model_type}
+
+    # Step 4: Advance counter state for the next frame
+    call update_counter_state
     
-    # Step 4: Loop back
+    # Step 5: Loop back
     j inference_loop
     
     # Unreachable, but include exit for completeness
