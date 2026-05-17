@@ -335,6 +335,12 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_counter255_runtime_smoke.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+
+    add_test(
+        NAME python/counter_char/combined_elf_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_counter_char_combined_smoke.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
      
     # ELF Loader Tests
     add_test(
@@ -494,6 +500,12 @@ if(RISCV_TOOLCHAIN_FOUND)
             set(COUNTER255_ASM "${CMAKE_CURRENT_BINARY_DIR}/counter255.s")
             set(COUNTER255_OBJ "${CMAKE_CURRENT_BINARY_DIR}/counter255.o")
             set(COUNTER255_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter255.elf")
+            set(COUNTER_CHAR_COMPOSE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_combined.py")
+            set(COUNTER_CHAR_COMBINED_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_counter_char_combined.py")
+            set(COUNTER_CHAR_COMBINED_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined_generator.json")
+            set(COUNTER_CHAR_COMBINED_ASM "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined.s")
+            set(COUNTER_CHAR_COMBINED_OBJ "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined.o")
+            set(COUNTER_CHAR_COMBINED_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined.elf")
 
         add_custom_command(
             OUTPUT ${NEURAL_ASM}
@@ -683,6 +695,48 @@ if(RISCV_TOOLCHAIN_FOUND)
         )
 
         add_custom_target(counter255_elf DEPENDS ${COUNTER255_ELF})
+
+        # Phase 5: Combined counter-chargen model
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_COMBINED_JSON}
+            COMMAND ${CMAKE_COMMAND} -E env
+                COUNTER_CHAR_COUNTER_EXPORT_SCRIPT=${COUNTER255_EXPORT_SCRIPT}
+                COUNTER_CHAR_CHARGEN_BASE_JSON=${COUNTER_CHAR_BASE_JSON}
+                COUNTER_CHAR_COMPOSE_SCRIPT=${COUNTER_CHAR_COMPOSE_SCRIPT}
+                COUNTER_CHAR_COUNTER_JSON_TEMP=${CMAKE_CURRENT_BINARY_DIR}/counter255_temp.json
+                COUNTER_CHAR_CHARGEN_JSON_TEMP=${CMAKE_CURRENT_BINARY_DIR}/chargen_temp.json
+                COUNTER_CHAR_COMBINED_JSON_OUTPUT=${COUNTER_CHAR_COMBINED_JSON}
+                ${PYTHON_EXECUTABLE} ${COUNTER_CHAR_COMBINED_BUILD_SCRIPT}
+            DEPENDS ${COUNTER_CHAR_COMBINED_BUILD_SCRIPT} ${COUNTER_CHAR_COMPOSE_SCRIPT} ${COUNTER255_EXPORT_SCRIPT} ${COUNTER_CHAR_BASE_JSON}
+            COMMENT "Building combined counter-chargen model JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_COMBINED_ASM}
+            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${COUNTER_CHAR_COMBINED_ASM} ${COUNTER_CHAR_COMBINED_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${COUNTER_CHAR_COMBINED_JSON}
+            COMMENT "Generating counter-char-combined.s from combined JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_COMBINED_OBJ}
+            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${COUNTER_CHAR_COMBINED_OBJ} ${COUNTER_CHAR_COMBINED_ASM}
+            DEPENDS ${COUNTER_CHAR_COMBINED_ASM}
+            COMMENT "Assembling counter-char-combined.o"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_COMBINED_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${COUNTER_CHAR_COMBINED_ELF} ${COUNTER_CHAR_COMBINED_OBJ}
+            DEPENDS ${COUNTER_CHAR_COMBINED_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            COMMENT "Linking counter-char-combined.elf"
+            VERBATIM
+        )
+
+        add_custom_target(counter_char_combined_elf DEPENDS ${COUNTER_CHAR_COMBINED_ELF})
 
         if(RV32AS_EXECUTABLE)
             add_custom_command(
