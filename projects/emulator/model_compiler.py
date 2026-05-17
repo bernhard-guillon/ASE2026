@@ -244,7 +244,8 @@ class ModelCompiler:
         model_type = self.metadata.get("model_type", "unknown")
         num_layers = len(self.layers)
         input_size = self.layers[0]["input_size"] if self.layers else 0
-        output_size = self.layers[-1]["output_size"] if self.layers else 0
+        # Use metadata output_size if available (for models with framebuffer_size != last layer output)
+        output_size = self.metadata.get("output_size", self.layers[-1]["output_size"] if self.layers else 0)
         
         # Determine model base address
         model_base = (self.MEMORY_LAYOUT["generator_base"] 
@@ -2061,6 +2062,71 @@ update_counter_state:
 """
             return code
 
+        # Block-diagonal-parallel: add update_counter_state function
+        if architecture == "block-diagonal-parallel":
+            output_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]
+            debug_word = self.MEMORY_LAYOUT["buffer_base"] + 0x3FE0
+            
+            code = f"""
+# Forward pass through all {len(self.layers)} layers
+run_forward_pass:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+
+"""
+            # Generate code for each layer
+            for i, layer in enumerate(self.layers):
+                code += f"    # === Layer {i} ===\n"
+                code += f"    call layer_{i}_forward\n\n"
+
+            code += """    lw ra, 12(sp)
+    addi sp, sp, 16
+    ret
+
+"""
+            # Add update_counter_state function for block-diagonal
+            code += f"""
+# Update a0 from counter output (positions 400-654 in output buffer)
+# Counter has 255 outputs, we take argmax to get the next character code
+update_counter_state:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+
+    # Output buffer is at 0x{output_buf:08X}
+    # Counter outputs are at byte offset {400 * 4} (positions 400-654)
+    li t0, 0x{output_buf:08X}
+    li t1, {400 * 4}
+    add t0, t0, t1                    # t0 = address of counter output[0]
+    li t1, 255                       # Number of counter outputs
+    li t2, 0                         # Loop index
+    li t3, 0                         # Best index (argmax result)
+    flw fa0, 0(t0)                   # Initialize max value
+
+.Largmax_counter_bd_loop:
+    bge t2, t1, .Largmax_counter_bd_done
+    slli t4, t2, 2                   # t4 = index * 4
+    add t5, t0, t4                  # t5 = address of counter_output[index]
+    flw fa1, 0(t5)                  # Load current value
+    flt.s t6, fa0, fa1              # t6 = (fa0 < fa1) ? 1 : 0
+    beq t6, zero, .Largmax_counter_bd_skip
+    fmv.s fa0, fa1                  # New max
+    addi t3, t2, 0                  # New best index
+.Largmax_counter_bd_skip:
+    addi t2, t2, 1
+    j .Largmax_counter_bd_loop
+
+.Largmax_counter_bd_done:
+    addi a0, t3, 0                  # Set a0 to the next character code
+    li t4, 0x{debug_word:08X}
+    sw t3, 0(t4)                    # Debug: store next char code
+
+    lw ra, 12(sp)
+    addi sp, sp, 16
+    ret
+
+"""
+            return code
+
         # Default sequential forward pass (unchanged)
         code = f"""
 # Forward pass through all {len(self.layers)} layers
@@ -2087,6 +2153,7 @@ run_forward_pass:
         """Generate the main cyclic execution loop."""
         architecture = self.metadata.get("architecture", "unknown")
         is_staged = architecture == "counter-char-staged"
+        is_block_diagonal = architecture == "block-diagonal-parallel"
         
         if is_staged:
             return f"""
@@ -2124,8 +2191,45 @@ inference_loop:
     ecall
 
 """
+        elif is_block_diagonal:
+            # For block-diagonal-parallel: both networks run in parallel, counter updates a0
+            return f"""
+# Main execution loop: Input -> Forward Pass -> Output -> Counter Update -> Repeat
+# For block-diagonal-parallel: counter and chargen run in parallel, counter updates a0 for next frame
+.section .text
+.align 4
+.globl _start
+
+_start:
+    # Initialize stack pointer to safe location (within 1MB, below code/data)
+    li sp, 0xF000              # sp = 0x0F000 (61440 bytes)
+    
+    # Main inference loop (infinite)
+inference_loop:
+    # Step 1: Read input and map to network input
+    # a0 already contains the character code (seeded by the emulator runner)
+    call map_input_{model_type}
+    
+    # Step 2: Run forward pass through all layers (both counter and chargen in parallel)
+    call run_forward_pass
+    
+    # Step 3: Map output to framebuffer (chargen outputs are first 400)
+    call map_output_{model_type}
+
+    # Step 4: Update a0 to next character based on counter output
+    call update_counter_state
+    
+    # Step 5: Loop back
+    j inference_loop
+    
+    # Unreachable, but include exit for completeness
+    li a0, 0
+    li a7, 93                    # SYS_exit
+    ecall
+
+"""
         else:
-            # For non-staged architectures (including block-diagonal-parallel)
+            # For non-staged, non-block-diagonal architectures
             # Don't call update_counter_state
             return f"""
 # Main execution loop: Input -> Forward Pass -> Output -> Repeat
