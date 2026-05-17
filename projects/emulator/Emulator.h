@@ -44,14 +44,10 @@ public:
     
 private:
     /* Convert pixel value to terminal character
-     * 0-63: space
-     * 64-191: | (paddle)
-     * 192-255: # (ball)
+     * threshold: pixel > 127 = block, else = space
      */
     char pixel_to_char(uint8_t pixel) const {
-        if (pixel > 191) return '#';
-        if (pixel > 63) return '|';
-        return ' ';
+        return (pixel > 127) ? '#' : ' ';
     }
     
     /* Clear screen and move cursor to home position */

@@ -2085,9 +2085,13 @@ run_forward_pass:
 
     def _generate_execution_loop(self, model_type: str) -> str:
         """Generate the main cyclic execution loop."""
-        return f"""
-# Main execution loop: Input -> Forward Pass -> Output -> Repeat
-# Mimics static_char_gen.c behavior but with neural network
+        architecture = self.metadata.get("architecture", "unknown")
+        is_staged = architecture == "counter-char-staged"
+        
+        if is_staged:
+            return f"""
+# Main execution loop: Input -> Forward Pass -> Output -> Counter Update -> Repeat
+# For staged architecture: counter runs separately after frame is rendered
 .section .text
 .align 4
 .globl _start
@@ -2112,6 +2116,41 @@ inference_loop:
     call update_counter_state
     
     # Step 5: Loop back
+    j inference_loop
+    
+    # Unreachable, but include exit for completeness
+    li a0, 0
+    li a7, 93                    # SYS_exit
+    ecall
+
+"""
+        else:
+            # For non-staged architectures (including block-diagonal-parallel)
+            # Don't call update_counter_state
+            return f"""
+# Main execution loop: Input -> Forward Pass -> Output -> Repeat
+# Mimics static_char_gen.c behavior but with neural network
+.section .text
+.align 4
+.globl _start
+
+_start:
+    # Initialize stack pointer to safe location (within 1MB, below code/data)
+    li sp, 0xF000              # sp = 0x0F000 (61440 bytes)
+    
+    # Main inference loop (infinite)
+inference_loop:
+    # Step 1: Read input and map to network input
+    # a0 already contains the character code (seeded by the emulator runner)
+    call map_input_{model_type}
+    
+    # Step 2: Run forward pass through all layers
+    call run_forward_pass
+    
+    # Step 3: Map output to framebuffer
+    call map_output_{model_type}
+
+    # Step 4: Loop back (no counter state update for non-staged architectures)
     j inference_loop
     
     # Unreachable, but include exit for completeness
