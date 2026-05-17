@@ -338,7 +338,13 @@ if(PYTHON_EXECUTABLE)
 
     add_test(
         NAME python/counter_char/combined_elf_smoke
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_counter_char_combined_smoke.py -v
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_counter_char_combined_smoke.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    add_test(
+        NAME python/counter_char/combined_elf_blackbox
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_counter_char_combined_blackbox.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
      
