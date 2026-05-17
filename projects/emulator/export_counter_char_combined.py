@@ -61,6 +61,9 @@ def compose_models(counter_json: dict, chargen_json: dict) -> dict:
     counter_meta = counter_json.get("metadata", {})
     chargen_meta = chargen_json.get("metadata", {})
 
+    # Get the actual final output size from chargen's last layer
+    final_output_size = chargen_layers[-1].get("output_size", 400)
+
     # Build combined model
     combined = {
         "metadata": {
@@ -75,10 +78,10 @@ def compose_models(counter_json: dict, chargen_json: dict) -> dict:
             "stages": ["counter_output", "a0_write", "a0_rebuild_to_onehot", "chargen_forward"]
         },
         "input_mapping": "counter_char_a0_bridge",
-        "output_mapping": chargen_json.get("output_mapping", "framebuffer_argmax_u8"),
+        # Note: output_mapping is determined by the compiler based on model_type and output_size
         "layers": combined_layers,
-        "input_size": counter_json.get("input_size", 1),  # Counter takes no real input (scalar constant)
-        "output_size": chargen_json.get("output_size", 256),
+        "input_size": counter_json.get("input_size", 1),
+        "output_size": final_output_size,  # 400 for chargen's 20x20 pixel grid
     }
 
     return combined
