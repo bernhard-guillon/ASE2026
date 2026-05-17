@@ -323,6 +323,12 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_chained_model_elf_smoke.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+
+    add_test(
+        NAME python/counter_char/scaffold_elf_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_counter_char_elf_scaffold.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
      
     # ELF Loader Tests
     add_test(
@@ -471,6 +477,12 @@ if(RISCV_TOOLCHAIN_FOUND)
             set(GAME_MOVEMENT_ASM "${CMAKE_CURRENT_BINARY_DIR}/game-movement.s")
             set(GAME_MOVEMENT_OBJ "${CMAKE_CURRENT_BINARY_DIR}/game-movement.o")
             set(GAME_MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/game-movement.elf")
+            set(COUNTER_CHAR_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_scaffold.py")
+            set(COUNTER_CHAR_BASE_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
+            set(COUNTER_CHAR_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter-char_generator.json")
+            set(COUNTER_CHAR_ASM "${CMAKE_CURRENT_BINARY_DIR}/counter-char.s")
+            set(COUNTER_CHAR_OBJ "${CMAKE_CURRENT_BINARY_DIR}/counter-char.o")
+            set(COUNTER_CHAR_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter-char.elf")
 
         add_custom_command(
             OUTPUT ${NEURAL_ASM}
@@ -581,6 +593,46 @@ if(RISCV_TOOLCHAIN_FOUND)
         )
 
         add_custom_target(game_movement_elf DEPENDS ${GAME_MOVEMENT_ELF})
+
+        # Phase-1 scaffold path for counter->a0->char-gen integration
+        set(COUNTER_CHAR_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_counter_char_model.py")
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_JSON}
+            COMMAND ${CMAKE_COMMAND} -E env
+                COUNTER_CHAR_BASE_JSON=${COUNTER_CHAR_BASE_JSON}
+                COUNTER_CHAR_EXPORT_SCRIPT=${COUNTER_CHAR_EXPORT_SCRIPT}
+                COUNTER_CHAR_JSON_OUTPUT=${COUNTER_CHAR_JSON}
+                ${PYTHON_EXECUTABLE} ${COUNTER_CHAR_BUILD_SCRIPT}
+            DEPENDS ${COUNTER_CHAR_BUILD_SCRIPT} ${COUNTER_CHAR_EXPORT_SCRIPT} ${COUNTER_CHAR_BASE_JSON}
+            COMMENT "Building counter-char scaffold JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_ASM}
+            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${COUNTER_CHAR_ASM} ${COUNTER_CHAR_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${COUNTER_CHAR_JSON}
+            COMMENT "Generating counter-char.s from scaffold JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_OBJ}
+            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${COUNTER_CHAR_OBJ} ${COUNTER_CHAR_ASM}
+            DEPENDS ${COUNTER_CHAR_ASM}
+            COMMENT "Assembling counter-char.o"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${COUNTER_CHAR_ELF} ${COUNTER_CHAR_OBJ}
+            DEPENDS ${COUNTER_CHAR_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            COMMENT "Linking counter-char.elf"
+            VERBATIM
+        )
+
+        add_custom_target(counter_char_elf DEPENDS ${COUNTER_CHAR_ELF})
 
         if(RV32AS_EXECUTABLE)
             add_custom_command(
