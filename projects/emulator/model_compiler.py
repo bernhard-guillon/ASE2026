@@ -1023,6 +1023,34 @@ map_input_chained:
 
 """
         if model_type == "generator":
+            if input_mapping == "counter255_a0_feedback":
+                return f"""
+# Input mapping: counter255 feedback (a0 scalar 0..254 -> one-hot 255)
+map_input_generator:
+    li t0, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]:08X}
+
+    # Zero out full input buffer (255 floats)
+    li t1, {input_size * 4}
+    li t2, 0
+.Lclear_input_counter255:
+    bge t2, t1, .Lset_counter255_input
+    add t3, t0, t2
+    sw zero, 0(t3)
+    addi t2, t2, 4
+    j .Lclear_input_counter255
+
+.Lset_counter255_input:
+    li t1, 255
+    bgeu a0, t1, .Linput_done_counter255
+    slli t2, a0, 2
+    add t2, t0, t2
+    lui t3, 0x3F800                  # 1.0f
+    sw t3, 0(t2)
+
+.Linput_done_counter255:
+    ret
+
+"""
             if input_mapping == "squash_fb_key_a0":
                 return f"""
 # Input mapping: squash framebuffer + key one-hot (a0 ASCII)
@@ -1331,6 +1359,57 @@ map_output_chained:
 
 """
         if model_type == "generator":
+            if input_mapping == "counter255_a0_feedback":
+                debug_word = self.MEMORY_LAYOUT["buffer_base"] + 0x3FE0
+                return f"""
+# Output mapping: counter255 argmax -> a0 + debug word + framebuffer marker
+map_output_generator:
+    li t0, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
+    li t1, 255
+
+    # Argmax over 255 outputs
+    li t2, 0                          # i
+    li t3, 0                          # max_idx
+    flw fa0, 0(t0)                    # max_val = output[0]
+.Largmax_counter255:
+    bge t2, t1, .Largmax_counter255_done
+    slli t4, t2, 2
+    add t5, t0, t4
+    flw fa1, 0(t5)
+    flt.s t6, fa0, fa1
+    beq t6, zero, .Largmax_counter255_next
+    fsgnj.s fa0, fa1, fa1
+    addi t3, t2, 0
+.Largmax_counter255_next:
+    addi t2, t2, 1
+    j .Largmax_counter255
+
+.Largmax_counter255_done:
+    # Feed back scalar state into a0 for next tick
+    addi a0, t3, 0
+
+    # Persist scalar state for blackbox checks
+    li t2, 0x{debug_word:08X}
+    sw t3, 0(t2)
+
+    # Visual marker: clear framebuffer and set one pixel at index=max_idx
+    li t4, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
+    li t5, 0
+    li t6, 400
+.Lclear_fb_counter255:
+    bge t5, t6, .Ldraw_counter255_pixel
+    add a1, t4, t5
+    sb zero, 0(a1)
+    addi t5, t5, 1
+    j .Lclear_fb_counter255
+
+.Ldraw_counter255_pixel:
+    add a1, t4, t3
+    li a2, 255
+    sb a2, 0(a1)
+    ret
+
+"""
             if input_mapping == "squash_fb_key_a0":
                 return f"""
 # Output mapping: squash top-4 active cells -> framebuffer
