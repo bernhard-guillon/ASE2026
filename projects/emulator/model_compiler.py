@@ -1051,6 +1051,35 @@ map_input_generator:
     ret
 
 """
+            if input_mapping == "counter_char_a0_bridge":
+                return f"""
+# Input mapping: staged counter->char bridge seed (a0 scalar 0..254 -> one-hot 255)
+# In staged forward pass, layer0 updates a0 each tick and layer1+ consume it.
+map_input_generator:
+    li t0, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]:08X}
+
+    # Zero out full input buffer (255 floats)
+    li t1, {input_size * 4}
+    li t2, 0
+.Lclear_input_counter_char:
+    bge t2, t1, .Lset_counter_char_input
+    add t3, t0, t2
+    sw zero, 0(t3)
+    addi t2, t2, 4
+    j .Lclear_input_counter_char
+
+.Lset_counter_char_input:
+    li t1, 255
+    bgeu a0, t1, .Linput_done_counter_char
+    slli t2, a0, 2
+    add t2, t0, t2
+    lui t3, 0x3F800                  # 1.0f
+    sw t3, 0(t2)
+
+.Linput_done_counter_char:
+    ret
+
+"""
             if input_mapping == "squash_fb_key_a0":
                 return f"""
 # Input mapping: squash framebuffer + key one-hot (a0 ASCII)
@@ -1944,6 +1973,79 @@ run_forward_pass:
     # Restore and return
     lw ra, 28(sp)
     addi sp, sp, 32
+    ret
+
+"""
+            return code
+
+        # Staged counter->char flow:
+        # - layer_0: counter(255->255), output in activation_a
+        # - compute argmax(counter_out), write a0 and debug word
+        # - rewrite activation_a as one-hot(a0)
+        # - run char-gen layers layer_1..end unchanged
+        if architecture == "counter-char-staged":
+            input_addr = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]
+            act_a_addr = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["activation_a"]
+            debug_word = self.MEMORY_LAYOUT["buffer_base"] + 0x3FE0
+
+            code = f"""
+# Forward pass (counter-char staged)
+run_forward_pass:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+
+    # 1) Counter layer
+    call layer_0_forward
+
+    # 2) Argmax over counter output in activation_a
+    li t0, 0x{act_a_addr:08X}
+    li t1, 255
+    li t2, 0
+    li t3, 0
+    flw fa0, 0(t0)
+.Largmax_counter_char:
+    bge t2, t1, .Largmax_counter_char_done
+    slli t4, t2, 2
+    add t5, t0, t4
+    flw fa1, 0(t5)
+    flt.s t6, fa0, fa1
+    beq t6, zero, .Largmax_counter_char_next
+    fsgnj.s fa0, fa1, fa1
+    addi t3, t2, 0
+.Largmax_counter_char_next:
+    addi t2, t2, 1
+    j .Largmax_counter_char
+.Largmax_counter_char_done:
+    addi a0, t3, 0
+    li t4, 0x{debug_word:08X}
+    sw t3, 0(t4)
+
+    # 3) Rewrite activation_a as one-hot(a0) for char-gen layer_1 input
+    li t0, 0x{act_a_addr:08X}
+    li t1, 1020                      # 255 * 4
+    li t2, 0
+.Lclear_acta_counter_char:
+    bge t2, t1, .Lset_acta_counter_char
+    add t4, t0, t2
+    sw zero, 0(t4)
+    addi t2, t2, 4
+    j .Lclear_acta_counter_char
+.Lset_acta_counter_char:
+    li t1, 255
+    bgeu a0, t1, .Lrun_char_layers
+    slli t2, a0, 2
+    add t2, t0, t2
+    lui t3, 0x3F800
+    sw t3, 0(t2)
+
+.Lrun_char_layers:
+"""
+            for i in range(1, len(self.layers)):
+                code += f"    call layer_{i}_forward\n"
+
+            code += """
+    lw ra, 12(sp)
+    addi sp, sp, 16
     ret
 
 """
