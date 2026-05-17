@@ -317,6 +317,12 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_elf_smoke.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+
+    add_test(
+        NAME python/game_movement/chained_elf_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_chained_model_elf_smoke.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
      
     # ELF Loader Tests
     add_test(
