@@ -552,30 +552,31 @@ if(RISCV_TOOLCHAIN_FOUND)
         # Build char_gen.elf from model JSON using C model compiler
         set(CHAR_GEN_C_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_to_C_split.py")
         set(CHAR_GEN_LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/riscv_generator_high.ld")
-        set(CHAR_GEN_H "${CMAKE_CURRENT_BINARY_DIR}/char_gen.h")
-        set(CHAR_GEN_C "${CMAKE_CURRENT_BINARY_DIR}/char_gen_runtime.c")
+        set(CHAR_GEN_RUNTIME_C "${CMAKE_CURRENT_SOURCE_DIR}/char_gen_runtime.c")
+        set(CHAR_GEN_H "${CMAKE_CURRENT_BINARY_DIR}/model.h")
         set(CHAR_GEN_ELF "${CMAKE_CURRENT_BINARY_DIR}/char_gen.elf")
 
         add_custom_command(
-            OUTPUT ${CHAR_GEN_H} ${CHAR_GEN_C}
+            OUTPUT ${CHAR_GEN_H}
             COMMAND ${PYTHON_EXECUTABLE} ${CHAR_GEN_C_COMPILER}
-                -o ${CMAKE_CURRENT_BINARY_DIR}/char_gen
+                -o ${CMAKE_CURRENT_BINARY_DIR}/model
                 ${NEURAL_MODEL_JSON}
             DEPENDS ${CHAR_GEN_C_COMPILER} ${NEURAL_MODEL_JSON}
-            COMMENT "Generating char_gen.h and char_gen_runtime.c from model JSON"
+            COMMENT "Generating model.h from model JSON"
             VERBATIM
         )
 
         add_custom_command(
             OUTPUT ${CHAR_GEN_ELF}
             COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+                -I${CMAKE_CURRENT_BINARY_DIR}
                 -T ${CHAR_GEN_LINKER_SCRIPT}
                 -Wl,--oformat=elf32-littleriscv
                 -Wl,-e,_start
                 -o ${CHAR_GEN_ELF}
-                ${CHAR_GEN_C}
+                ${CHAR_GEN_RUNTIME_C}
                 -lgcc
-            DEPENDS ${CHAR_GEN_C} ${CHAR_GEN_LINKER_SCRIPT}
+            DEPENDS ${CHAR_GEN_H} ${CHAR_GEN_RUNTIME_C} ${CHAR_GEN_LINKER_SCRIPT}
             COMMENT "Compiling char_gen.elf"
             VERBATIM
         )

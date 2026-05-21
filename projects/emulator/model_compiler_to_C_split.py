@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """
-Split C Model Compiler
+C Model Header Generator
 
 Generates:
-  1) <output_base>.h with embedded model weights
-  2) <output_base>_runtime.c with a pure C implementation
-  3) <output_base>_build.sh helper to compile to RV32 ELF
+   <output_base>.h with embedded model weights + model size macros
 
-The runtime uses the same memory layout as the assembly compiler and
-writes the framebuffer at 0x20000.
+The .h uses MODEL_ prefix and model_data symbol name.
+The runtime is a separate checked-in file that includes this header.
 """
 
 import argparse
@@ -26,32 +24,6 @@ ACTIVATIONS = {"relu": 0, "sigmoid": 1, "none": 2}
 
 HEADER_SIZE = 28
 LAYER_ENTRY_SIZE = 32
-
-
-def _sanitize_symbol(name: str) -> str:
-    out = []
-    for ch in name:
-        if ch.isalnum():
-            out.append(ch.lower())
-        else:
-            out.append("_")
-    sanitized = "".join(out)
-    if not sanitized or sanitized[0].isdigit():
-        sanitized = "model_" + sanitized
-    return sanitized
-
-
-def _sanitize_macro(name: str) -> str:
-    out = []
-    for ch in name:
-        if ch.isalnum():
-            out.append(ch.upper())
-        else:
-            out.append("_")
-    sanitized = "".join(out)
-    if not sanitized or sanitized[0].isdigit():
-        sanitized = "MODEL_" + sanitized
-    return sanitized
 
 
 def load_json(json_path: str) -> Dict:
@@ -119,9 +91,9 @@ def generate_binary(data: Dict) -> bytes:
     return bytes(binary)
 
 
-def emit_header(binary: bytes, data: Dict, output_h: Path, symbol_base: str) -> None:
-    macro_base = _sanitize_macro(symbol_base)
-    guard = f"{macro_base}_H"
+def emit_header(binary: bytes, data: Dict, output_h: Path) -> None:
+    guard = "MODEL_H"
+    prefix = "MODEL"
 
     words = len(binary) // 4
     uint32_array: List[str] = []
@@ -146,17 +118,17 @@ def emit_header(binary: bytes, data: Dict, output_h: Path, symbol_base: str) -> 
 // Basic type definitions (no stdint.h dependency)
 typedef unsigned int uint32_t;
 
-#define {macro_base}_HEADER_SIZE {HEADER_SIZE}
-#define {macro_base}_LAYER_ENTRY_SIZE {LAYER_ENTRY_SIZE}
-#define {macro_base}_NUM_LAYERS {len(layers)}
-#define {macro_base}_TOTAL_WEIGHTS {sum(l["input_size"] * l["output_size"] for l in layers)}
-#define {macro_base}_TOTAL_BIASES {sum(l["output_size"] for l in layers)}
-#define {macro_base}_INPUT_SIZE {input_size}
-#define {macro_base}_OUTPUT_SIZE {output_size}
-#define {macro_base}_MODEL_WORDS {words}
+#define {prefix}_HEADER_SIZE {HEADER_SIZE}
+#define {prefix}_LAYER_ENTRY_SIZE {LAYER_ENTRY_SIZE}
+#define {prefix}_NUM_LAYERS {len(layers)}
+#define {prefix}_TOTAL_WEIGHTS {sum(l["input_size"] * l["output_size"] for l in layers)}
+#define {prefix}_TOTAL_BIASES {sum(l["output_size"] for l in layers)}
+#define {prefix}_INPUT_SIZE {input_size}
+#define {prefix}_OUTPUT_SIZE {output_size}
+#define {prefix}_MODEL_WORDS {words}
 
 __attribute__((aligned(4), section(".model")))
-static const uint32_t {symbol_base}_model_data[{words}] = {{
+static const uint32_t model_data[{words}] = {{
 {chr(10).join(lines)}
 }};
 
@@ -166,175 +138,10 @@ static const uint32_t {symbol_base}_model_data[{words}] = {{
     output_h.write_text(header)
 
 
-def emit_runtime(data: Dict, output_c: Path, header_name: str, symbol_base: str) -> None:
-    macro_base = _sanitize_macro(symbol_base)
-
-    runtime = f"""// Basic type definitions (no stdint.h dependency)
-typedef unsigned int uint32_t;
-typedef unsigned char uint8_t;
-
-#include \"{header_name}\"
-
-#define MODEL_MAGIC 0x4E52414E
-
-#define CODE_BASE 0x00001000u
-#define GENERATOR_BASE 0x00030000u
-#define RECOGNIZER_BASE 0x00110000u
-#define BUFFER_BASE 0x00150000u
-#define FRAMEBUFFER_BASE 0x00020000u
-
-#define INPUT_BUF (BUFFER_BASE + 0x0000u)
-#define ACTIVATION_A (BUFFER_BASE + 0x1000u)
-#define ACTIVATION_B (BUFFER_BASE + 0x2000u)
-#define OUTPUT_BUF (BUFFER_BASE + 0x3000u)
-
-static inline uint32_t read_a0(void) {{
-    uint32_t value;
-    __asm__ volatile ("mv %0, a0" : "=r"(value));
-    return value;
-}}
-
-static inline float sigmoid_pwl(float x) {{
-    if (x <= -4.0f) return 0.0f;
-    if (x >= 4.0f) return 1.0f;
-    return 0.5f + x * 0.125f;
-}}
-
-static inline void map_input_generator(void) {{
-    volatile float *input = (volatile float *)INPUT_BUF;
-    uint32_t code = read_a0();
-
-    for (uint32_t i = 0; i < {macro_base}_INPUT_SIZE; i++) {{
-        input[i] = 0.0f;
-    }}
-
-    if (code < {macro_base}_INPUT_SIZE) {{
-        input[code] = 1.0f;
-    }}
-}}
-
-static inline void map_output_generator(void) {{
-    volatile float *output = (volatile float *)OUTPUT_BUF;
-    volatile uint8_t *fb = (volatile uint8_t *)FRAMEBUFFER_BASE;
-
-    for (uint32_t i = 0; i < {macro_base}_OUTPUT_SIZE; i++) {{
-        float v = output[i];
-        if (v < 0.0f) v = 0.0f;
-        if (v > 1.0f) v = 1.0f;
-        v = v * 255.0f;
-        uint32_t pixel = (uint32_t)v;
-        if (pixel > 255u) pixel = 255u;
-        fb[i] = (uint8_t)pixel;
-    }}
-}}
-
-static inline void run_forward_pass(void) {{
-    const uint8_t *model_bytes = (const uint8_t *){symbol_base}_model_data;
-    const uint32_t *model_u32 = (const uint32_t *){symbol_base}_model_data;
-
-    if (model_u32[0] != MODEL_MAGIC) {{
-        return;
-    }}
-
-    uint32_t num_layers = model_u32[3];
-    uint32_t total_weights = model_u32[4];
-
-    uint32_t layer_table_offset = {macro_base}_HEADER_SIZE;
-    uint32_t weights_base = {macro_base}_HEADER_SIZE + num_layers * {macro_base}_LAYER_ENTRY_SIZE;
-    uint32_t biases_base = weights_base + total_weights * 4u;
-
-    volatile float *input_buf = (volatile float *)INPUT_BUF;
-    volatile float *act_a = (volatile float *)ACTIVATION_A;
-    volatile float *act_b = (volatile float *)ACTIVATION_B;
-    volatile float *output_buf = (volatile float *)OUTPUT_BUF;
-
-    for (uint32_t layer_idx = 0; layer_idx < num_layers; layer_idx++) {{
-        const uint32_t *layer = (const uint32_t *)(model_bytes + layer_table_offset + layer_idx * {macro_base}_LAYER_ENTRY_SIZE);
-        uint32_t input_size = layer[0];
-        uint32_t output_size = layer[1];
-        uint32_t activation = layer[2];
-        uint32_t weight_offset = layer[3];
-        uint32_t bias_offset = layer[4];
-
-        const float *weights = (const float *)(model_bytes + weights_base + weight_offset);
-        const float *biases = (const float *)(model_bytes + biases_base + bias_offset);
-
-        volatile float *input_ptr;
-        volatile float *output_ptr;
-
-        if (layer_idx == 0) {{
-            input_ptr = input_buf;
-            output_ptr = act_a;
-        }} else if (layer_idx & 1u) {{
-            input_ptr = act_a;
-            output_ptr = act_b;
-        }} else {{
-            input_ptr = act_b;
-            output_ptr = act_a;
-        }}
-
-        if (layer_idx == num_layers - 1) {{
-            output_ptr = output_buf;
-        }}
-
-        for (uint32_t j = 0; j < output_size; j++) {{
-            float acc = biases[j];
-            const float *wptr = weights + j;
-            for (uint32_t i = 0; i < input_size; i++) {{
-                acc += input_ptr[i] * (*wptr);
-                wptr += output_size;
-            }}
-
-            if (activation == 1u) {{
-                if (acc < 0.0f) acc = 0.0f;
-            }} else if (activation == 2u) {{
-                acc = sigmoid_pwl(acc);
-            }}
-
-            output_ptr[j] = acc;
-        }}
-    }}
-}}
-
-void inference_loop(void);
-
-__attribute__((naked)) void _start(void) {{
-    __asm__ volatile (
-        "lui sp, 0x20\\n"
-        "jal ra, inference_loop\\n"
-    );
-}}
-
-void inference_loop(void) {{
-    for (;;) {{
-        map_input_generator();
-        run_forward_pass();
-        map_output_generator();
-    }}
-}}
-"""
-
-    output_c.write_text(runtime)
-
-
-def emit_build_script(output_sh: Path, output_c: Path, output_elf: Path) -> None:
-    script = f"""#!/bin/sh
-set -e
-
-RISC_V_GCC=${{RISC_V_GCC:-riscv64-elf-gcc}}
-
-$RISC_V_GCC -march=rv32if -mabi=ilp32f -nostdlib \
-  -T ../riscv_generator_high.ld -Wl,--oformat=elf32-littleriscv \
-  -Wl,-e,_start -o {output_elf.name} {output_c.name} -lgcc
-"""
-    output_sh.write_text(script)
-    output_sh.chmod(0o755)
-
-
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Split C model compiler")
+    parser = argparse.ArgumentParser(description="C model header generator")
     parser.add_argument("json_file", help="Path to JSON intermediate format file")
-    parser.add_argument("-o", "--output", required=True, help="Output base name (no extension)")
+    parser.add_argument("-o", "--output", required=True, help="Output header path (no extension)")
     args = parser.parse_args()
 
     json_path = Path(args.json_file)
@@ -342,23 +149,14 @@ def main() -> int:
     output_dir = output_base.parent
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    symbol_base = _sanitize_symbol(output_base.stem)
-
     data = load_json(str(json_path))
     binary = generate_binary(data)
 
     header_path = output_base.with_suffix(".h")
-    runtime_path = output_base.with_name(output_base.stem + "_runtime.c")
-    build_path = output_base.with_name(output_base.stem + "_build.sh")
-    elf_path = output_base.with_suffix(".elf")
 
-    emit_header(binary, data, header_path, symbol_base)
-    emit_runtime(data, runtime_path, header_path.name, symbol_base)
-    emit_build_script(build_path, runtime_path, elf_path)
+    emit_header(binary, data, header_path)
 
     print(f"Generated header: {header_path}")
-    print(f"Generated runtime: {runtime_path}")
-    print(f"Generated build script: {build_path}")
     print(f"Model bytes: {len(binary)}")
 
     return 0
