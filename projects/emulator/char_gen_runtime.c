@@ -17,44 +17,78 @@ typedef unsigned char uint8_t;
 #define ACTIVATION_B (BUFFER_BASE + 0x2000u)
 #define OUTPUT_BUF (BUFFER_BASE + 0x3000u)
 
-static inline uint32_t read_a0(void) {
-    uint32_t value;
-    __asm__ volatile ("mv %0, a0" : "=r"(value));
-    return value;
+// Character code preserved in callee-saved register s1
+// Set once by _start from the initial a0, then never touched by C code
+register uint32_t char_code asm("s1");
+
+// Descriptor for nmatvec custom instruction (32 bytes)
+typedef struct {
+    uint32_t input_ptr;
+    uint32_t weights_ptr;
+    uint32_t bias_ptr;
+    uint32_t output_ptr;
+    uint32_t input_len;
+    uint32_t output_len;
+    uint32_t flags;
+    uint32_t reserved;
+} __attribute__((packed)) neural_desc_t;
+
+// nmatvecx.f32 a0, t0  ->  .word 0x0000557B
+// opcode=0x7B, rd=a0(10), rs1=t0(5), opid=0
+static inline uint32_t neural_matvec(const neural_desc_t *desc) {
+    register uint32_t dp asm("t0") = (uint32_t)desc;
+    register uint32_t st asm("a0");
+    __asm__ volatile(".word 0x557B\n" : "=r"(st) : "r"(dp) : "memory");
+    return st;
 }
 
-static inline float sigmoid_pwl(float x) {
-    if (x <= -4.0f) return 0.0f;
-    if (x >= 4.0f) return 1.0f;
-    return 0.5f + x * 0.125f;
+// nvrelux.f32 a0, t1, t2, t3  ->  .word 0x0F0E657B
+// opcode=0x7B, rd=a0(10), rs1=t1(6), rs2=t2(7), rs3=t3(28), opid=1
+static inline uint32_t neural_relu(float *dst, const float *src, uint32_t len) {
+    register uint32_t d asm("t1") = (uint32_t)dst;
+    register uint32_t s asm("t2") = (uint32_t)src;
+    register uint32_t n asm("t3") = len;
+    register uint32_t st asm("a0");
+    __asm__ volatile(".word 0x0F0E657B\n" : "=r"(st) : "r"(d), "r"(s), "r"(n) : "memory");
+    return st;
+}
+
+// nvsigpwlx.f32 a0, t1, t2, t3  ->  .word 0x170E657B
+// opcode=0x7B, rd=a0(10), rs1=t1(6), rs2=t2(7), rs3=t3(28), opid=2
+static inline uint32_t neural_sigmoid(float *dst, const float *src, uint32_t len) {
+    register uint32_t d asm("t1") = (uint32_t)dst;
+    register uint32_t s asm("t2") = (uint32_t)src;
+    register uint32_t n asm("t3") = len;
+    register uint32_t st asm("a0");
+    __asm__ volatile(".word 0x170E657B\n" : "=r"(st) : "r"(d), "r"(s), "r"(n) : "memory");
+    return st;
+}
+
+// nvclampu8x.f32 a0, t1, t2, t3  ->  .word 0x1F0E657B
+// opcode=0x7B, rd=a0(10), rs1=t1(6), rs2=t2(7), rs3=t3(28), opid=3
+static inline uint32_t neural_clamp_u8(uint8_t *dst, const float *src, uint32_t len) {
+    register uint32_t d asm("t1") = (uint32_t)dst;
+    register uint32_t s asm("t2") = (uint32_t)src;
+    register uint32_t n asm("t3") = len;
+    register uint32_t st asm("a0");
+    __asm__ volatile(".word 0x1F0E657B\n" : "=r"(st) : "r"(d), "r"(s), "r"(n) : "memory");
+    return st;
 }
 
 static inline void map_input_generator(void) {
     volatile float *input = (volatile float *)INPUT_BUF;
-    uint32_t code = read_a0();
 
     for (uint32_t i = 0; i < MODEL_INPUT_SIZE; i++) {
         input[i] = 0.0f;
     }
 
-    if (code < MODEL_INPUT_SIZE) {
-        input[code] = 1.0f;
+    if (char_code < MODEL_INPUT_SIZE) {
+        input[char_code] = 1.0f;
     }
 }
 
 static inline void map_output_generator(void) {
-    volatile float *output = (volatile float *)OUTPUT_BUF;
-    volatile uint8_t *fb = (volatile uint8_t *)FRAMEBUFFER_BASE;
-
-    for (uint32_t i = 0; i < MODEL_OUTPUT_SIZE; i++) {
-        float v = output[i];
-        if (v < 0.0f) v = 0.0f;
-        if (v > 1.0f) v = 1.0f;
-        v = v * 255.0f;
-        uint32_t pixel = (uint32_t)v;
-        if (pixel > 255u) pixel = 255u;
-        fb[i] = (uint8_t)pixel;
-    }
+    neural_clamp_u8((uint8_t *)FRAMEBUFFER_BASE, (const float *)OUTPUT_BUF, MODEL_OUTPUT_SIZE);
 }
 
 static inline void run_forward_pass(void) {
@@ -72,11 +106,6 @@ static inline void run_forward_pass(void) {
     uint32_t weights_base = MODEL_HEADER_SIZE + num_layers * MODEL_LAYER_ENTRY_SIZE;
     uint32_t biases_base = weights_base + total_weights * 4u;
 
-    volatile float *input_buf = (volatile float *)INPUT_BUF;
-    volatile float *act_a = (volatile float *)ACTIVATION_A;
-    volatile float *act_b = (volatile float *)ACTIVATION_B;
-    volatile float *output_buf = (volatile float *)OUTPUT_BUF;
-
     for (uint32_t layer_idx = 0; layer_idx < num_layers; layer_idx++) {
         const uint32_t *layer = (const uint32_t *)(model_bytes + layer_table_offset + layer_idx * MODEL_LAYER_ENTRY_SIZE);
         uint32_t input_size = layer[0];
@@ -85,42 +114,42 @@ static inline void run_forward_pass(void) {
         uint32_t weight_offset = layer[3];
         uint32_t bias_offset = layer[4];
 
-        const float *weights = (const float *)(model_bytes + weights_base + weight_offset);
-        const float *biases = (const float *)(model_bytes + biases_base + bias_offset);
+        uint32_t weights_addr = (uint32_t)(model_bytes + weights_base + weight_offset);
+        uint32_t biases_addr = (uint32_t)(model_bytes + biases_base + bias_offset);
 
-        volatile float *input_ptr;
-        volatile float *output_ptr;
+        uint32_t input_addr, output_addr;
 
         if (layer_idx == 0) {
-            input_ptr = input_buf;
-            output_ptr = act_a;
+            input_addr = INPUT_BUF;
+            output_addr = ACTIVATION_A;
         } else if (layer_idx & 1u) {
-            input_ptr = act_a;
-            output_ptr = act_b;
+            input_addr = ACTIVATION_A;
+            output_addr = ACTIVATION_B;
         } else {
-            input_ptr = act_b;
-            output_ptr = act_a;
+            input_addr = ACTIVATION_B;
+            output_addr = ACTIVATION_A;
         }
 
         if (layer_idx == num_layers - 1) {
-            output_ptr = output_buf;
+            output_addr = OUTPUT_BUF;
         }
 
-        for (uint32_t j = 0; j < output_size; j++) {
-            float acc = biases[j];
-            const float *wptr = weights + j;
-            for (uint32_t i = 0; i < input_size; i++) {
-                acc += input_ptr[i] * (*wptr);
-                wptr += output_size;
-            }
+        neural_desc_t desc;
+        desc.input_ptr = input_addr;
+        desc.weights_ptr = weights_addr;
+        desc.bias_ptr = biases_addr;
+        desc.output_ptr = output_addr;
+        desc.input_len = input_size;
+        desc.output_len = output_size;
+        desc.flags = 0;
+        desc.reserved = 0;
 
-            if (activation == 1u) {
-                if (acc < 0.0f) acc = 0.0f;
-            } else if (activation == 2u) {
-                acc = sigmoid_pwl(acc);
-            }
+        neural_matvec(&desc);
 
-            output_ptr[j] = acc;
+        if (activation == 0u) {
+            neural_relu((float *)output_addr, (float *)output_addr, output_size);
+        } else if (activation == 1u) {
+            neural_sigmoid((float *)output_addr, (float *)output_addr, output_size);
         }
     }
 }
@@ -130,6 +159,7 @@ void inference_loop(void);
 __attribute__((naked)) void _start(void) {
     __asm__ volatile (
         "lui sp, 0x20\n"
+        "mv s1, a0\n"
         "jal ra, inference_loop\n"
     );
 }

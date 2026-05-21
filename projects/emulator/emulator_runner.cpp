@@ -71,6 +71,7 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool is_sq
         
         // Set initial a0 to 'j' (106) as default input
         emulator.getCPU().setReg(10, 106);
+        emulator.getCPU().setReg(9, 106);  // s1 for s1-based runtime
     } else {
         std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
     }
@@ -113,8 +114,9 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool is_sq
             
             current_key_code = key_code;
             
-            // Store ASCII code in register a0 (x10)
+            // Store ASCII code in registers (a0 for a0-based runtimes, s1 for s1-based)
             emulator.getCPU().setReg(10, key_code);
+            emulator.getCPU().setReg(9, key_code);
             
             if (!first_key) {
                 // Print key info (will be overwritten when framebuffer renders)
@@ -131,9 +133,10 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool is_sq
         // For squash model, keep a0 stable by writing key code each step
         for (uint32_t i = 0; i < cycles_per_frame && !g_should_exit; ++i) {
             try {
-                // Keep a0 stable for squash model (it may get clobbered)
+                // Keep a0 and s1 stable for squash model (they may get clobbered)
                 if (is_squash_model) {
                     emulator.getCPU().setReg(10, current_key_code);
+                    emulator.getCPU().setReg(9, current_key_code);
                 }
                 
                 emulator.step();
@@ -507,11 +510,6 @@ int main(int argc, char** argv) {
             // Standard single-execution mode
             uint32_t executed_cycles = 0;
             for (; executed_cycles < max_cycles && !emulator.isHalted(); ++executed_cycles) {
-                if (char_specified && !is_counter_char_model) {
-                    // Keep the selected character stable across the full run
-                    // for static character demos.
-                    emulator.getCPU().setReg(10, char_code);
-                }
                 emulator.step();
             }
             

@@ -1,5 +1,6 @@
 #include "CPU.h"
 #include <cstring>  // for memcpy
+#include <iostream>
 
 CPU::CPU() : registers_{}, fp_registers_{}, pc_(0) {
     reset();
@@ -29,13 +30,7 @@ uint32_t CPU::getReg(uint8_t reg) const {
 }
 
 void CPU::setReg(uint8_t reg, uint32_t value) {
-    validateRegister(reg);
-    
-    // x0 is hardwired to zero - writes are ignored
-    if (reg == 0) {
-        return;
-    }
-    
+    if (reg == 0) return; // x0 is hardwired to 0
     registers_[reg] = value;
 }
 
@@ -357,7 +352,6 @@ void CPU::executeJALR(const Instruction& instr) {
 }
 
 void CPU::executeLUI(const Instruction& instr) {
-    // Load upper immediate into rd (lower 12 bits are zero)
     setReg(instr.rd, static_cast<uint32_t>(instr.imm));
 }
 
@@ -611,19 +605,14 @@ void CPU::executeNeural(const Instruction& instr, Memory& memory) {
                 );
             break;
         case 3: // NVCLAMPU8.F32 rd_status, rs_dst_u8, rs_src_f32, rs_len
-            status = is_v2
-                ? NeuralOps::vec_clamp_scale_u8_f32_v2(
-                    raw_mem,
-                    getReg(instr.rs1),
-                    getReg(instr.rs2),
-                    getReg(instr.rs3)
-                )
-                : NeuralOps::vec_clamp_scale_u8_f32(
-                    raw_mem,
-                    getReg(instr.rs1),
-                    getReg(instr.rs2),
-                    getReg(instr.rs3)
-                );
+            {
+                uint32_t r1 = getReg(instr.rs1);
+                uint32_t r2 = getReg(instr.rs2);
+                uint32_t r3 = getReg(instr.rs3);
+                status = is_v2
+                    ? NeuralOps::vec_clamp_scale_u8_f32_v2(raw_mem, r1, r2, r3)
+                    : NeuralOps::vec_clamp_scale_u8_f32(raw_mem, r1, r2, r3);
+            }
             break;
         default:
             throw std::runtime_error("Unsupported neural custom operation");

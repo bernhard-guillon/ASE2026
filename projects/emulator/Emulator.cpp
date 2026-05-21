@@ -47,6 +47,12 @@ void Emulator::step() {
     // Decode instruction
     Instruction instr = InstructionDecoder::decode(instruction_word);
     
+    if (instr.opcode == Opcode::UNKNOWN) {
+        std::cerr << "UNKNOWN OPCODE at PC=0x" << std::hex << pc
+                  << " instruction=0x" << instruction_word
+                  << " bits[6:0]=0x" << (instruction_word & 0x7f) << std::dec << std::endl;
+    }
+    
     // Handle ECALL specially
     if (instr.opcode == Opcode::SYSTEM) {
         if (instr.funct3 == 0b000 && instr.imm == 0) {
