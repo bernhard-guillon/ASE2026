@@ -380,8 +380,8 @@ map_input_generator:
     addi t2, t2, 4
     j .Lclear_input
 
-.Lclear_done:
-    li t1, 255
+ .Lclear_done:
+    li t1, {input_size}
     bgeu a0, t1, .Linput_done
     slli t1, a0, 2
     add t1, t0, t1
@@ -630,7 +630,10 @@ layer_{layer_idx}_forward:
     sw s3, 12(sp)
     sw s4, 8(sp)
 
+    .option push
+    .option norelax
     la s0, model_data_start
+    .option pop
     lui s1, {input_buf >> 12}
     addi s1, s1, {input_buf & 0xFFF}
     lui s2, {output_buf >> 12}
@@ -771,10 +774,15 @@ sigmoid_piecewise:
         # Wrap assembly in C functions
         c_parts.append(self._generate_c_wrapped_asm(asm_code))
         
-        # Add _start function that jumps to inference_loop
+        # Add _start function that initializes stack and jumps to inference_loop
+        # Note: No data copying needed since model_data is already at target address
         c_parts.append("""// Entry point
 void _start(void) {
     __asm__ volatile (
+        "# Initialize stack pointer to 0x20000\\n"
+        "lui sp, 0x20\\n"
+        "\\n"
+        "# Jump directly to inference loop\\n"
         "j inference_loop"
     );
 }
