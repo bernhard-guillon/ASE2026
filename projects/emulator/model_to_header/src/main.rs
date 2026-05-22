@@ -30,7 +30,13 @@ struct Metadata {
     #[serde(default)]
     input_mapping: Option<String>,
     #[serde(default)]
+    output_mapping: Option<String>,
+    #[serde(default)]
     output_size: Option<u32>,
+    #[serde(default)]
+    board_size: Option<u32>,
+    #[serde(default)]
+    actions: Option<Vec<String>>,
 }
 
 #[allow(dead_code)]
@@ -135,9 +141,6 @@ fn run() -> Result<(), String> {
         u32_vals.push(u32::from_le_bytes(chunk.try_into().unwrap()));
     }
 
-    let stem = args.output.file_stem().unwrap().to_str().unwrap().to_uppercase().replace('-', "_");
-    let stem_lower = stem.to_lowercase();
-
     let input_size = model.layers.first().map(|l| l.input_size).unwrap_or(0);
     let output_size = model
         .metadata
@@ -146,20 +149,20 @@ fn run() -> Result<(), String> {
         .unwrap_or(0);
 
     let mut out = String::new();
-    out.push_str(&format!("#ifndef {stem}_H\n#define {stem}_H\n\n"));
+    out.push_str("#ifndef MODEL_H\n#define MODEL_H\n\n");
     out.push_str("// Basic type definitions (no stdint.h dependency)\n");
-    out.push_str("typedef unsigned int uint32_t;\n\n");
-    out.push_str(&format!("#define {stem}_HEADER_SIZE 28\n"));
-    out.push_str(&format!("#define {stem}_LAYER_ENTRY_SIZE 32\n"));
-    out.push_str(&format!("#define {stem}_NUM_LAYERS {num_layers}\n"));
-    out.push_str(&format!("#define {stem}_TOTAL_WEIGHTS {total_weights}\n"));
-    out.push_str(&format!("#define {stem}_TOTAL_BIASES {total_biases}\n"));
-    out.push_str(&format!("#define {stem}_INPUT_SIZE {input_size}\n"));
-    out.push_str(&format!("#define {stem}_OUTPUT_SIZE {output_size}\n"));
-    out.push_str(&format!("#define {stem}_MODEL_WORDS {words}\n\n"));
+    out.push_str("typedef unsigned int uint32_t;\ntypedef unsigned char uint8_t;\n\n");
+    out.push_str(&format!("#define MODEL_HEADER_SIZE 28\n"));
+    out.push_str(&format!("#define MODEL_LAYER_ENTRY_SIZE 32\n"));
+    out.push_str(&format!("#define MODEL_NUM_LAYERS {num_layers}\n"));
+    out.push_str(&format!("#define MODEL_TOTAL_WEIGHTS {total_weights}\n"));
+    out.push_str(&format!("#define MODEL_TOTAL_BIASES {total_biases}\n"));
+    out.push_str(&format!("#define MODEL_INPUT_SIZE {input_size}\n"));
+    out.push_str(&format!("#define MODEL_OUTPUT_SIZE {output_size}\n"));
+    out.push_str(&format!("#define MODEL_MODEL_WORDS {words}\n\n"));
 
     out.push_str("__attribute__((aligned(4), section(\".model\")))\n");
-    out.push_str(&format!("static const uint32_t {stem_lower}_model_data[{words}] = {{\n    "));
+    out.push_str(&format!("static const uint32_t model_data[{words}] = {{\n    "));
 
     for (i, word) in u32_vals.iter().enumerate() {
         if i == 0 {
@@ -171,7 +174,68 @@ fn run() -> Result<(), String> {
         }
     }
     out.push_str("\n};\n\n");
-    out.push_str(&format!("#endif /* {stem}_H */\n"));
+
+    // Emit model-specific mapping macros based on input_mapping / output_mapping metadata
+    match model.metadata.input_mapping.as_deref() {
+        None | Some("character_code") => {
+            out.push_str("// Keycode from _start argument (s1), set once at boot\n");
+            out.push_str("register uint32_t model_key asm(\"s1\");\n\n");
+            out.push_str("#define MODEL_READ_A0_EACH_ITER 0\n");
+            out.push_str("#define MODEL_HAS_DONE_FLAG 0\n\n");
+            out.push_str("#define MODEL_MAP_INPUT(buf) do { \\\n");
+            out.push_str("    for (uint32_t i = 0; i < MODEL_INPUT_SIZE; i++) buf[i] = 0.0f; \\\n");
+            out.push_str("    if (model_key < MODEL_INPUT_SIZE) buf[model_key] = 1.0f; \\\n");
+            out.push_str("} while(0)\n\n");
+            out.push_str("#define MODEL_MAP_OUTPUT(buf, fb) do { \\\n");
+            out.push_str("    uint8_t *_out = (uint8_t *)(fb); \\\n");
+            out.push_str("    for (uint32_t _i = 0; _i < MODEL_OUTPUT_SIZE; _i++) { \\\n");
+            out.push_str("        float _v = (buf)[_i]; \\\n");
+            out.push_str("        if (_v < 0.0f) _v = 0.0f; \\\n");
+            out.push_str("        if (_v > 255.0f) _v = 255.0f; \\\n");
+            out.push_str("        _out[_i] = (uint8_t)_v; \\\n");
+            out.push_str("    } \\\n");
+            out.push_str("} while(0)\n\n");
+        }
+        Some("movement_packed_a0") => {
+            let board_cells = model.metadata.board_size.map(|s| s * s).unwrap_or(400);
+            out.push_str(&format!("// Movement model: state + action input, argmax output\n"));
+            out.push_str(&format!("#define MODEL_BOARD_CELLS {board_cells}\n"));
+            out.push_str("#define MODEL_READ_A0_EACH_ITER 1\n");
+            out.push_str("#define MODEL_HAS_DONE_FLAG 1\n\n");
+            out.push_str("// Persistent state: current board position\n");
+            out.push_str("static uint32_t model_state = 200;\n\n");
+            out.push_str("#define MODEL_MAP_INPUT(buf) do { \\\n");
+            out.push_str("    for (uint32_t i = 0; i < MODEL_INPUT_SIZE; i++) buf[i] = 0.0f; \\\n");
+            out.push_str("    buf[model_state] = 1.0f; \\\n");
+            out.push_str("    uint32_t _action = 4; \\\n");
+            out.push_str("    uint32_t _key; \\\n");
+            out.push_str("    __asm__ volatile (\"mv %0, a0\" : \"=r\"(_key)); \\\n");
+            out.push_str("    if (_key == 'h') _action = 2; \\\n");
+            out.push_str("    else if (_key == 'j') _action = 1; \\\n");
+            out.push_str("    else if (_key == 'k') _action = 0; \\\n");
+            out.push_str("    else if (_key == 'l') _action = 3; \\\n");
+            out.push_str("    buf[400 + _action] = 1.0f; \\\n");
+            out.push_str("} while(0)\n\n");
+            out.push_str("#define MODEL_MAP_OUTPUT(buf, fb) do { \\\n");
+            out.push_str("    uint32_t _mi = 0; \\\n");
+            out.push_str("    float _mv = buf[0]; \\\n");
+            out.push_str("    for (uint32_t _i = 1; _i < MODEL_OUTPUT_SIZE; _i++) { \\\n");
+            out.push_str("        if (buf[_i] > _mv) { _mv = buf[_i]; _mi = _i; } \\\n");
+            out.push_str("    } \\\n");
+            out.push_str("    if (_mi < MODEL_BOARD_CELLS) model_state = _mi; \\\n");
+            out.push_str("    for (uint32_t _i = 0; _i < MODEL_BOARD_CELLS; _i++) fb[_i] = 0; \\\n");
+            out.push_str("    fb[model_state] = 255; \\\n");
+            out.push_str("} while(0)\n\n");
+        }
+        other => {
+            return Err(format!(
+                "Unknown input_mapping '{:?}' — expected 'character_code' or 'movement_packed_a0'",
+                other
+            ));
+        }
+    }
+
+    out.push_str("#endif /* MODEL_H */\n");
 
     fs::write(&args.output, &out)
         .map_err(|e| format!("Failed to write {}: {e}", args.output.display()))?;

@@ -39,6 +39,7 @@ def build_intermediate(model: PlayerMovementNetwork) -> dict[str, Any]:
             "precision": "float32",
             "framework": "pytorch",
             "input_mapping": "movement_packed_a0",
+            "output_mapping": "movement_argmax",
             "board_size": 20,
             "actions": ["up", "down", "left", "right", "stay"],
         },

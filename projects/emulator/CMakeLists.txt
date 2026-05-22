@@ -130,11 +130,6 @@ add_executable(test_elf_loader utest/test_elf_loader.cpp)
 target_include_directories(test_elf_loader PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_elf_loader emulator cpu memory instruction gtest_main)
 
-# Model loading tests
-add_executable(test_model_loading utest/test_model_loading.cpp)
-target_include_directories(test_model_loading PRIVATE ${UNIT_TEST_INCLUDE_DIR})
-target_link_libraries(test_model_loading emulator cpu memory instruction)
-
 # Floating-point instruction tests (F extension)
 add_executable(test_fp_instructions utest/test_fp_instructions.cpp)
 target_include_directories(test_fp_instructions PRIVATE ${UNIT_TEST_INCLUDE_DIR})
@@ -169,7 +164,6 @@ gtest_discover_tests(test_elf_loader)
 gtest_discover_tests(test_neural_ops)
 
 # Register integration tests
-add_test(NAME test_model_loading COMMAND test_model_loading)
 add_test(NAME test_memory_layout COMMAND run_memory_layout_test)
 
 # ============================================================================
@@ -331,6 +325,26 @@ if(PYTHON_EXECUTABLE)
     )
 
     add_test(
+        NAME python/neural_char_gen/runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_neural_char_gen_runtime.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/neural_char_gen/runtime_smoke PROPERTIES
+        LABELS "neural;char_gen;runtime"
+        TIMEOUT 600
+    )
+
+    add_test(
+        NAME python/neural_movement/runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_movement_runtime.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/neural_movement/runtime_smoke PROPERTIES
+        LABELS "neural;movement;runtime"
+        TIMEOUT 600
+    )
+
+    add_test(
         NAME python/counter_char/combined_elf_smoke
         COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_counter_char_combined_smoke.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -480,10 +494,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             set(MOVEMENT_JSON "${CMAKE_CURRENT_BINARY_DIR}/movement_generator.json")
             message(STATUS "Will generate movement model JSON in build directory")
         endif()
-        set(MOVEMENT_ASM "${CMAKE_CURRENT_BINARY_DIR}/movement.s")
-        set(MOVEMENT_OBJ "${CMAKE_CURRENT_BINARY_DIR}/movement.o")
-        set(MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/movement.elf")
-            set(COUNTER_CHAR_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_scaffold.py")
+        set(COUNTER_CHAR_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_scaffold.py")
             set(COUNTER_CHAR_BASE_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
             set(COUNTER_CHAR_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter-char_generator.json")
             set(COUNTER_CHAR_ASM "${CMAKE_CURRENT_BINARY_DIR}/counter-char.s")
@@ -537,41 +548,47 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_target(neural_elf ALL DEPENDS ${NEURAL_ELF})
 
-        # Build char_gen.elf from model JSON using C model compiler
-        set(CHAR_GEN_C_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_to_C_split.py")
-        set(CHAR_GEN_LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/riscv_generator_high.ld")
-        set(CHAR_GEN_RUNTIME_C "${CMAKE_CURRENT_SOURCE_DIR}/char_gen_runtime.c")
-        set(CHAR_GEN_H "${CMAKE_CURRENT_BINARY_DIR}/model.h")
+        # Rust model-to-header compiler (pre-built, install via `cargo build --release`)
+        set(MODEL_TO_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/model_to_header/target/release/model_to_header")
+
+        # Shared runtime for all neural models (char_gen, movement, etc.)
+        set(SHARED_RUNTIME_C "${CMAKE_CURRENT_SOURCE_DIR}/runtime.c")
+        set(SHARED_LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/riscv_generator_high.ld")
+
+        # --- char_gen.elf -------------------------------------------------------
+        set(CHAR_GEN_MODEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/char_gen_model_dir")
+        set(CHAR_GEN_H "${CHAR_GEN_MODEL_DIR}/model.h")
         set(CHAR_GEN_ELF "${CMAKE_CURRENT_BINARY_DIR}/char_gen.elf")
 
         add_custom_command(
             OUTPUT ${CHAR_GEN_H}
-            COMMAND ${PYTHON_EXECUTABLE} ${CHAR_GEN_C_COMPILER}
-                -o ${CMAKE_CURRENT_BINARY_DIR}/model
-                ${NEURAL_MODEL_JSON}
-            DEPENDS ${CHAR_GEN_C_COMPILER} ${NEURAL_MODEL_JSON}
-            COMMENT "Generating model.h from model JSON"
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CHAR_GEN_MODEL_DIR}
+            COMMAND ${MODEL_TO_HEADER}
+                -i ${NEURAL_MODEL_JSON}
+                -o ${CHAR_GEN_H}
+            DEPENDS ${NEURAL_MODEL_JSON}
+            COMMENT "Generating char_gen model.h via Rust model-to-header"
             VERBATIM
         )
 
         add_custom_command(
             OUTPUT ${CHAR_GEN_ELF}
             COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
-                -I${CMAKE_CURRENT_BINARY_DIR}
-                -T ${CHAR_GEN_LINKER_SCRIPT}
+                -I${CHAR_GEN_MODEL_DIR}
+                -T ${SHARED_LINKER_SCRIPT}
                 -Wl,--oformat=elf32-littleriscv
                 -Wl,-e,_start
                 -o ${CHAR_GEN_ELF}
-                ${CHAR_GEN_RUNTIME_C}
+                ${SHARED_RUNTIME_C}
                 -lgcc
-            DEPENDS ${CHAR_GEN_H} ${CHAR_GEN_RUNTIME_C} ${CHAR_GEN_LINKER_SCRIPT}
+            DEPENDS ${CHAR_GEN_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
             COMMENT "Compiling char_gen.elf"
             VERBATIM
         )
 
         add_custom_target(char_gen_elf ALL DEPENDS ${CHAR_GEN_ELF})
 
-        # Custom command to ensure movement model exists and export JSON
+        # --- movement.elf -------------------------------------------------------
         set(MOVEMENT_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_movement_model.py")
         add_custom_command(
             OUTPUT ${MOVEMENT_JSON}
@@ -587,27 +604,33 @@ if(RISCV_TOOLCHAIN_FOUND)
             VERBATIM
         )
 
-        add_custom_command(
-            OUTPUT ${MOVEMENT_ASM}
-            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${MOVEMENT_ASM} ${MOVEMENT_JSON}
-            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${MOVEMENT_JSON}
-            COMMENT "Generating movement.s from movement model JSON"
-            VERBATIM
-        )
+        set(MOVEMENT_MODEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/movement_model_dir")
+        set(MOVEMENT_H "${MOVEMENT_MODEL_DIR}/model.h")
+        set(MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/movement.elf")
 
         add_custom_command(
-            OUTPUT ${MOVEMENT_OBJ}
-            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${MOVEMENT_OBJ} ${MOVEMENT_ASM}
-            DEPENDS ${MOVEMENT_ASM}
-            COMMENT "Assembling movement.o"
+            OUTPUT ${MOVEMENT_H}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${MOVEMENT_MODEL_DIR}
+            COMMAND ${MODEL_TO_HEADER}
+                -i ${MOVEMENT_JSON}
+                -o ${MOVEMENT_H}
+            DEPENDS ${MOVEMENT_JSON}
+            COMMENT "Generating movement model.h via Rust model-to-header"
             VERBATIM
         )
 
         add_custom_command(
             OUTPUT ${MOVEMENT_ELF}
-            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${MOVEMENT_ELF} ${MOVEMENT_OBJ}
-            DEPENDS ${MOVEMENT_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
-            COMMENT "Linking movement.elf"
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+                -I${MOVEMENT_MODEL_DIR}
+                -T ${SHARED_LINKER_SCRIPT}
+                -Wl,--oformat=elf32-littleriscv
+                -Wl,-e,_start
+                -o ${MOVEMENT_ELF}
+                ${SHARED_RUNTIME_C}
+                -lgcc
+            DEPENDS ${MOVEMENT_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
+            COMMENT "Compiling movement.elf"
             VERBATIM
         )
 
