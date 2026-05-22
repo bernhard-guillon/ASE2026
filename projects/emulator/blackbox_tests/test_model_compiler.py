@@ -516,42 +516,6 @@ class TestModelCompiler(unittest.TestCase):
         self.assertIn("Output mapping: movement argmax", asm)
         self.assertIn(".Largmax_done_movement", asm)
 
-    def test_generate_assembly_emits_squash_fb_key_mapping(self):
-        """Squash mapping mode should emit framebuffer+key input decode path."""
-        squash_model = {
-            "metadata": {
-                "model_type": "generator",
-                "version": 1,
-                "architecture": "fully-connected",
-                "precision": "float32",
-                "framework": "pytorch",
-                "input_mapping": "squash_fb_key_a0",
-            },
-            "layers": [
-                {
-                    "name": "layer_0",
-                    "input_size": 655,
-                    "output_size": 1,
-                    "activation": "none",
-                    "weights_shape": [655, 1],
-                    "weights": [[0.0] for _ in range(655)],
-                    "biases_shape": [1],
-                    "biases": [0.0],
-                }
-            ],
-        }
-        json_path = self._save_json(squash_model, "squash_mapping.json")
-        asm_path = os.path.join(self.temp_dir.name, "squash_mapping.s")
-        self.compiler.generate_assembly(json_path, asm_path, with_execution=True)
-        with open(asm_path, "r") as f:
-            asm = f.read()
-        self.assertIn("Input mapping: squash framebuffer + key one-hot", asm)
-        self.assertIn(".Lread_fb_squash", asm)
-        self.assertIn("li t1, 255", asm)
-        self.assertIn("li t2, 400", asm)
-        self.assertIn("Output mapping: squash top-4 active cells", asm)
-        self.assertIn(".Ltop4_done_squash", asm)
-
     def test_generate_assembly_emits_nmatvec8xp3(self):
         """x7b + 8xpmac3 lane mode should emit nmatvec8xp3 mnemonic."""
         json_path = self._save_json(self.simple_model)

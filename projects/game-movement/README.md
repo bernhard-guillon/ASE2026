@@ -79,46 +79,4 @@ cmake --build build --target movement_elf -j4
 
 Output: `projects/emulator/build/movement.elf`
 
-## Model training (`j/k` paddle control)
-
-This extends from movement-only into game-frame prediction:
-
-- Input: current `20x20` framebuffer (`400`) + key one-hot (`255`, ASCII channel)
-- Keys: `j` = up, `k` = down, `space` = stay
-- Output: next `20x20` framebuffer (`400`)
-
-Produced artifacts:
-
-- `squash_dataset.npz`
-- `squash_transitions.json`
-- `squash_model.pth`
-- `squash_metrics.json`
-- `squash_eval.json`
-- `squash_mismatches.json`
-
-Build ELF from game-movement model for emulator runs:
-
-```bash
-cd ../../emulator
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --target game_movement_elf -j4
-```
-
-Output: `projects/emulator/build/game-movement.elf`
-
-Run on C++ emulator (example with `j` = up):
-
-```bash
-cd ../../emulator
-./build/emulator_runner ./build/game-movement.elf --char-code 106 --cycles 12000000 --render-framebuffer --dump-framebuffer
-```
-
-Note: the game-movement model is larger than the movement-only model, so use a higher cycle budget (`>= 10,000,000`) for visible framebuffer output.
-
-Key codes:
-
-- `j` (up): `106`
-- `k` (down): `107`
-- `space` (stay): `32`
-
 
