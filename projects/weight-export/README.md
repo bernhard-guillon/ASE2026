@@ -26,14 +26,6 @@ Convert trained PyTorch character-generation weights into formats used by the RI
 python3 export_generator.py
 ```
 
-Optional legacy script:
-
-```bash
-python3 export_recognizer.py
-```
-
-Legacy recognizer artifacts are not part of current ASE2026 scope.
-
 ## Files
 
 - `export_generator.py`: generator export entry point

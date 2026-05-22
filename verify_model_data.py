@@ -220,11 +220,6 @@ def main():
             'name': 'Character Generator',
             'json': 'projects/weight-export/character_generator.json',
             'binary': 'projects/weight-export/character_generator.bin'
-        },
-        {
-            'name': 'Character Recognizer',
-            'json': 'projects/weight-export/character_recognition.json',
-            'binary': 'projects/weight-export/character_recognition.bin'
         }
     ]
     

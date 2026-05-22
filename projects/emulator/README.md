@@ -31,7 +31,7 @@ cmake --build build --target neural_elf -j4
 # Game movement model (exports JSON + compiles movement.elf)
 cmake --build build --target movement_elf -j4
 
-# Squash/Pong world model (j/k input, outputs game-movement.elf)
+# Game-movement model (j/k input, outputs game-movement.elf)
 cmake --build build --target game_movement_elf -j4
 ```
 
@@ -56,7 +56,7 @@ cd build
 ./verilator_runner ./neural-op-enhance8pmac4.elf --char-code 65 --render-framebuffer
 ```
 
-Squash game-movement run example:
+Game-movement run example:
 
 ```bash
 cd build

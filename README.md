@@ -142,7 +142,7 @@ Goal: introduce timer/input interrupts so neural workloads can react to events i
 - Define interrupt entry/return conventions for our runtime.
 - Use interrupts to trigger neural update steps (e.g., frame tick, input event).
 
-### 2) Single-player Neural Pong (squash mode)
+### 2) Single-player Neural Pong (game-movement mode)
 
 Goal: prove interactive closed-loop behavior using the neural path in real time.
 

@@ -52,29 +52,6 @@ class TestBootloaderCodeGeneration(unittest.TestCase):
             ]
         }
         
-        # Recognizer model for testing
-        self.rec_model = {
-            "metadata": {
-                "model_type": "recognizer",
-                "version": 1,
-                "architecture": "fully-connected",
-                "precision": "float32",
-                "framework": "pytorch"
-            },
-            "layers": [
-                {
-                    "name": "layer_0",
-                    "input_size": 6,
-                    "output_size": 3,
-                    "activation": "sigmoid",
-                    "weights_shape": [6, 3],
-                    "weights": [[float(i*3+j) for j in range(3)] for i in range(6)],
-                    "biases_shape": [3],
-                    "biases": [float(i) * 0.2 for i in range(3)]
-                }
-            ]
-        }
-    
     def tearDown(self):
         """Clean up test fixtures."""
         self.temp_dir.cleanup()
@@ -187,21 +164,6 @@ class TestBootloaderCodeGeneration(unittest.TestCase):
         
         # Generator should load to 0x10000
         self.assertIn("0x10", asm_content)  # lui 0x10 for 0x10000
-    
-    def test_recognizer_model_destination_address(self):
-        """Test that recognizer model uses correct destination address."""
-        json_path = self._save_json(self.rec_model)
-        asm_path = os.path.join(self.temp_dir.name, "boot.s")
-        
-        self.compiler.compile(json_path, asm_path, with_bootloader=True)
-        
-        with open(asm_path, 'r') as f:
-            asm_content = f.read()
-        
-        # Recognizer should load to 0xF4ABC
-        # lui 0xF4 with addi -1348 for the ABC part
-        self.assertIn("0xF4", asm_content)
-        self.assertIn("-1348", asm_content)
     
     def test_bootloader_loads_correct_size(self):
         """Test that bootloader copies correct number of bytes."""

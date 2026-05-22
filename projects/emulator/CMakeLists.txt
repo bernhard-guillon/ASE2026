@@ -313,12 +313,6 @@ if(PYTHON_EXECUTABLE)
     )
 
     add_test(
-        NAME python/game_movement/squash_elf_smoke
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_elf_smoke.py -v
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-
-    add_test(
         NAME python/game_movement/chained_elf_smoke
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_chained_model_elf_smoke.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -489,12 +483,6 @@ if(RISCV_TOOLCHAIN_FOUND)
         set(MOVEMENT_ASM "${CMAKE_CURRENT_BINARY_DIR}/movement.s")
         set(MOVEMENT_OBJ "${CMAKE_CURRENT_BINARY_DIR}/movement.o")
         set(MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/movement.elf")
-            set(GAME_MOVEMENT_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/export_squash_intermediate.py")
-            set(GAME_MOVEMENT_MODEL_CHECKPOINT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/squash_model.pth")
-            set(GAME_MOVEMENT_JSON "${CMAKE_CURRENT_BINARY_DIR}/game-movement_generator.json")
-            set(GAME_MOVEMENT_ASM "${CMAKE_CURRENT_BINARY_DIR}/game-movement.s")
-            set(GAME_MOVEMENT_OBJ "${CMAKE_CURRENT_BINARY_DIR}/game-movement.o")
-            set(GAME_MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/game-movement.elf")
             set(COUNTER_CHAR_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_scaffold.py")
             set(COUNTER_CHAR_BASE_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
             set(COUNTER_CHAR_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter-char_generator.json")
@@ -625,47 +613,8 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_target(movement_elf ALL DEPENDS ${MOVEMENT_ELF})
 
-        # Build game-movement.elf from squash model (j/k input + 20x20 framebuffer output)
-        set(GAME_MOVEMENT_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_game_movement_model.py")
-        add_custom_command(
-            OUTPUT ${GAME_MOVEMENT_JSON}
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src
-            COMMAND ${CMAKE_COMMAND} -E env
-                GAME_MOVEMENT_MODEL_CHECKPOINT=${GAME_MOVEMENT_MODEL_CHECKPOINT}
-                GAME_MOVEMENT_TRAIN_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/train_squash.py
-                GAME_MOVEMENT_EXPORT_SCRIPT=${GAME_MOVEMENT_EXPORT_SCRIPT}
-                GAME_MOVEMENT_JSON_OUTPUT=${GAME_MOVEMENT_JSON}
-                ${PYTHON_EXECUTABLE} ${GAME_MOVEMENT_BUILD_SCRIPT}
-            DEPENDS ${GAME_MOVEMENT_BUILD_SCRIPT} ${GAME_MOVEMENT_EXPORT_SCRIPT}
-            COMMENT "Building game movement model (train if needed, then export JSON)"
-            VERBATIM
-        )
-
-        add_custom_command(
-            OUTPUT ${GAME_MOVEMENT_ASM}
-            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${GAME_MOVEMENT_ASM} ${GAME_MOVEMENT_JSON}
-            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${GAME_MOVEMENT_JSON}
-            COMMENT "Generating game-movement.s from squash model JSON"
-            VERBATIM
-        )
-
-        add_custom_command(
-            OUTPUT ${GAME_MOVEMENT_OBJ}
-            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${GAME_MOVEMENT_OBJ} ${GAME_MOVEMENT_ASM}
-            DEPENDS ${GAME_MOVEMENT_ASM}
-            COMMENT "Assembling game-movement.o"
-            VERBATIM
-        )
-
-        add_custom_command(
-            OUTPUT ${GAME_MOVEMENT_ELF}
-            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${GAME_MOVEMENT_ELF} ${GAME_MOVEMENT_OBJ}
-            DEPENDS ${GAME_MOVEMENT_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
-            COMMENT "Linking game-movement.elf"
-            VERBATIM
-        )
-
-        add_custom_target(game_movement_elf DEPENDS ${GAME_MOVEMENT_ELF})
+        # game_movement_elf target removed — build scripts (train_squash.py,
+        # export_squash_intermediate.py, build_game_movement_model.py) no longer exist
 
         # Phase-1 scaffold path for counter->a0->char-gen integration
         set(COUNTER_CHAR_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_counter_char_model.py")

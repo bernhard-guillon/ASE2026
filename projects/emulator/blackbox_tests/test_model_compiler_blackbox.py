@@ -239,49 +239,6 @@ class TestModelCompilerBlackBox(unittest.TestCase):
         self.assertEqual(len(incbin_lines), 1)
         self.assertIn('"', incbin_lines[0])
     
-    def test_large_model_assembly(self):
-        """Test assembly generation for larger model."""
-        large_model = {
-            "metadata": {
-                "model_type": "recognizer",
-                "version": 1,
-                "architecture": "fully-connected",
-                "precision": "float32",
-                "framework": "pytorch"
-            },
-            "layers": [
-                {
-                    "name": "layer_0",
-                    "input_size": 50,
-                    "output_size": 30,
-                    "activation": "relu",
-                    "weights_shape": [50, 30],
-                    "weights": [[float(i*30+j) for j in range(30)] for i in range(50)],
-                    "biases_shape": [30],
-                    "biases": [float(i) * 0.01 for i in range(30)]
-                }
-            ]
-        }
-        
-        json_path = self._save_json(large_model)
-        asm_path = os.path.join(self.temp_dir.name, "large.s")
-        
-        asm_result, bin_path = self.compiler.compile(json_path, asm_path)
-        
-        # Files should exist
-        self.assertTrue(os.path.exists(asm_result))
-        self.assertTrue(os.path.exists(bin_path))
-        
-        # Binary should be reasonably sized (50*30*4 weights + 30*4 biases + header + table)
-        expected_min = 50*30*4 + 30*4
-        actual_size = os.path.getsize(bin_path)
-        self.assertGreater(actual_size, expected_min)
-        
-        # Assembly should be reasonable length
-        with open(asm_result, 'r') as f:
-            asm_size = len(f.read())
-        self.assertGreater(asm_size, 100)  # At least some content
-    
     def test_cli_interface(self):
         """Test command-line interface of model_compiler.py."""
         json_path = self._save_json(self.simple_model)

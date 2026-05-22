@@ -2,7 +2,7 @@
 
 Train and validate a deterministic neural transition model for single-player movement on a `20x20` board.
 
-This project is the first gameplay building block before squash/pong physics:
+This project is the first gameplay building block before pong physics:
 
 - one `#` player on a `20x20` framebuffer
 - actions: `up`, `down`, `left`, `right`, `stay`
@@ -79,22 +79,13 @@ cmake --build build --target movement_elf -j4
 
 Output: `projects/emulator/build/movement.elf`
 
-## Squash model training (`j/k` paddle control)
+## Model training (`j/k` paddle control)
 
 This extends from movement-only into game-frame prediction:
 
 - Input: current `20x20` framebuffer (`400`) + key one-hot (`255`, ASCII channel)
 - Keys: `j` = up, `k` = down, `space` = stay
 - Output: next `20x20` framebuffer (`400`)
-
-Run from `src/`:
-
-```bash
-cd src
-python3 test_squash_oracle.py
-python3 train_squash.py 60 128 0.001 600 120
-python3 evaluate_squash.py
-```
 
 Produced artifacts:
 
@@ -105,7 +96,7 @@ Produced artifacts:
 - `squash_eval.json`
 - `squash_mismatches.json`
 
-Build ELF from squash model for emulator runs:
+Build ELF from game-movement model for emulator runs:
 
 ```bash
 cd ../../emulator
@@ -122,7 +113,7 @@ cd ../../emulator
 ./build/emulator_runner ./build/game-movement.elf --char-code 106 --cycles 12000000 --render-framebuffer --dump-framebuffer
 ```
 
-Note: the squash model is larger than the movement-only model, so use a higher cycle budget (`>= 10,000,000`) for visible framebuffer output.
+Note: the game-movement model is larger than the movement-only model, so use a higher cycle budget (`>= 10,000,000`) for visible framebuffer output.
 
 Key codes:
 
@@ -130,27 +121,4 @@ Key codes:
 - `k` (down): `107`
 - `space` (stay): `32`
 
-## Throwaway terminal squash prototype
 
-Prototype path: `projects/game-movement/prototype/terminal_squash.py`
-
-```bash
-cd prototype
-python3 terminal_squash.py
-```
-
-Controls:
-
-- `up/down` arrows (or `w/s`): move paddle by one cell per tick
-- `p`: write ASCII screenshot to `prototype/screenshots/`
-- `r`: reset game
-- `space`: pause/resume
-- `q`: quit
-
-Quick non-interactive check:
-
-```bash
-cd prototype
-python3 test_squash_logic.py
-python3 terminal_squash.py --headless-ticks 80 --script "ddddddssssssuuuuuu" --seed 7
-```

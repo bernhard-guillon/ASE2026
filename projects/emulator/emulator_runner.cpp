@@ -48,7 +48,7 @@ struct TerminalMode {
 };
 
 // Process keyboard input in GUI mode
-void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool is_squash_model, uint32_t default_a0) {
+void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, uint32_t default_a0) {
     TerminalMode terminal;
     FramebufferRenderer renderer;
     signal(SIGINT, signal_handler);
@@ -56,34 +56,14 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool is_sq
     g_emulator = &emulator;
     g_should_exit = false;
     
-    // For squash model, use specific key semantics
-    if (is_squash_model) {
-        std::cout << "Squash GUI mode active. Use Up/Down arrows or W/S to move, Space to action. Ctrl+C to exit." << std::endl;
-        
-        // Seed initial framebuffer for squash game state
-        // Framebuffer is at 0x20000, 20x20 grid (index = y * 20 + x)
-        // ball at (x=0, y=10) -> index = 10 * 20 + 0 = 200
-        emulator.getMemory().write8(0x20000 + 200, 255);
-        // paddle at x=19, y=9..11 -> indices 9*20+19=199, 10*20+19=219, 11*20+19=239
-        emulator.getMemory().write8(0x20000 + 199, 255);
-        emulator.getMemory().write8(0x20000 + 219, 255);
-        emulator.getMemory().write8(0x20000 + 239, 255);
-        
-        // Set initial a0 to 'j' (106) as default input
-        emulator.getCPU().setReg(10, 106);
-        emulator.getCPU().setReg(9, 106);  // s1 for s1-based runtime
-    } else {
-        std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
-    }
+    std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
     std::cout << std::endl;
     
     // Initial render
     renderer.render(emulator.getMemory());
-    if (!is_squash_model) {
-        std::cout << "\nPress keys to change character:" << std::endl;
-    }
+    std::cout << "\nPress keys to change character:" << std::endl;
     
-    uint32_t current_key_code = is_squash_model ? 106 : default_a0;
+    uint32_t current_key_code = default_a0;
     bool first_key = true;
     
     while (!g_should_exit) {
@@ -91,26 +71,6 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool is_sq
         unsigned char ch = 0;
         if (read(STDIN_FILENO, &ch, 1) == 1) {
             uint32_t key_code = static_cast<uint32_t>(ch);
-            
-            // For squash model, map keys
-            if (is_squash_model) {
-                if (ch == 27) {
-                    // Arrow key prefix (ESC), read next two bytes
-                    unsigned char next1 = 0, next2 = 0;
-                    if (read(STDIN_FILENO, &next1, 1) == 1 && read(STDIN_FILENO, &next2, 1) == 1) {
-                        if (next1 == 91) {
-                            if (next2 == 65) key_code = 106;  // Up arrow -> 'j'
-                            else if (next2 == 66) key_code = 107;  // Down arrow -> 'k'
-                        }
-                    }
-                } else if (ch == 'w' || ch == 'W') {
-                    key_code = 106;  // W -> 'j'
-                } else if (ch == 's' || ch == 'S') {
-                    key_code = 107;  // S -> 'k'
-                } else if (ch == ' ') {
-                    key_code = 32;  // Space
-                }
-            }
             
             current_key_code = key_code;
             
@@ -130,15 +90,8 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool is_sq
         }
         
         // Execute instructions per iteration
-        // For squash model, keep a0 stable by writing key code each step
         for (uint32_t i = 0; i < cycles_per_frame && !g_should_exit; ++i) {
             try {
-                // Keep a0 and s1 stable for squash model (they may get clobbered)
-                if (is_squash_model) {
-                    emulator.getCPU().setReg(10, current_key_code);
-                    emulator.getCPU().setReg(9, current_key_code);
-                }
-                
                 emulator.step();
                 if (emulator.isHalted()) {
                     g_should_exit = true;
@@ -485,18 +438,6 @@ int main(int argc, char** argv) {
         }
     }
     
-    // Detect if this is a squash model (game-movement)
-    // Check if binary path contains "game-movement"
-    bool is_squash_model = (binary_path.find("game-movement") != std::string::npos);
-    
-    // For squash model in GUI mode, use large default cycles if not specified
-    if (is_squash_model && gui_mode && gui_cycles == 10000) {
-        gui_cycles = 9000000;
-        if (verbose) {
-            std::cout << "Detected squash model, using default GUI cycles: " << gui_cycles << std::endl;
-        }
-    }
-    
     // Run the program
     try {
         if (movement_mode) {
@@ -505,7 +446,7 @@ int main(int argc, char** argv) {
         } else if (gui_mode) {
             // Interactive GUI mode
             uint32_t gui_default_a0 = is_counter_char_model ? 65 : 32;
-            process_gui_input(emulator, gui_cycles, is_squash_model, gui_default_a0);
+            process_gui_input(emulator, gui_cycles, gui_default_a0);
         } else {
             // Standard single-execution mode
             uint32_t executed_cycles = 0;

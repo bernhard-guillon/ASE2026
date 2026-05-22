@@ -1,4 +1,4 @@
-# Handoff for Follow-Up Agents: Two-Model Squash Control Chain
+# Handoff for Follow-Up Agents: Game-Movement Model Build
 
 ## Mission
 Build a **modular two-model system** to replace the current hard-to-train single-model gameplay approach.
@@ -63,7 +63,7 @@ Why:
 
 ## Current Repository State (Important Context)
 - Worktree is currently dirty with ongoing emulator/game-movement changes.
-- Existing squash pipeline and `game_movement_elf` target are already present but prior approach did not solve training complexity.
+- Existing game-movement pipeline and `game_movement_elf` target are already present but prior approach did not solve training complexity.
 - There is an existing in-progress todo entry: `future-me-handoff`.
 - Do **not** revert unrelated user changes.
 

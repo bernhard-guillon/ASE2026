@@ -24,7 +24,7 @@ class CModelCompiler:
     # Binary format constants (must match projects/weight-export/model_formats.py)
     MAGIC = 0x4E52414E  # "NRAL"
     VERSION = 1
-    MODEL_TYPES = {"generator": 0, "recognizer": 1, "chained": 0}
+    MODEL_TYPES = {"generator": 0, "chained": 0}
     ACTIVATIONS = {"relu": 0, "sigmoid": 1, "none": 2}
     
     HEADER_SIZE = 32
@@ -34,7 +34,6 @@ class CModelCompiler:
     MEMORY_LAYOUT = {
         "code_base": 0x00001000,
         "generator_base": 0x00010000,
-        "recognizer_base": 0x00110000,
         "buffer_base": 0x00150000,
         "framebuffer_base": 0x00020000,
     }
@@ -276,9 +275,7 @@ __asm__(
         asm_parts.append(self._generate_model_forward_pass())
         
         # Layer functions
-        model_base = (self.MEMORY_LAYOUT["generator_base"] 
-                     if model_type == "generator" 
-                     else self.MEMORY_LAYOUT["recognizer_base"])
+        model_base = self.MEMORY_LAYOUT["generator_base"]
         
         for i, layer in enumerate(self.layers):
             is_last = (i == len(self.layers) - 1)
@@ -392,30 +389,8 @@ map_input_generator:
     ret
 """
         else:
-            return f"""# Input mapping: Framebuffer pixels -> Network input
-map_input_recognizer:
-    lui t0, {self.MEMORY_LAYOUT["framebuffer_base"] >> 12}
-    lui t1, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) >> 12}
-    addi t1, t1, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) & 0xFFF}
-
-    li t2, 0
-    li t3, 400
-
-.Lread_pixels:
-    bge t2, t3, .Lread_done
-    add t4, t0, t2
-    lbu t5, 0(t4)
-    fcvt.s.wu fa0, t5
-    lui t6, 0x43800
-    fmv.w.x fa1, t6
-    fdiv.s fa0, fa0, fa1
-    slli t4, t2, 2
-    add t4, t1, t4
-    fsw fa0, 0(t4)
-    addi t2, t2, 1
-    j .Lread_pixels
-
-.Lread_done:
+            return """# Input mapping: Generic -> Network input
+map_input_generic:
     ret
 """
 
@@ -504,8 +479,8 @@ map_output_generator:
     ret
 """
         else:
-            return """# Output mapping: Recognizer - TODO
-map_output_recognizer:
+            return """# Output mapping: Generic - TODO
+map_output_generic:
     ret
 """
 
@@ -750,9 +725,7 @@ sigmoid_piecewise:
         output_size = self.metadata.get("output_size", self.layers[-1]["output_size"] if self.layers else 0)
         
         # Determine model base address
-        model_base = (self.MEMORY_LAYOUT["generator_base"] 
-                     if model_type == "generator" 
-                     else self.MEMORY_LAYOUT["recognizer_base"])
+        model_base = self.MEMORY_LAYOUT["generator_base"]
         
         # Build C file
         c_parts = []

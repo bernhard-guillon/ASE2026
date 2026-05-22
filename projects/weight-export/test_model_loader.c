@@ -21,17 +21,6 @@ int main() {
         printf("✗ Failed to load generator model\n\n");
     }
 
-    // Test loading recognizer model
-    printf("2. Loading character recognizer model...\n");
-    Model *recog_model = model_load_from_file("character_recognition.bin");
-    if (recog_model) {
-        model_print_info(recog_model);
-        model_free(recog_model);
-        printf("✓ Recognizer model loaded successfully\n\n");
-    } else {
-        printf("✗ Failed to load recognizer model\n\n");
-    }
-
     printf("All tests completed!\n");
     return 0;
 }

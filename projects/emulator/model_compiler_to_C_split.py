@@ -19,7 +19,7 @@ import numpy as np
 
 MAGIC = 0x4E52414E  # "NRAL"
 VERSION = 1
-MODEL_TYPES = {"generator": 0, "recognizer": 1, "chained": 0}
+MODEL_TYPES = {"generator": 0, "chained": 0}
 ACTIVATIONS = {"relu": 0, "sigmoid": 1, "none": 2}
 
 HEADER_SIZE = 28

@@ -26,7 +26,7 @@ class ModelCompiler:
     # Binary format constants (must match projects/weight-export/model_formats.py)
     MAGIC = 0x4E52414E  # "NRAL"
     VERSION = 1
-    MODEL_TYPES = {"generator": 0, "recognizer": 1, "chained": 0}
+    MODEL_TYPES = {"generator": 0, "chained": 0}
     ACTIVATIONS = {"relu": 0, "sigmoid": 1, "none": 2}
     
     HEADER_SIZE = 32
@@ -36,7 +36,6 @@ class ModelCompiler:
     MEMORY_LAYOUT = {
         "code_base": 0x00001000,
         "generator_base": 0x00010000,
-        "recognizer_base": 0x00110000,
         "buffer_base": 0x00150000,
         "framebuffer_base": 0x00020000,
     }
@@ -248,9 +247,7 @@ class ModelCompiler:
         output_size = self.metadata.get("output_size", self.layers[-1]["output_size"] if self.layers else 0)
         
         # Determine model base address
-        model_base = (self.MEMORY_LAYOUT["generator_base"] 
-                     if model_type == "generator" 
-                     else self.MEMORY_LAYOUT["recognizer_base"])
+        model_base = self.MEMORY_LAYOUT["generator_base"]
         
         # Build complete assembly file
         asm_parts = []
@@ -323,7 +320,6 @@ class ModelCompiler:
 # Memory Map:
 #   0x00000 - 0x0FFFF: Bootloader code and embedded model data
 #   0x10000 - 0xF3C7F: Generator model (loaded by bootloader)
-#   0xF4ABC - 0xFFFFF: Recognizer model (loaded by bootloader)
 
 .section .data
 .align 4
@@ -377,7 +373,6 @@ model_data_end:
 _start:
     # Bootloader code will copy embedded model data to correct addresses:
     # - Generator model data -> 0x10000
-    # - Recognizer model data -> 0xF4ABC
     #
     # Implementation in Phase 2
 
@@ -401,10 +396,8 @@ _start:
             RISC-V assembly code for bootloader initialization
         """
         # Calculate model addresses and sizes
-        # Models are embedded in .data section in order: generator, then recognizer
-        
         if self.metadata is None or self.metadata.get("model_type") != "generator":
-            # For single model (either generator or recognizer)
+            # For single model (either generator or chained)
             return self._generate_single_model_bootloader()
         
         # For now, assume we're compiling a single model
@@ -412,16 +405,13 @@ _start:
         return self._generate_single_model_bootloader()
     
     def _generate_single_model_bootloader(self) -> str:
-        """Generate bootloader for a single model (generator or recognizer)."""
+        """Generate bootloader for a single model."""
         model_type = self.metadata.get("model_type", "unknown")
         binary_size = len(self.binary_data) if self.binary_data else 0
         
         if model_type == "generator":
             dest_addr = 0x10000
             model_name = "generator"
-        elif model_type == "recognizer":
-            dest_addr = 0xF4ABC
-            model_name = "recognizer"
         else:
             dest_addr = 0x10000
             model_name = "unknown"
@@ -592,77 +582,6 @@ verify_model:
         
         return "\n".join(checks)
     
-    def _generate_dual_model_bootloader(self, gen_size: int, rec_size: int) -> str:
-        """
-        Generate bootloader for both generator and recognizer models.
-        
-        Note: This is for future use when both models are embedded.
-        For Phase 2, we handle single models only.
-        """
-        return f"""# RISC-V Bootloader Phase 2: Dual Model Initialization
-# Copies both generator and recognizer models to target addresses
-
-.section .text
-.align 4
-.globl _start
-
-_start:
-    # Initialize stack pointer to 0x20000
-    lui sp, 0x20
-    
-    # === Copy Generator Model ===
-    # Destination: 0x10000
-    # Size: {gen_size} bytes
-    
-    lui a1, 0x10            # a1 = 0x10000 (dest for generator)
-    
-    la a0, model_data_start # a0 = source (start of embedded data)
-    li a2, {gen_size}       # a2 = size of generator
-    
-    xor a3, a3, a3          # a3 = 0 (loop counter)
-    
-.Lcopy_gen_loop:
-    bge a3, a2, .Lcopy_gen_done
-    add a4, a0, a3
-    lbu a5, 0(a4)
-    add a4, a1, a3
-    sb a5, 0(a4)
-    addi a3, a3, 1
-    j .Lcopy_gen_loop
-    
-.Lcopy_gen_done:
-    # === Copy Recognizer Model ===
-    # Destination: 0xF4ABC
-    # Offset from generator: {gen_size} bytes
-    # Size: {rec_size} bytes
-    
-    # a1 = 0xF4ABC (dest for recognizer)
-    lui a1, 0xF5
-    addi a1, a1, -1348
-    
-    # a0 already has model_data_start
-    # a0 = model_data_start + {gen_size} (offset to recognizer)
-    addi a0, a0, {gen_size}
-    
-    li a2, {rec_size}       # a2 = size of recognizer
-    xor a3, a3, a3          # a3 = 0 (loop counter)
-    
-.Lcopy_rec_loop:
-    bge a3, a2, .Lcopy_rec_done
-    add a4, a0, a3
-    lbu a5, 0(a4)
-    add a4, a1, a3
-    sb a5, 0(a4)
-    addi a3, a3, 1
-    j .Lcopy_rec_loop
-    
-.Lcopy_rec_done:
-    # Both models copied successfully
-    li a0, 0                # exit code 0 (success)
-    li a7, 93               # SYS_exit
-    ecall
-
-"""
     def _generate_sigmoid_piecewise(self) -> str:
         """Generate piecewise linear sigmoid approximation function.
         
@@ -1224,43 +1143,9 @@ map_input_generator:
 
 """
         else:
-            # For recognizer: read pixels from framebuffer
-            return f"""
-# Input mapping: Framebuffer pixels -> Network input
-# For recognizer: read 400 pixels (20x20) and normalize to [0,1]
-map_input_recognizer:
-    # Read from framebuffer at 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
-    # Write to input buffer at 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]:08X}
-
-    lui t0, {self.MEMORY_LAYOUT["framebuffer_base"] >> 12}
-    lui t1, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) >> 12}
-    addi t1, t1, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) & 0xFFF}
-
-    li t2, 0                        # t2 = pixel index
-    li t3, 400                      # t3 = num pixels
-
-.Lread_pixels:
-    bge t2, t3, .Lread_done
-
-    # Read byte pixel[i]
-    add t4, t0, t2
-    lbu t5, 0(t4)                   # t5 = pixel value [0-255]
-
-    # Convert to float: divide by 255.0
-    fcvt.s.wu fa0, t5               # fa0 = (float)pixel
-    lui t6, 0x43800                 # 255.0 in float
-    fmv.w.x fa1, t6
-    fdiv.s fa0, fa0, fa1            # fa0 = pixel / 255.0
-
-    # Store to input[i]
-    slli t4, t2, 2                  # t4 = i * 4
-    add t4, t1, t4                  # t4 = input_buf + i*4
-    fsw fa0, 0(t4)
-
-    addi t2, t2, 1
-    j .Lread_pixels
-
-.Lread_done:
+            return """
+# Input mapping: Generic -> Network input
+map_input_generic:
     ret
 
 """
@@ -1772,15 +1657,9 @@ map_output_generator:
 
 """
         else:
-            # For recognizer: show predicted class
-            return f"""
-# Output mapping: Network output -> Display prediction
-# For recognizer: find argmax and display predicted character
-map_output_recognizer:
-    # Read from output buffer at 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
-    # For now: just return (visualization TBD)
-
-    # TODO: Implement argmax and character display
+            return """
+# Output mapping: Generic -> return
+map_output_generic:
     ret
 
 """

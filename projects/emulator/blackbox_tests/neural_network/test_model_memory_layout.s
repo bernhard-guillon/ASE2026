@@ -49,24 +49,6 @@ skip_test4:
     addi s0, s0, 1
 skip_test5:
 
-    # Test 6 - Recognizer magic at 0xF4ABC
-    lui a0, 0xf5
-    addi a0, a0, -1348
-    lw a1, 0(a0)
-    lui a2, 0x4e524
-    ori a2, a2, 0x14e
-    bne a1, a2, skip_test6
-    addi s0, s0, 1
-skip_test6:
-
-    # Test 7 - Recognizer version at 0xF4AC0
-    lui a0, 0xf5
-    addi a0, a0, -1344
-    lw a1, 0(a0)
-    ori a2, zero, 1
-    bne a1, a2, done
-    addi s0, s0, 1
-
 done:
     # Exit with pass count
     ori a0, s0, 0

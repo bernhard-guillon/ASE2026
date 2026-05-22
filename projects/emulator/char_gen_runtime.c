@@ -8,7 +8,6 @@ typedef unsigned char uint8_t;
 
 #define CODE_BASE 0x00001000u
 #define GENERATOR_BASE 0x00030000u
-#define RECOGNIZER_BASE 0x00110000u
 #define BUFFER_BASE 0x00150000u
 #define FRAMEBUFFER_BASE 0x00020000u
 

@@ -164,13 +164,6 @@ int main(int argc, char* argv[]) {
             233216,  // From export output
             912,
             3
-        },
-        {
-            "Character Recognizer", 
-            "../weight-export/character_recognition.bin",
-            55936,   // From export output
-            165,
-            2
         }
     };
     

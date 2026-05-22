@@ -12,7 +12,6 @@
 # Memory Map:
 #   0x00000 - 0x0FFFF: Bootloader code and embedded model data
 #   0x10000 - 0xF3C7F: Generator model (loaded by bootloader)
-#   0xF4ABC - 0xFFFFF: Recognizer model (loaded by bootloader)
 
 .section .data
 .align 4
