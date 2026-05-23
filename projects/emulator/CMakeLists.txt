@@ -325,6 +325,16 @@ if(PYTHON_EXECUTABLE)
     )
 
     add_test(
+        NAME python/counter_chargen_combined/runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_counter_chargen_combined_smoke.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/counter_chargen_combined/runtime_smoke PROPERTIES
+        LABELS "neural;counter_chargen;combined;runtime"
+        TIMEOUT 600
+    )
+
+    add_test(
         NAME python/neural_char_gen/runtime_smoke
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_neural_char_gen_runtime.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -724,6 +734,47 @@ if(RISCV_TOOLCHAIN_FOUND)
         )
 
         add_custom_target(counter255_elf ALL DEPENDS ${COUNTER255_ELF})
+
+        # --- counter+chargen combined block-diagonal model (glue mode) -------
+        set(COUNTER_CHARGEN_COMBINED_GLUE "${CMAKE_CURRENT_SOURCE_DIR}/combined_glue.json")
+        set(COUNTER_CHARGEN_COMBINED_MODEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/counter_chargen_combined_model_dir")
+        set(COUNTER_CHARGEN_COMBINED_H "${COUNTER_CHARGEN_COMBINED_MODEL_DIR}/model.h")
+        set(COUNTER_CHARGEN_COMBINED_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter-chargen-combined.elf")
+
+        set(COUNTER_CHARGEN_COMBINED_GLUE_COUNTER_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter255_three_layer.json")
+        set(COUNTER_CHARGEN_COMBINED_GLUE_CHARGEN_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHARGEN_COMBINED_H}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${COUNTER_CHARGEN_COMBINED_MODEL_DIR}
+            COMMAND ${MODEL_TO_HEADER}
+                --glue ${CMAKE_CURRENT_SOURCE_DIR}/combined_glue.json
+                -o ${COUNTER_CHARGEN_COMBINED_H}
+            DEPENDS
+                ${CMAKE_CURRENT_SOURCE_DIR}/combined_glue.json
+                ${COUNTER_CHARGEN_COMBINED_GLUE_COUNTER_JSON}
+                ${COUNTER_CHARGEN_COMBINED_GLUE_CHARGEN_JSON}
+                ${MODEL_TO_HEADER}
+            COMMENT "Generating combined counter+chargen model.h via Rust model-to-header (glue mode)"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHARGEN_COMBINED_ELF}
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+                -I${COUNTER_CHARGEN_COMBINED_MODEL_DIR}
+                -T ${SHARED_LINKER_SCRIPT}
+                -Wl,--oformat=elf32-littleriscv
+                -Wl,-e,_start
+                -o ${COUNTER_CHARGEN_COMBINED_ELF}
+                ${SHARED_RUNTIME_C}
+                -lgcc
+            DEPENDS ${COUNTER_CHARGEN_COMBINED_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
+            COMMENT "Compiling counter-chargen-combined.elf"
+            VERBATIM
+        )
+
+        add_custom_target(counter_chargen_combined_elf ALL DEPENDS ${COUNTER_CHARGEN_COMBINED_ELF})
 
         # Phase 5: Combined counter-chargen model
         add_custom_command(
