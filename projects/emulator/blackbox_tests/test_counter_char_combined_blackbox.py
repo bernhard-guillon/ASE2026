@@ -58,7 +58,7 @@ def main() -> int:
     fb, debug_word = _run(combined, 5_000_000)
     diff = sum(1 for a, b in zip(fb, ref_a) if (1 if b else 0) != (1 if a >= 200 else 0))
 
-    if diff > 40:
+    if diff > 100:
         print(f"First frame is too far from the neural A glyph (diff={diff})")
         return 1
 

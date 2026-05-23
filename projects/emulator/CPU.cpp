@@ -30,6 +30,7 @@ uint32_t CPU::getReg(uint8_t reg) const {
 }
 
 void CPU::setReg(uint8_t reg, uint32_t value) {
+    validateRegister(reg);
     if (reg == 0) return; // x0 is hardwired to 0
     registers_[reg] = value;
 }

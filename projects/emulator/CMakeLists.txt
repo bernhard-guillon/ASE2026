@@ -363,11 +363,19 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_counter_char_combined_smoke.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+    set_tests_properties(python/counter_char/combined_elf_smoke PROPERTIES
+        LABELS "neural;counter_char;combined;elf"
+        TIMEOUT 600
+    )
 
     add_test(
         NAME python/counter_char/combined_elf_blackbox
         COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_counter_char_combined_blackbox.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/counter_char/combined_elf_blackbox PROPERTIES
+        LABELS "neural;counter_char;combined;elf"
+        TIMEOUT 600
     )
      
     # ELF Loader Tests
@@ -853,7 +861,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             VERBATIM
         )
 
-        add_custom_target(counter_char_combined_elf DEPENDS ${COUNTER_CHAR_COMBINED_ELF})
+        add_custom_target(counter_char_combined_elf ALL DEPENDS ${COUNTER_CHAR_COMBINED_ELF})
 
         # Phase 5b: Static counter-chargen model (non-incrementing version for testing)
         add_custom_command(
