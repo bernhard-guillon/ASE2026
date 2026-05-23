@@ -323,6 +323,10 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_counter255_runtime_smoke.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+    set_tests_properties(python/counter255/runtime_smoke PROPERTIES
+        LABELS "neural;counter255;runtime"
+        TIMEOUT 600
+    )
 
     add_test(
         NAME python/counter_chargen_combined/runtime_smoke
