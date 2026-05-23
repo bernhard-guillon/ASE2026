@@ -196,6 +196,33 @@ fn run() -> Result<(), String> {
             out.push_str("    } \\\n");
             out.push_str("} while(0)\n\n");
         }
+        Some("counter255_a0_feedback") => {
+            out.push_str("// Counter255 model: one-hot input, argmax output, a0 feedback\n");
+            out.push_str("#define MODEL_READ_A0_EACH_ITER 0\n");
+            out.push_str("#define MODEL_HAS_DONE_FLAG 0\n\n");
+            out.push_str("// Persistent state: current counter value\n");
+            out.push_str("static uint32_t model_counter = 0;\n\n");
+            out.push_str("#define MODEL_MAP_INPUT(buf) do { \\\n");
+            out.push_str("    for (uint32_t i = 0; i < MODEL_INPUT_SIZE; i++) buf[i] = 0.0f; \\\n");
+            out.push_str("    uint32_t _idx = model_counter; \\\n");
+            out.push_str("    if (_idx >= MODEL_INPUT_SIZE) _idx = 0; \\\n");
+            out.push_str("    buf[_idx] = 1.0f; \\\n");
+            out.push_str("} while(0)\n\n");
+            out.push_str("// Track previous pixel to avoid clearing all 400 bytes each iteration\n");
+            out.push_str("static uint32_t _counter255_prev_fb = 400;\n\n");
+            out.push_str("#define MODEL_MAP_OUTPUT(buf, fb) do { \\\n");
+            out.push_str("    uint32_t _mi = 0; \\\n");
+            out.push_str("    float _mv = buf[0]; \\\n");
+            out.push_str("    for (uint32_t _i = 1; _i < MODEL_OUTPUT_SIZE; _i++) { \\\n");
+            out.push_str("        if (buf[_i] > _mv) { _mv = buf[_i]; _mi = _i; } \\\n");
+            out.push_str("    } \\\n");
+            out.push_str("    model_counter = _mi; \\\n");
+            out.push_str("    volatile uint32_t *_debug = (volatile uint32_t *)0x00153FE0; \\\n");
+            out.push_str("    *_debug = model_counter; \\\n");
+            out.push_str("    if (_counter255_prev_fb < 400) fb[_counter255_prev_fb] = 0; \\\n");
+            out.push_str("    if (model_counter < 400) { fb[model_counter] = 255; _counter255_prev_fb = model_counter; } \\\n");
+            out.push_str("} while(0)\n\n");
+        }
         Some("movement_packed_a0") => {
             let board_cells = model.metadata.board_size.map(|s| s * s).unwrap_or(400);
             out.push_str(&format!("// Movement model: state + action input, argmax output\n"));
@@ -229,7 +256,7 @@ fn run() -> Result<(), String> {
         }
         other => {
             return Err(format!(
-                "Unknown input_mapping '{:?}' — expected 'character_code' or 'movement_packed_a0'",
+                "Unknown input_mapping '{:?}' — expected 'character_code', 'counter255_a0_feedback', or 'movement_packed_a0'",
                 other
             ));
         }

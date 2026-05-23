@@ -679,8 +679,9 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_target(counter_char_elf DEPENDS ${COUNTER_CHAR_ELF})
 
-        # Standalone counter255 runtime path (phase 3)
+        # --- counter255.elf (Rust model-to-header + unified runtime) ------------
         set(COUNTER255_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_counter255_model.py")
+
         add_custom_command(
             OUTPUT ${COUNTER255_JSON}
             COMMAND ${CMAKE_COMMAND} -E env
@@ -692,31 +693,37 @@ if(RISCV_TOOLCHAIN_FOUND)
             VERBATIM
         )
 
-        add_custom_command(
-            OUTPUT ${COUNTER255_ASM}
-            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${COUNTER255_ASM} ${COUNTER255_JSON}
-            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${COUNTER255_JSON}
-            COMMENT "Generating counter255.s from counter255 model JSON"
-            VERBATIM
-        )
+        set(COUNTER255_MODEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/counter255_model_dir")
+        set(COUNTER255_H "${COUNTER255_MODEL_DIR}/model.h")
+        set(COUNTER255_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter255.elf")
 
         add_custom_command(
-            OUTPUT ${COUNTER255_OBJ}
-            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${COUNTER255_OBJ} ${COUNTER255_ASM}
-            DEPENDS ${COUNTER255_ASM}
-            COMMENT "Assembling counter255.o"
+            OUTPUT ${COUNTER255_H}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${COUNTER255_MODEL_DIR}
+            COMMAND ${MODEL_TO_HEADER}
+                -i ${COUNTER255_JSON}
+                -o ${COUNTER255_H}
+            DEPENDS ${COUNTER255_JSON}
+            COMMENT "Generating counter255 model.h via Rust model-to-header"
             VERBATIM
         )
 
         add_custom_command(
             OUTPUT ${COUNTER255_ELF}
-            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${COUNTER255_ELF} ${COUNTER255_OBJ}
-            DEPENDS ${COUNTER255_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
-            COMMENT "Linking counter255.elf"
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+                -I${COUNTER255_MODEL_DIR}
+                -T ${SHARED_LINKER_SCRIPT}
+                -Wl,--oformat=elf32-littleriscv
+                -Wl,-e,_start
+                -o ${COUNTER255_ELF}
+                ${SHARED_RUNTIME_C}
+                -lgcc
+            DEPENDS ${COUNTER255_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
+            COMMENT "Compiling counter255.elf"
             VERBATIM
         )
 
-        add_custom_target(counter255_elf DEPENDS ${COUNTER255_ELF})
+        add_custom_target(counter255_elf ALL DEPENDS ${COUNTER255_ELF})
 
         # Phase 5: Combined counter-chargen model
         add_custom_command(

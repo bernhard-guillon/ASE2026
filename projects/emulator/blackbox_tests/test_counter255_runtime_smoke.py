@@ -90,3 +90,31 @@ def test_counter255_runtime_is_deterministic_and_progresses() -> None:
     v6 = _run_and_read_counter(6_000_000)
     v10 = _run_and_read_counter(10_000_000)
     assert len({v2a, v6, v10}) >= 2, "Counter value did not progress across larger cycle budgets"
+
+
+FRAMEBUFFER_PREFIX = "FRAMEBUFFER_HEX:"
+
+
+def _run_and_read_framebuffer(cycles: int) -> list[int]:
+    run = subprocess.run(
+        [str(RUNNER), str(COUNTER255_ELF), "--cycles", str(cycles), "--dump-framebuffer"],
+        cwd=EMULATOR_DIR,
+        capture_output=True,
+        text=True,
+        timeout=90,
+    )
+    assert run.returncode == 0, f"counter255 failed (cycles={cycles}).\nstdout:\n{run.stdout}\nstderr:\n{run.stderr}"
+    line = next((ln for ln in run.stdout.splitlines() if ln.startswith(FRAMEBUFFER_PREFIX)), None)
+    assert line is not None, f"Missing framebuffer dump.\nstdout:\n{run.stdout}"
+    hex_data = line[len(FRAMEBUFFER_PREFIX):].strip()
+    assert len(hex_data) == 800, f"Unexpected framebuffer length: {len(hex_data)}"
+    return [int(hex_data[i:i+2], 16) for i in range(0, len(hex_data), 2)]
+
+
+def test_counter255_produces_framebuffer_output() -> None:
+    _require_env()
+    _build_targets()
+    pixels = _run_and_read_framebuffer(2_000_000)
+    active = [i for i, p in enumerate(pixels) if p != 0]
+    assert len(active) == 1, f"Expected exactly one active pixel, got {len(active)}: {active}"
+    assert pixels[active[0]] == 255, f"Active pixel should have value 255, got {pixels[active[0]]}"

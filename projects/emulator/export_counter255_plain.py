@@ -42,6 +42,7 @@ def build_counter255_intermediate() -> dict:
             "precision": "float32",
             "framework": "oracle",
             "input_mapping": "counter255_a0_feedback",
+            "output_mapping": "counter255_a0_feedback",
             "counter_modulus": COUNTER255_MODULUS,
             "description": "Deterministic modulo-255 counter network: outputs chargen_index = (counter + 1) mod 255",
         },
