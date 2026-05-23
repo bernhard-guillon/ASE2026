@@ -48,7 +48,7 @@ struct TerminalMode {
 };
 
 // Process keyboard input in GUI mode
-void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, uint32_t default_a0) {
+void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame) {
     TerminalMode terminal;
     FramebufferRenderer renderer;
     signal(SIGINT, signal_handler);
@@ -56,14 +56,11 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, uint32_t d
     g_emulator = &emulator;
     g_should_exit = false;
     
-    std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
+    std::cout << "GUI mode active. Keys switch character; auto-advance runs continuously. Ctrl+C to exit." << std::endl;
     std::cout << std::endl;
     
     // Initial render
     renderer.render(emulator.getMemory());
-    std::cout << "\nPress keys to change character:" << std::endl;
-    
-    uint32_t current_key_code = default_a0;
     
     while (!g_should_exit) {
         // Try to read a key without blocking
@@ -71,8 +68,6 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, uint32_t d
         bool key_pressed = false;
         if (read(STDIN_FILENO, &ch, 1) == 1) {
             uint32_t key_code = static_cast<uint32_t>(ch);
-            
-            current_key_code = key_code;
             
             // Store ASCII code in registers (a0 for a0-based runtimes, s1 for s1-based)
             emulator.getCPU().setReg(10, key_code);
@@ -86,24 +81,24 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, uint32_t d
             key_pressed = true;
         }
         
-        if (key_pressed) {
-            // Execute instructions until one firmware iteration completes
-            emulator.getMemory().write32(0x154000, 0);
-            for (uint32_t i = 0; i < cycles_per_frame && !g_should_exit; ++i) {
-                try {
-                    emulator.step();
-                    if (emulator.isHalted()) {
-                        g_should_exit = true;
-                        break;
-                    }
-                    if (emulator.getMemory().read32(0x154000) == 1) {
-                        break;
-                    }
-                } catch (const std::exception& e) {
+        // Always run inference — enables auto-advance for models with MODEL_HAS_DONE_FLAG
+        emulator.getMemory().write32(0x154000, 0);
+        for (uint32_t i = 0; i < cycles_per_frame && !g_should_exit; ++i) {
+            try {
+                emulator.step();
+                if (emulator.isHalted()) {
+                    g_should_exit = true;
                     break;
                 }
+                if (emulator.getMemory().read32(0x154000) == 1) {
+                    break;
+                }
+            } catch (const std::exception& e) {
+                break;
             }
-            
+        }
+        
+        if (key_pressed) {
             // Read framebuffer to find current position
             uint32_t max_brightness = 0;
             uint32_t current_state = 0;
@@ -123,8 +118,8 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, uint32_t d
         // Render framebuffer to terminal
         renderer.render(emulator.getMemory());
         
-        // Small sleep to prevent busy-waiting
-        usleep(10000);  // 10ms
+        // Sleep controls auto-advance speed; ~150ms = ~6 fps
+        usleep(150000);  // 150ms
     }
     
     std::cout << "\nGUI mode closed." << std::endl;
@@ -428,8 +423,7 @@ int main(int argc, char** argv) {
             process_movement_input(emulator);
         } else if (gui_mode) {
             // Interactive GUI mode
-            uint32_t gui_default_a0 = is_counter_char_model ? 65 : 32;
-            process_gui_input(emulator, gui_cycles, gui_default_a0);
+            process_gui_input(emulator, gui_cycles);
         } else {
             // Standard single-execution mode
             uint32_t executed_cycles = 0;

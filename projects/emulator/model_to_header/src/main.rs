@@ -270,8 +270,13 @@ fn run() -> Result<(), String> {
             out.push_str(&format!("static uint32_t model_counter = {cnt_init};\n\n"));
             out.push_str("#define MODEL_MAP_INPUT(buf) do { \\\n");
             out.push_str("    for (uint32_t i = 0; i < MODEL_INPUT_SIZE; i++) buf[i] = 0.0f; \\\n");
-            out.push_str("    uint32_t _idx = model_counter; \\\n");
-            out.push_str("    if (model_key >= 32 && model_key < MODEL_INPUT_SIZE) _idx = model_key; \\\n");
+            out.push_str("    uint32_t _idx; \\\n");
+            out.push_str("    if (model_key >= 32 && model_key < MODEL_INPUT_SIZE) { \\\n");
+            out.push_str("        _idx = model_key; \\\n");
+            out.push_str("        model_key = 0; \\\n");
+            out.push_str("    } else { \\\n");
+            out.push_str("        _idx = model_counter; \\\n");
+            out.push_str("    } \\\n");
             out.push_str("    if (_idx >= MODEL_INPUT_SIZE) _idx = 0; \\\n");
             out.push_str("    buf[_idx] = 1.0f; \\\n");
             out.push_str("} while(0)\n\n");
