@@ -759,13 +759,26 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_target(counter255_elf ALL DEPENDS ${COUNTER255_ELF})
 
+        # --- three-layer counter255 JSON for combined block-diagonal model ----
+        set(COUNTER255_THREE_LAYER_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter255_three_layer.py")
+        set(COUNTER255_THREE_LAYER_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter255_three_layer.json")
+
+        add_custom_command(
+            OUTPUT ${COUNTER255_THREE_LAYER_JSON}
+            COMMAND ${PYTHON_EXECUTABLE} ${COUNTER255_THREE_LAYER_EXPORT_SCRIPT}
+                --output ${COUNTER255_THREE_LAYER_JSON}
+            DEPENDS ${COUNTER255_THREE_LAYER_EXPORT_SCRIPT}
+            COMMENT "Building three-layer counter255 model JSON for combined model"
+            VERBATIM
+        )
+
         # --- counter+chargen combined block-diagonal model (glue mode) -------
         set(COUNTER_CHARGEN_COMBINED_GLUE "${CMAKE_CURRENT_SOURCE_DIR}/combined_glue.json")
         set(COUNTER_CHARGEN_COMBINED_MODEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/counter_chargen_combined_model_dir")
         set(COUNTER_CHARGEN_COMBINED_H "${COUNTER_CHARGEN_COMBINED_MODEL_DIR}/model.h")
         set(COUNTER_CHARGEN_COMBINED_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter-chargen-combined.elf")
 
-        set(COUNTER_CHARGEN_COMBINED_GLUE_COUNTER_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter255_three_layer.json")
+        set(COUNTER_CHARGEN_COMBINED_GLUE_COUNTER_JSON ${COUNTER255_THREE_LAYER_JSON})
         set(COUNTER_CHARGEN_COMBINED_GLUE_CHARGEN_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
 
         add_custom_command(
