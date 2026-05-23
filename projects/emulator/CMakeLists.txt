@@ -575,10 +575,8 @@ if(RISCV_TOOLCHAIN_FOUND)
                 VERBATIM
             )
         else()
-            message(WARNING "cargo not found — Rust model-to-header will not be auto-built. "
+            message(WARNING "cargo not found — Rust model-to-header must be pre-built. "
                            "Install Rust or run 'cargo build --release' in model_to_header/")
-            # Use a phony target so cmake doesn't fail on missing binary; targets will
-            # fail at link time if model.h is missing.
             add_custom_command(
                 OUTPUT ${MODEL_TO_HEADER}
                 COMMAND ${CMAKE_COMMAND} -E echo "cargo not found — cannot build model_to_header"

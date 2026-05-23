@@ -20,6 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ github.workspace }}
     
     steps:
       - name: Checkout code
@@ -54,9 +58,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            projects/emulator/model_to_header/target
+            /root/.cargo/registry
+            /root/.cargo/git
+            ${{ github.workspace }}/projects/emulator/model_to_header/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('projects/emulator/model_to_header/**/*.rs', 'projects/emulator/model_to_header/Cargo.toml') }}
           restore-keys: ${{ runner.os }}-cargo-
 
