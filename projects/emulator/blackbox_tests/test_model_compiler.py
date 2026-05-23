@@ -56,7 +56,7 @@ class TestModelCompiler(unittest.TestCase):
         # Multi-layer model for more complex tests
         self.multi_layer_model = {
             "metadata": {
-                "model_type": "recognizer",
+                "model_type": "generator",
                 "version": 1,
                 "architecture": "fully-connected",
                 "precision": "float32",
@@ -332,7 +332,7 @@ class TestModelCompiler(unittest.TestCase):
         # Parse model type from header
         magic, version, model_type = struct.unpack('<3I', binary[0:12])
         
-        self.assertEqual(model_type, 1)  # recognizer = 1
+        self.assertEqual(model_type, 0)  # generator = 0
     
     def test_large_model_compilation(self):
         """Test compilation of larger model to catch memory issues."""

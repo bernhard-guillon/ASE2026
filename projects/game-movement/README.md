@@ -2,7 +2,7 @@
 
 Train and validate a deterministic neural transition model for single-player movement on a `20x20` board.
 
-This project is the first gameplay building block before squash/pong physics:
+This project is the first gameplay building block before pong physics:
 
 - one `#` player on a `20x20` framebuffer
 - actions: `up`, `down`, `left`, `right`, `stay`
@@ -78,3 +78,5 @@ cmake --build build --target movement_elf -j4
 ```
 
 Output: `projects/emulator/build/movement.elf`
+
+

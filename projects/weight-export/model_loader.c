@@ -189,7 +189,6 @@ const char* model_activation_name(ActivationType activation) {
 const char* model_type_name(ModelType type) {
     switch (type) {
         case MODEL_GENERATOR:   return "generator";
-        case MODEL_RECOGNIZER:  return "recognizer";
         default:                return "unknown";
     }
 }

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 #include <cstring>
 #include <iomanip>
 #include <limits>
@@ -47,7 +48,7 @@ struct TerminalMode {
 };
 
 // Process keyboard input in GUI mode
-void process_gui_input(Emulator& emulator) {
+void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame) {
     TerminalMode terminal;
     FramebufferRenderer renderer;
     signal(SIGINT, signal_handler);
@@ -55,55 +56,70 @@ void process_gui_input(Emulator& emulator) {
     g_emulator = &emulator;
     g_should_exit = false;
     
-    std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
-    std::cout << "Starting with character code 0..." << std::endl;
+    std::cout << "GUI mode active. Keys switch character; auto-advance runs continuously. Ctrl+C to exit." << std::endl;
     std::cout << std::endl;
     
-    // Initial render with blank framebuffer
+    // Initial render
     renderer.render(emulator.getMemory());
-    std::cout << "\nPress keys to change character:" << std::endl;
     
-    bool first_key = true;
     while (!g_should_exit) {
         // Try to read a key without blocking
         unsigned char ch = 0;
+        bool key_pressed = false;
         if (read(STDIN_FILENO, &ch, 1) == 1) {
             uint32_t key_code = static_cast<uint32_t>(ch);
             
-            // Store ASCII code in register a0 (x10)
+            // Store ASCII code in registers (a0 for a0-based runtimes, s1 for s1-based)
             emulator.getCPU().setReg(10, key_code);
+            emulator.getCPU().setReg(9, key_code);
             
-            if (!first_key) {
-                // Print key info (will be overwritten when framebuffer renders)
-                if (key_code >= 32 && key_code < 127) {
-                    std::cout << "Key: '" << ch << "' (ASCII " << key_code << ")" << std::endl;
-                } else {
-                    std::cout << "Key: (ASCII " << key_code << ")" << std::endl;
-                }
+            if (key_code >= 32 && key_code < 127) {
+                std::cout << "Key: '" << static_cast<char>(key_code) << "' (ASCII " << key_code << ")" << std::endl;
+            } else {
+                std::cout << "Key: (ASCII " << key_code << ")" << std::endl;
             }
-            first_key = false;
+            key_pressed = true;
         }
         
-        // Execute instructions per iteration (enough for framebuffer updates)
-        for (int i = 0; i < 10000 && !g_should_exit; ++i) {
+        // Always run inference — enables auto-advance for models with MODEL_HAS_DONE_FLAG
+        emulator.getMemory().write32(0x154000, 0);
+        for (uint32_t i = 0; i < cycles_per_frame && !g_should_exit; ++i) {
             try {
                 emulator.step();
                 if (emulator.isHalted()) {
                     g_should_exit = true;
                     break;
                 }
+                if (emulator.getMemory().read32(0x154000) == 1) {
+                    break;
+                }
             } catch (const std::exception& e) {
-                // Ignore unsupported instructions during GUI mode
-                // Program may be in a loop waiting for input
                 break;
+            }
+        }
+        
+        if (key_pressed) {
+            // Read framebuffer to find current position
+            uint32_t max_brightness = 0;
+            uint32_t current_state = 0;
+            for (uint32_t i = 0; i < 400; ++i) {
+                uint8_t pixel = emulator.getMemory().read8(0x20000 + i);
+                if (pixel > max_brightness) {
+                    max_brightness = pixel;
+                    current_state = i;
+                }
+            }
+            if (max_brightness > 0) {
+                std::cout << "  Position: " << current_state;
+                std::cout << " (x:" << (current_state % 20) << ", y:" << (current_state / 20) << ")" << std::endl;
             }
         }
         
         // Render framebuffer to terminal
         renderer.render(emulator.getMemory());
         
-        // Small sleep to prevent busy-waiting
-        usleep(10000);  // 10ms
+        // Sleep controls auto-advance speed; ~150ms = ~6 fps
+        usleep(150000);  // 150ms
     }
     
     std::cout << "\nGUI mode closed." << std::endl;
@@ -122,15 +138,11 @@ void process_movement_input(Emulator& emulator) {
     std::cout << "h: left, j: down, k: up, l: right, space: stay" << std::endl;
     std::cout << std::endl;
     
-    // Initial state: center of board (position 200 out of 400)
-    uint32_t current_state = 200;  // Center position (10,10 on 20x20 board)
-    
+    uint32_t current_state = 200;
     bool waiting_for_prediction = false;
-    uint32_t pending_action = 4;  // No pending action initially
-    uint32_t pending_state = current_state;
     
     while (!g_should_exit) {
-        // Try to read a key without blocking
+        // Read key
         unsigned char ch = 0;
         if (read(STDIN_FILENO, &ch, 1) == 1) {
             if (ch == 'q') {
@@ -138,76 +150,47 @@ void process_movement_input(Emulator& emulator) {
                 break;
             }
             
-            if (!waiting_for_prediction) {
-                // Map hjkl keys to movement actions
-                uint32_t action_id = 4;  // Default: stay (action 4)
-                if (ch == 'h') action_id = 2;  // left
-                else if (ch == 'j') action_id = 1;  // down
-                else if (ch == 'k') action_id = 0;  // up
-                else if (ch == 'l') action_id = 3;  // right
-                else if (ch == ' ') action_id = 4;  // stay
-                
-                // Store pending action and current state
-                pending_action = action_id;
-                pending_state = current_state;
-                waiting_for_prediction = true;
-                
-                std::cout << "Key: '" << ch << "' Action: " << action_id;
-                std::cout << " State: " << current_state << " (waiting for neural prediction)" << std::endl;
-            }
+            // Send raw keycode to firmware (firmware handles mapping + state tracking)
+            emulator.getCPU().setReg(10, static_cast<uint32_t>(ch));
+            emulator.getCPU().setReg(9, static_cast<uint32_t>(ch));
+            waiting_for_prediction = true;
+            
+            std::cout << "Key: '" << ch << "' (waiting for neural prediction)" << std::endl;
         }
         
-        // Execute instructions per iteration (enough for neural network to process)
-        // Movement model needs significant cycles to complete forward pass
-        for (int i = 0; i < 500000 && !g_should_exit; ++i) {
-            try {
-                emulator.step();
-                if (emulator.isHalted()) {
-                    g_should_exit = true;
+        if (waiting_for_prediction) {
+            // Run until firmware completes one iteration (or timeout)
+            emulator.getMemory().write32(0x154000, 0);
+            for (int i = 0; i < 10000000 && !g_should_exit; ++i) {
+                try {
+                    emulator.step();
+                    if (emulator.isHalted()) {
+                        g_should_exit = true;
+                        break;
+                    }
+                    if (emulator.getMemory().read32(0x154000) == 1) {
+                        break;
+                    }
+                } catch (const std::exception& e) {
                     break;
                 }
-            } catch (const std::exception& e) {
-                // Ignore unsupported instructions during movement mode
-                // Program may be in a loop waiting for input
-                break;
             }
-        }
-        
-        // Update current state based on framebuffer (neural network output)
-        // Read framebuffer to find the new position of '#'
-        uint32_t framebuffer_base = 0x20000;
-        uint32_t new_state = current_state;  // Default: no change
-        
-        // Find the brightest pixel in framebuffer (neural network output)
-        uint8_t max_brightness = 0;
-        uint32_t bright_pixel_count = 0;
-        for (uint32_t i = 0; i < 400; ++i) {
-            uint8_t pixel = emulator.getMemory().read8(framebuffer_base + i);
-            if (pixel > 0) {
-                bright_pixel_count++;
-            }
-            if (pixel > max_brightness) {
-                max_brightness = pixel;
-                new_state = i;
-            }
-        }
-        
-        std::cout << "Framebuffer stats: " << bright_pixel_count << " bright pixels, max brightness: " << (int)max_brightness << std::endl;
-        
-        // If we were waiting for a prediction and got valid output, process it
-        if (waiting_for_prediction && max_brightness > 0 && new_state != current_state) {
-            current_state = new_state;
-            waiting_for_prediction = false;
-            std::cout << "Neural prediction: moved to " << current_state;
-            std::cout << " (x:" << (current_state % 20) << ", y:" << (current_state / 20) << ")" << std::endl;
             
-            // Update a0 register with new state for next prediction
-            uint32_t packed_code = current_state | (pending_action << 9);
-            emulator.getCPU().setReg(10, packed_code);
-        } else if (waiting_for_prediction && max_brightness == 0) {
-            // Neural network still warming up, keep the pending input
-            uint32_t packed_code = pending_state | (pending_action << 9);
-            emulator.getCPU().setReg(10, packed_code);
+            // Read framebuffer to find current position
+            uint32_t max_brightness = 0;
+            for (uint32_t i = 0; i < 400; ++i) {
+                uint8_t pixel = emulator.getMemory().read8(0x20000 + i);
+                if (pixel > max_brightness) {
+                    max_brightness = pixel;
+                    current_state = i;
+                }
+            }
+            
+            if (max_brightness > 0) {
+                std::cout << "Neural prediction: moved to " << current_state;
+                std::cout << " (x:" << (current_state % 20) << ", y:" << (current_state / 20) << ")" << std::endl;
+            }
+            waiting_for_prediction = false;
         }
         
         // Render framebuffer to terminal
@@ -222,7 +205,7 @@ void process_movement_input(Emulator& emulator) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--movement] [--char <char>] [--char-code <uint32>] [--cycles <count>] [--render-framebuffer] [--dump-framebuffer] [--verbose]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--movement] [--char <char>] [--char-code <uint32>] [--cycles <count>] [--gui-cycles <count>] [--render-framebuffer] [--dump-framebuffer] [--verbose]" << std::endl;
         return 1;
     }
     
@@ -234,6 +217,7 @@ int main(int argc, char** argv) {
     bool char_specified = false;
     uint32_t char_code = 0;
     uint32_t max_cycles = 1000000;  // Default 1M cycles
+    uint32_t gui_cycles = 50000;    // Default 50K cycles per frame for GUI
     const char* binary_file = argv[1];
     
     struct DumpRegion {
@@ -298,6 +282,17 @@ int main(int argc, char** argv) {
                 ++i;  // Skip next argument
             } else {
                 std::cerr << "Error: --cycles requires a number" << std::endl;
+                return 1;
+            }
+        } else if (std::strcmp(argv[i], "--gui-cycles") == 0) {
+            if (i + 1 < argc) {
+                gui_cycles = std::atoi(argv[i + 1]);
+                if (verbose) {
+                    std::cout << "GUI cycles per frame set to: " << gui_cycles << std::endl;
+                }
+                ++i;  // Skip next argument
+            } else {
+                std::cerr << "Error: --gui-cycles requires a number" << std::endl;
                 return 1;
             }
         } else if (std::strcmp(argv[i], "--dump-memory") == 0) {
@@ -389,13 +384,23 @@ int main(int argc, char** argv) {
     // Initialize stack pointer to 512MB (high in address space for stack growth)
     emulator.getCPU().setReg(2, 512 * 1024 * 1024);
     
+    std::string binary_path = binary_file;
+
     // Set register x10 (a0, first function argument) with character code if provided
+    bool is_counter_char_model = binary_path.find("counter-char") != std::string::npos;
+
     if (char_specified) {
         // Use provided character code
         emulator.getCPU().setReg(10, char_code);
     } else if (gui_mode) {
-        // In GUI mode without explicit char, initialize with space character
-        emulator.getCPU().setReg(10, 32);
+        // Counter/char demos should start on 'a' so the first rendered frame
+        // matches the standalone character generator. Other GUI demos keep
+        // the previous space default.
+        if (is_counter_char_model) {
+            emulator.getCPU().setReg(10, 97);
+        } else {
+            emulator.getCPU().setReg(10, 32);
+        }
     }
     
     if (verbose) {
@@ -418,16 +423,11 @@ int main(int argc, char** argv) {
             process_movement_input(emulator);
         } else if (gui_mode) {
             // Interactive GUI mode
-            process_gui_input(emulator);
+            process_gui_input(emulator, gui_cycles);
         } else {
             // Standard single-execution mode
             uint32_t executed_cycles = 0;
             for (; executed_cycles < max_cycles && !emulator.isHalted(); ++executed_cycles) {
-                if (char_specified) {
-                    // Keep the selected character stable across the full run.
-                    // Neural programs are cyclic and may clobber a0 internally.
-                    emulator.getCPU().setReg(10, char_code);
-                }
                 emulator.step();
             }
             

@@ -224,7 +224,6 @@ class LinkerScriptComplianceTest(unittest.TestCase):
     def test_model_addresses_addressable(self):
         """Verify memory regions support required model addresses"""
         # Generator: 0x10000
-        # Recognizer: 0xF4ABC
         # Both should be addressable in DATA region
         
         # Extract DATA region bounds

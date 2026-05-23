@@ -1,4 +1,5 @@
 #include "NeuralOps.h"
+#include <cstring>
 
 namespace {
 bool checked_mul_u32(uint32_t a, uint32_t b, uint32_t* out) {

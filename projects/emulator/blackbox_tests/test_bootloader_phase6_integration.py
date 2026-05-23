@@ -36,7 +36,7 @@ class Phase6IntegrationTestSetup:
         
         Args:
             work_dir: Directory to create JSON in
-            model_type: "generator" or "recognizer"
+            model_type: "generator"
             
         Returns:
             Tuple of (json_path, model_data)
@@ -272,23 +272,18 @@ class TestPhase6ModelLoading(Phase6IntegrationTestSetup):
         with tempfile.TemporaryDirectory() as tmpdir:
             work_dir = Path(tmpdir)
             
-            # Create multiple models
+            # Create model
             generator_json, generator_data = self.create_simple_model_json(work_dir, "generator")
-            recognizer_json, recognizer_data = self.create_simple_model_json(work_dir, "recognizer")
             
-            # Compile both
+            # Compile
             generator_elf = self.compile_model_to_elf(generator_json, work_dir)
-            recognizer_elf = self.compile_model_to_elf(recognizer_json, work_dir)
             
-            # Both should exist and be valid ELF files
+            # Should exist and be valid ELF file
             assert generator_elf.exists()
-            assert recognizer_elf.exists()
             
             gen_info = self.validate_elf_structure(generator_elf)
-            rec_info = self.validate_elf_structure(recognizer_elf)
             
             assert gen_info["magic"] == b'\x7fELF'
-            assert rec_info["magic"] == b'\x7fELF'
     
     def test_model_compilation_deterministic(self):
         """Test that model compilation is deterministic."""
@@ -332,18 +327,15 @@ class TestPhase6MemoryLayout(Phase6IntegrationTestSetup):
         # According to bootloader spec:
         # - Code: 0x0 - 0x10000
         # - Generator model: 0x10000 onwards
-        # - Recognizer model: 0xF4ABC onwards
+        # - Generator model: 0x10000 onwards
         
         expected_regions = {
             "code": (0x00000, 0x10000),
             "generator": (0x10000, 0xF3C7F),
-            "recognizer": (0xF4ABC, 0xFFFFF)
         }
         
         # Just verify the specification is reasonable
         assert expected_regions["code"][1] <= expected_regions["generator"][0]
-        assert expected_regions["generator"][1] < expected_regions["recognizer"][0]
-        assert expected_regions["recognizer"][1] <= 0x100000
 
 
 # ============================================================================

@@ -130,11 +130,6 @@ add_executable(test_elf_loader utest/test_elf_loader.cpp)
 target_include_directories(test_elf_loader PRIVATE ${UNIT_TEST_INCLUDE_DIR})
 target_link_libraries(test_elf_loader emulator cpu memory instruction gtest_main)
 
-# Model loading tests
-add_executable(test_model_loading utest/test_model_loading.cpp)
-target_include_directories(test_model_loading PRIVATE ${UNIT_TEST_INCLUDE_DIR})
-target_link_libraries(test_model_loading emulator cpu memory instruction)
-
 # Floating-point instruction tests (F extension)
 add_executable(test_fp_instructions utest/test_fp_instructions.cpp)
 target_include_directories(test_fp_instructions PRIVATE ${UNIT_TEST_INCLUDE_DIR})
@@ -169,7 +164,6 @@ gtest_discover_tests(test_elf_loader)
 gtest_discover_tests(test_neural_ops)
 
 # Register integration tests
-add_test(NAME test_model_loading COMMAND test_model_loading)
 add_test(NAME test_memory_layout COMMAND run_memory_layout_test)
 
 # ============================================================================
@@ -311,6 +305,78 @@ if(PYTHON_EXECUTABLE)
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_game_movement_replay.py -k readiness_gate -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+
+    add_test(
+        NAME python/game_movement/chained_elf_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_chained_model_elf_smoke.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    add_test(
+        NAME python/counter_char/scaffold_elf_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_counter_char_elf_scaffold.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    add_test(
+        NAME python/counter255/runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_counter255_runtime_smoke.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/counter255/runtime_smoke PROPERTIES
+        LABELS "neural;counter255;runtime"
+        TIMEOUT 600
+    )
+
+    add_test(
+        NAME python/counter_chargen_combined/runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_counter_chargen_combined_smoke.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/counter_chargen_combined/runtime_smoke PROPERTIES
+        LABELS "neural;counter_chargen;combined;runtime"
+        TIMEOUT 600
+    )
+
+    add_test(
+        NAME python/neural_char_gen/runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_neural_char_gen_runtime.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/neural_char_gen/runtime_smoke PROPERTIES
+        LABELS "neural;char_gen;runtime"
+        TIMEOUT 600
+    )
+
+    add_test(
+        NAME python/neural_movement/runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_movement_runtime.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/neural_movement/runtime_smoke PROPERTIES
+        LABELS "neural;movement;runtime"
+        TIMEOUT 600
+    )
+
+    add_test(
+        NAME python/counter_char/combined_elf_smoke
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_counter_char_combined_smoke.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/counter_char/combined_elf_smoke PROPERTIES
+        LABELS "neural;counter_char;combined;elf"
+        TIMEOUT 600
+    )
+
+    add_test(
+        NAME python/counter_char/combined_elf_blackbox
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_counter_char_combined_blackbox.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/counter_char/combined_elf_blackbox PROPERTIES
+        LABELS "neural;counter_char;combined;elf"
+        TIMEOUT 600
+    )
      
     # ELF Loader Tests
     add_test(
@@ -437,6 +503,9 @@ if(RISCV_TOOLCHAIN_FOUND)
         set(NEURAL_OP_ENHANCE8PMAC4_BIN "${CMAKE_CURRENT_BINARY_DIR}/neural-op-enhance8pmac4.bin")
         set(NEURAL_MODEL_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
         set(NEURAL_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler_interactive.py")
+        # model_compiler_interactive.py subclasses/imports model_compiler.py, so
+        # asm generation must also depend on the core compiler to avoid stale outputs.
+        set(NEURAL_COMPILER_CORE "${CMAKE_CURRENT_SOURCE_DIR}/model_compiler.py")
         set(MOVEMENT_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/export_intermediate.py")
         set(MOVEMENT_MODEL_CHECKPOINT "${CMAKE_CURRENT_SOURCE_DIR}/../game-movement/src/movement_model.pth")
         # Use pre-exported JSON if available, otherwise generate in build directory
@@ -447,14 +516,38 @@ if(RISCV_TOOLCHAIN_FOUND)
             set(MOVEMENT_JSON "${CMAKE_CURRENT_BINARY_DIR}/movement_generator.json")
             message(STATUS "Will generate movement model JSON in build directory")
         endif()
-        set(MOVEMENT_ASM "${CMAKE_CURRENT_BINARY_DIR}/movement.s")
-        set(MOVEMENT_OBJ "${CMAKE_CURRENT_BINARY_DIR}/movement.o")
-        set(MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/movement.elf")
+        set(COUNTER_CHAR_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_scaffold.py")
+            set(COUNTER_CHAR_BASE_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
+            set(COUNTER_CHAR_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter-char_generator.json")
+            set(COUNTER_CHAR_ASM "${CMAKE_CURRENT_BINARY_DIR}/counter-char.s")
+            set(COUNTER_CHAR_OBJ "${CMAKE_CURRENT_BINARY_DIR}/counter-char.o")
+            set(COUNTER_CHAR_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter-char.elf")
+            set(COUNTER255_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter255_plain.py")
+            set(COUNTER255_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter255_generator.json")
+            set(COUNTER255_ASM "${CMAKE_CURRENT_BINARY_DIR}/counter255.s")
+            set(COUNTER255_OBJ "${CMAKE_CURRENT_BINARY_DIR}/counter255.o")
+            set(COUNTER255_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter255.elf")
+            set(COUNTER_CHAR_COMPOSE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_combined.py")
+            set(COUNTER_CHAR_COMBINED_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_counter_char_combined.py")
+            set(COUNTER_CHAR_COMBINED_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined_generator.json")
+            set(COUNTER_CHAR_COMBINED_ASM "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined.s")
+            set(COUNTER_CHAR_COMBINED_OBJ "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined.o")
+            set(COUNTER_CHAR_COMBINED_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter-char-combined.elf")
+            set(COUNTER_CHAR_STATIC_OFFSET_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_static.py")
+            set(COUNTER_CHAR_STATIC_CHARGEN_BASE_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
+            set(COUNTER_CHAR_STATIC_COMPOSE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter_char_static_compose.py")
+            set(COUNTER_CHAR_STATIC_OFFSET_JSON_TEMP "${CMAKE_CURRENT_BINARY_DIR}/counter_char_static_offset_temp.json")
+            set(COUNTER_CHAR_STATIC_CHARGEN_JSON_TEMP "${CMAKE_CURRENT_BINARY_DIR}/counter_char_static_chargen_temp.json")
+            set(COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/counter-char-static_generator.json")
+            set(COUNTER_CHAR_STATIC_COMBINED_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_counter_char_static.py")
+            set(COUNTER_CHAR_STATIC_ASM "${CMAKE_CURRENT_BINARY_DIR}/counter-char-static.s")
+            set(COUNTER_CHAR_STATIC_OBJ "${CMAKE_CURRENT_BINARY_DIR}/counter-char-static.o")
+            set(COUNTER_CHAR_STATIC_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter-char-static.elf")
 
         add_custom_command(
             OUTPUT ${NEURAL_ASM}
             COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${NEURAL_ASM} ${NEURAL_MODEL_JSON}
-            DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
             COMMENT "Generating neural.s from model JSON"
             VERBATIM
         )
@@ -477,7 +570,67 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_target(neural_elf ALL DEPENDS ${NEURAL_ELF})
 
-        # Custom command to ensure movement model exists and export JSON
+        # Rust model-to-header compiler
+        set(MODEL_TO_HEADER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/model_to_header")
+        set(MODEL_TO_HEADER "${MODEL_TO_HEADER_SRC_DIR}/target/release/model_to_header")
+        find_program(CARGO_EXECUTABLE cargo)
+        if(CARGO_EXECUTABLE)
+            add_custom_command(
+                OUTPUT ${MODEL_TO_HEADER}
+                COMMAND cargo build --release
+                WORKING_DIRECTORY ${MODEL_TO_HEADER_SRC_DIR}
+                COMMENT "Building Rust model-to-header compiler"
+                VERBATIM
+            )
+        else()
+            message(WARNING "cargo not found — Rust model-to-header must be pre-built. "
+                           "Install Rust or run 'cargo build --release' in model_to_header/")
+            add_custom_command(
+                OUTPUT ${MODEL_TO_HEADER}
+                COMMAND ${CMAKE_COMMAND} -E echo "cargo not found — cannot build model_to_header"
+                COMMAND false
+            )
+        endif()
+        add_custom_target(model_to_header_bin DEPENDS ${MODEL_TO_HEADER})
+
+        # Shared runtime for all neural models (char_gen, movement, etc.)
+        set(SHARED_RUNTIME_C "${CMAKE_CURRENT_SOURCE_DIR}/runtime.c")
+        set(SHARED_LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/riscv_generator_high.ld")
+
+        # --- char_gen.elf -------------------------------------------------------
+        set(CHAR_GEN_MODEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/char_gen_model_dir")
+        set(CHAR_GEN_H "${CHAR_GEN_MODEL_DIR}/model.h")
+        set(CHAR_GEN_ELF "${CMAKE_CURRENT_BINARY_DIR}/char_gen.elf")
+
+        add_custom_command(
+            OUTPUT ${CHAR_GEN_H}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CHAR_GEN_MODEL_DIR}
+            COMMAND ${MODEL_TO_HEADER}
+                -i ${NEURAL_MODEL_JSON}
+                -o ${CHAR_GEN_H}
+            DEPENDS ${NEURAL_MODEL_JSON} ${MODEL_TO_HEADER}
+            COMMENT "Generating char_gen model.h via Rust model-to-header"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${CHAR_GEN_ELF}
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+                -I${CHAR_GEN_MODEL_DIR}
+                -T ${SHARED_LINKER_SCRIPT}
+                -Wl,--oformat=elf32-littleriscv
+                -Wl,-e,_start
+                -o ${CHAR_GEN_ELF}
+                ${SHARED_RUNTIME_C}
+                -lgcc
+            DEPENDS ${CHAR_GEN_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
+            COMMENT "Compiling char_gen.elf"
+            VERBATIM
+        )
+
+        add_custom_target(char_gen_elf ALL DEPENDS ${CHAR_GEN_ELF})
+
+        # --- movement.elf -------------------------------------------------------
         set(MOVEMENT_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_movement_model.py")
         add_custom_command(
             OUTPUT ${MOVEMENT_JSON}
@@ -493,37 +646,270 @@ if(RISCV_TOOLCHAIN_FOUND)
             VERBATIM
         )
 
-        add_custom_command(
-            OUTPUT ${MOVEMENT_ASM}
-            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${MOVEMENT_ASM} ${MOVEMENT_JSON}
-            DEPENDS ${NEURAL_COMPILER} ${MOVEMENT_JSON}
-            COMMENT "Generating movement.s from movement model JSON"
-            VERBATIM
-        )
+        set(MOVEMENT_MODEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/movement_model_dir")
+        set(MOVEMENT_H "${MOVEMENT_MODEL_DIR}/model.h")
+        set(MOVEMENT_ELF "${CMAKE_CURRENT_BINARY_DIR}/movement.elf")
 
         add_custom_command(
-            OUTPUT ${MOVEMENT_OBJ}
-            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${MOVEMENT_OBJ} ${MOVEMENT_ASM}
-            DEPENDS ${MOVEMENT_ASM}
-            COMMENT "Assembling movement.o"
+            OUTPUT ${MOVEMENT_H}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${MOVEMENT_MODEL_DIR}
+            COMMAND ${MODEL_TO_HEADER}
+                -i ${MOVEMENT_JSON}
+                -o ${MOVEMENT_H}
+            DEPENDS ${MOVEMENT_JSON} ${MODEL_TO_HEADER}
+            COMMENT "Generating movement model.h via Rust model-to-header"
             VERBATIM
         )
 
         add_custom_command(
             OUTPUT ${MOVEMENT_ELF}
-            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${MOVEMENT_ELF} ${MOVEMENT_OBJ}
-            DEPENDS ${MOVEMENT_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
-            COMMENT "Linking movement.elf"
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+                -I${MOVEMENT_MODEL_DIR}
+                -T ${SHARED_LINKER_SCRIPT}
+                -Wl,--oformat=elf32-littleriscv
+                -Wl,-e,_start
+                -o ${MOVEMENT_ELF}
+                ${SHARED_RUNTIME_C}
+                -lgcc
+            DEPENDS ${MOVEMENT_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
+            COMMENT "Compiling movement.elf"
             VERBATIM
         )
 
         add_custom_target(movement_elf ALL DEPENDS ${MOVEMENT_ELF})
 
+        # game_movement_elf target removed — build scripts (train_squash.py,
+        # export_squash_intermediate.py, build_game_movement_model.py) no longer exist
+
+        # Phase-1 scaffold path for counter->a0->char-gen integration
+        set(COUNTER_CHAR_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_counter_char_model.py")
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_JSON}
+            COMMAND ${CMAKE_COMMAND} -E env
+                COUNTER_CHAR_BASE_JSON=${COUNTER_CHAR_BASE_JSON}
+                COUNTER_CHAR_EXPORT_SCRIPT=${COUNTER_CHAR_EXPORT_SCRIPT}
+                COUNTER_CHAR_JSON_OUTPUT=${COUNTER_CHAR_JSON}
+                ${PYTHON_EXECUTABLE} ${COUNTER_CHAR_BUILD_SCRIPT}
+            DEPENDS ${COUNTER_CHAR_BUILD_SCRIPT} ${COUNTER_CHAR_EXPORT_SCRIPT} ${COUNTER_CHAR_BASE_JSON}
+            COMMENT "Building counter-char scaffold JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_ASM}
+            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${COUNTER_CHAR_ASM} ${COUNTER_CHAR_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${COUNTER_CHAR_JSON}
+            COMMENT "Generating counter-char.s from scaffold JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_OBJ}
+            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${COUNTER_CHAR_OBJ} ${COUNTER_CHAR_ASM}
+            DEPENDS ${COUNTER_CHAR_ASM}
+            COMMENT "Assembling counter-char.o"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${COUNTER_CHAR_ELF} ${COUNTER_CHAR_OBJ}
+            DEPENDS ${COUNTER_CHAR_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            COMMENT "Linking counter-char.elf"
+            VERBATIM
+        )
+
+        add_custom_target(counter_char_elf DEPENDS ${COUNTER_CHAR_ELF})
+
+        # --- counter255.elf (Rust model-to-header + unified runtime) ------------
+        set(COUNTER255_BUILD_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/build_counter255_model.py")
+
+        add_custom_command(
+            OUTPUT ${COUNTER255_JSON}
+            COMMAND ${CMAKE_COMMAND} -E env
+                COUNTER255_EXPORT_SCRIPT=${COUNTER255_EXPORT_SCRIPT}
+                COUNTER255_JSON_OUTPUT=${COUNTER255_JSON}
+                ${PYTHON_EXECUTABLE} ${COUNTER255_BUILD_SCRIPT}
+            DEPENDS ${COUNTER255_BUILD_SCRIPT} ${COUNTER255_EXPORT_SCRIPT}
+            COMMENT "Building counter255 model JSON"
+            VERBATIM
+        )
+
+        set(COUNTER255_MODEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/counter255_model_dir")
+        set(COUNTER255_H "${COUNTER255_MODEL_DIR}/model.h")
+        set(COUNTER255_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter255.elf")
+
+        add_custom_command(
+            OUTPUT ${COUNTER255_H}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${COUNTER255_MODEL_DIR}
+            COMMAND ${MODEL_TO_HEADER}
+                -i ${COUNTER255_JSON}
+                -o ${COUNTER255_H}
+            DEPENDS ${COUNTER255_JSON} ${MODEL_TO_HEADER}
+            COMMENT "Generating counter255 model.h via Rust model-to-header"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER255_ELF}
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+                -I${COUNTER255_MODEL_DIR}
+                -T ${SHARED_LINKER_SCRIPT}
+                -Wl,--oformat=elf32-littleriscv
+                -Wl,-e,_start
+                -o ${COUNTER255_ELF}
+                ${SHARED_RUNTIME_C}
+                -lgcc
+            DEPENDS ${COUNTER255_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
+            COMMENT "Compiling counter255.elf"
+            VERBATIM
+        )
+
+        add_custom_target(counter255_elf ALL DEPENDS ${COUNTER255_ELF})
+
+        # --- three-layer counter255 JSON for combined block-diagonal model ----
+        set(COUNTER255_THREE_LAYER_EXPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/export_counter255_three_layer.py")
+        set(COUNTER255_THREE_LAYER_JSON "${CMAKE_CURRENT_BINARY_DIR}/counter255_three_layer.json")
+
+        add_custom_command(
+            OUTPUT ${COUNTER255_THREE_LAYER_JSON}
+            COMMAND ${PYTHON_EXECUTABLE} ${COUNTER255_THREE_LAYER_EXPORT_SCRIPT}
+                --output ${COUNTER255_THREE_LAYER_JSON}
+            DEPENDS ${COUNTER255_THREE_LAYER_EXPORT_SCRIPT}
+            COMMENT "Building three-layer counter255 model JSON for combined model"
+            VERBATIM
+        )
+
+        # --- counter+chargen combined block-diagonal model (glue mode) -------
+        set(COUNTER_CHARGEN_COMBINED_GLUE "${CMAKE_CURRENT_SOURCE_DIR}/combined_glue.json")
+        set(COUNTER_CHARGEN_COMBINED_MODEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/counter_chargen_combined_model_dir")
+        set(COUNTER_CHARGEN_COMBINED_H "${COUNTER_CHARGEN_COMBINED_MODEL_DIR}/model.h")
+        set(COUNTER_CHARGEN_COMBINED_ELF "${CMAKE_CURRENT_BINARY_DIR}/counter-chargen-combined.elf")
+
+        set(COUNTER_CHARGEN_COMBINED_GLUE_COUNTER_JSON ${COUNTER255_THREE_LAYER_JSON})
+        set(COUNTER_CHARGEN_COMBINED_GLUE_CHARGEN_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHARGEN_COMBINED_H}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${COUNTER_CHARGEN_COMBINED_MODEL_DIR}
+            COMMAND ${MODEL_TO_HEADER}
+                --glue ${CMAKE_CURRENT_SOURCE_DIR}/combined_glue.json
+                -o ${COUNTER_CHARGEN_COMBINED_H}
+            DEPENDS
+                ${CMAKE_CURRENT_SOURCE_DIR}/combined_glue.json
+                ${COUNTER_CHARGEN_COMBINED_GLUE_COUNTER_JSON}
+                ${COUNTER_CHARGEN_COMBINED_GLUE_CHARGEN_JSON}
+                ${MODEL_TO_HEADER}
+            COMMENT "Generating combined counter+chargen model.h via Rust model-to-header (glue mode)"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHARGEN_COMBINED_ELF}
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+                -I${COUNTER_CHARGEN_COMBINED_MODEL_DIR}
+                -T ${SHARED_LINKER_SCRIPT}
+                -Wl,--oformat=elf32-littleriscv
+                -Wl,-e,_start
+                -o ${COUNTER_CHARGEN_COMBINED_ELF}
+                ${SHARED_RUNTIME_C}
+                -lgcc
+            DEPENDS ${COUNTER_CHARGEN_COMBINED_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
+            COMMENT "Compiling counter-chargen-combined.elf"
+            VERBATIM
+        )
+
+        add_custom_target(counter_chargen_combined_elf ALL DEPENDS ${COUNTER_CHARGEN_COMBINED_ELF})
+
+        # Phase 5: Combined counter-chargen model
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_COMBINED_JSON}
+            COMMAND ${CMAKE_COMMAND} -E env
+                COUNTER_CHAR_COUNTER_EXPORT_SCRIPT=${COUNTER255_EXPORT_SCRIPT}
+                COUNTER_CHAR_CHARGEN_BASE_JSON=${COUNTER_CHAR_BASE_JSON}
+                COUNTER_CHAR_COMPOSE_SCRIPT=${COUNTER_CHAR_COMPOSE_SCRIPT}
+                COUNTER_CHAR_COUNTER_JSON_TEMP=${CMAKE_CURRENT_BINARY_DIR}/counter255_temp.json
+                COUNTER_CHAR_CHARGEN_JSON_TEMP=${CMAKE_CURRENT_BINARY_DIR}/chargen_temp.json
+                COUNTER_CHAR_COMBINED_JSON_OUTPUT=${COUNTER_CHAR_COMBINED_JSON}
+                ${PYTHON_EXECUTABLE} ${COUNTER_CHAR_COMBINED_BUILD_SCRIPT}
+            DEPENDS ${COUNTER_CHAR_COMBINED_BUILD_SCRIPT} ${COUNTER_CHAR_COMPOSE_SCRIPT} ${COUNTER255_EXPORT_SCRIPT} ${COUNTER_CHAR_BASE_JSON}
+            COMMENT "Building combined counter-chargen model JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_COMBINED_ASM}
+            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${COUNTER_CHAR_COMBINED_ASM} ${COUNTER_CHAR_COMBINED_JSON}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${COUNTER_CHAR_COMBINED_JSON}
+            COMMENT "Generating counter-char-combined.s from combined JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_COMBINED_OBJ}
+            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${COUNTER_CHAR_COMBINED_OBJ} ${COUNTER_CHAR_COMBINED_ASM}
+            DEPENDS ${COUNTER_CHAR_COMBINED_ASM}
+            COMMENT "Assembling counter-char-combined.o"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_COMBINED_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${COUNTER_CHAR_COMBINED_ELF} ${COUNTER_CHAR_COMBINED_OBJ}
+            DEPENDS ${COUNTER_CHAR_COMBINED_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            COMMENT "Linking counter-char-combined.elf"
+            VERBATIM
+        )
+
+        add_custom_target(counter_char_combined_elf ALL DEPENDS ${COUNTER_CHAR_COMBINED_ELF})
+
+        # Phase 5b: Static counter-chargen model (non-incrementing version for testing)
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT}
+            COMMAND ${CMAKE_COMMAND} -E env
+                COUNTER_CHAR_STATIC_OFFSET_EXPORT_SCRIPT=${COUNTER_CHAR_STATIC_OFFSET_EXPORT_SCRIPT}
+                COUNTER_CHAR_STATIC_CHARGEN_BASE_JSON=${COUNTER_CHAR_STATIC_CHARGEN_BASE_JSON}
+                COUNTER_CHAR_STATIC_COMPOSE_SCRIPT=${COUNTER_CHAR_STATIC_COMPOSE_SCRIPT}
+                COUNTER_CHAR_STATIC_OFFSET_JSON_TEMP=${COUNTER_CHAR_STATIC_OFFSET_JSON_TEMP}
+                COUNTER_CHAR_STATIC_CHARGEN_JSON_TEMP=${COUNTER_CHAR_STATIC_CHARGEN_JSON_TEMP}
+                COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT=${COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT}
+                ${PYTHON_EXECUTABLE} ${COUNTER_CHAR_STATIC_COMBINED_BUILD_SCRIPT}
+            DEPENDS ${COUNTER_CHAR_STATIC_COMBINED_BUILD_SCRIPT} ${COUNTER_CHAR_STATIC_COMPOSE_SCRIPT} ${COUNTER_CHAR_STATIC_OFFSET_EXPORT_SCRIPT} ${COUNTER_CHAR_STATIC_CHARGEN_BASE_JSON}
+            COMMENT "Building static counter-chargen model JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_STATIC_ASM}
+            COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} -o ${COUNTER_CHAR_STATIC_ASM} ${COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT}
+            DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${COUNTER_CHAR_STATIC_COMBINED_JSON_OUTPUT}
+            COMMENT "Generating counter-char-static.s from static model JSON"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_STATIC_OBJ}
+            COMMAND ${RISCV_AS} -march=rv32if -mabi=ilp32f -o ${COUNTER_CHAR_STATIC_OBJ} ${COUNTER_CHAR_STATIC_ASM}
+            DEPENDS ${COUNTER_CHAR_STATIC_ASM}
+            COMMENT "Assembling counter-char-static.o"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${COUNTER_CHAR_STATIC_ELF}
+            COMMAND ${RISCV_LD} -m elf32lriscv -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -o ${COUNTER_CHAR_STATIC_ELF} ${COUNTER_CHAR_STATIC_OBJ}
+            DEPENDS ${COUNTER_CHAR_STATIC_OBJ} ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+            COMMENT "Linking counter-char-static.elf"
+            VERBATIM
+        )
+
+        add_custom_target(counter_char_static_elf DEPENDS ${COUNTER_CHAR_STATIC_ELF})
+
         if(RV32AS_EXECUTABLE)
             add_custom_command(
                 OUTPUT ${NEURAL_OPSX77_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops -o ${NEURAL_OPSX77_ASM} -b ${NEURAL_OPSX77_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-ai-opsx77.s from model JSON"
                 VERBATIM
             )
@@ -549,7 +935,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b -o ${NEURAL_OP_ENHANCE_ASM} -b ${NEURAL_OP_ENHANCE_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance.s from model JSON"
                 VERBATIM
             )
@@ -575,7 +961,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE4_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 4x -o ${NEURAL_OP_ENHANCE4_ASM} -b ${NEURAL_OP_ENHANCE4_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance4.s from model JSON"
                 VERBATIM
             )
@@ -601,7 +987,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE8_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8x -o ${NEURAL_OP_ENHANCE8_ASM} -b ${NEURAL_OP_ENHANCE8_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance8.s from model JSON"
                 VERBATIM
             )
@@ -627,7 +1013,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE8PMAC_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8xpmac -o ${NEURAL_OP_ENHANCE8PMAC_ASM} -b ${NEURAL_OP_ENHANCE8PMAC_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance8pmac.s from model JSON"
                 VERBATIM
             )
@@ -653,7 +1039,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE8PMAC2_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8xpmac2 -o ${NEURAL_OP_ENHANCE8PMAC2_ASM} -b ${NEURAL_OP_ENHANCE8PMAC2_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance8pmac2.s from model JSON"
                 VERBATIM
             )
@@ -679,7 +1065,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE8PMAC3_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8xpmac3 -o ${NEURAL_OP_ENHANCE8PMAC3_ASM} -b ${NEURAL_OP_ENHANCE8PMAC3_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance8pmac3.s from model JSON"
                 VERBATIM
             )
@@ -705,7 +1091,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             add_custom_command(
                 OUTPUT ${NEURAL_OP_ENHANCE8PMAC4_ASM}
                 COMMAND ${PYTHON_EXECUTABLE} ${NEURAL_COMPILER} --use-neural-ops --neural-opcode x7b --neural-lane-mode 8xpmac4 -o ${NEURAL_OP_ENHANCE8PMAC4_ASM} -b ${NEURAL_OP_ENHANCE8PMAC4_BIN} ${NEURAL_MODEL_JSON}
-                DEPENDS ${NEURAL_COMPILER} ${NEURAL_MODEL_JSON}
+                DEPENDS ${NEURAL_COMPILER} ${NEURAL_COMPILER_CORE} ${NEURAL_MODEL_JSON}
                 COMMENT "Generating neural-op-enhance8pmac4.s from model JSON"
                 VERBATIM
             )

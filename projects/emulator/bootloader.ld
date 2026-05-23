@@ -7,7 +7,6 @@
  *
  * Model Placement (by bootloader):
  * - Generator model:   0x10000 - 0xF3C7F (loaded at runtime)
- * - Recognizer model:  0xF4ABC - 0xFFFFF (loaded at runtime)
  * - Stack:             0x20000 (initialized in bootloader)
  *
  * Notes:

@@ -2,7 +2,7 @@
  * Model loader for RISC-V emulator neural network inference.
  *
  * Loads weights from binary format into emulator memory.
- * Supports both character generator and character recognition models.
+ * Supports character generator models.
  */
 
 #ifndef MODEL_LOADER_H
@@ -22,8 +22,7 @@ typedef enum {
 } ActivationType;
 
 typedef enum {
-    MODEL_GENERATOR = 0,
-    MODEL_RECOGNIZER = 1
+    MODEL_GENERATOR = 0
 } ModelType;
 
 typedef struct {

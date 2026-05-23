@@ -93,29 +93,8 @@ int main() {
     }
     std::cout << "✓ Generator model loaded at 0x10000\n\n";
     
-    // Load recognizer model
-    std::cout << "2. Loading character recognizer model...\n";
-    std::vector<uint8_t> recog_model;
-    if (!loadBinaryFile("../../weight-export/character_recognition.bin", recog_model)) {
-        std::cerr << "FAILED: Could not load recognizer model\n";
-        return 1;
-    }
-    
-    if (!loadProgramIntoEmulator(emulator, recog_model, 0xF4ABC)) {
-        std::cerr << "FAILED: Could not load recognizer into emulator\n";
-        return 1;
-    }
-    
-    // Verify recognizer header
-    magic = memory.read32(0xF4ABC);
-    if (magic != 0x4E52414E) {
-        std::cerr << "FAILED: Recognizer magic number incorrect\n";
-        return 1;
-    }
-    std::cout << "✓ Recognizer model loaded at 0xF4ABC\n\n";
-    
     // Load test program
-    std::cout << "3. Loading RISC-V test program...\n";
+    std::cout << "2. Loading RISC-V test program...\n";
     std::vector<uint8_t> test_binary;
     if (!loadBinaryFile("test_model_memory_layout.bin", test_binary)) {
         std::cerr << "FAILED: Could not load test program\n";
@@ -147,20 +126,17 @@ int main() {
     std::cout << "5. Test Results:\n";
     std::cout << "   Exit code: " << exit_code << "/7 tests passed\n";
     
-    // Accept 7/7 or 0 (depending on how RISC-V program encodes success)
-    if (exit_code == 7 || exit_code == 0) {
+    // Accept 5/5 or 0 (depending on how RISC-V program encodes success)
+    if (exit_code == 5 || exit_code == 0) {
         std::cout << "\n✓ ALL TESTS PASSED!\n";
         std::cout << "\nMemory verification successful:\n";
         std::cout << "  • Generator model header @ 0x10000: Valid\n";
         std::cout << "  • Generator weights @ 0x10080: Readable\n";
         std::cout << "  • Generator biases @ 0xF3C80: Readable\n";
-        std::cout << "  • Recognizer model header @ 0xF4ABC: Valid\n";
-        std::cout << "  • Recognizer weights @ 0xF4B1C: Readable\n";
-        std::cout << "  • Recognizer biases @ 0x12B51C: Readable\n";
         return 0;
     } else {
         std::cout << "\n✗ TESTS FAILED\n";
-        std::cout << "Expected 7/7 tests to pass, got " << exit_code << "/7\n";
+        std::cout << "Expected 5/5 tests to pass, got " << exit_code << "/5\n";
         return 1;
     }
 }

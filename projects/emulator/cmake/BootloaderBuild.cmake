@@ -4,7 +4,6 @@
 # Allows simple integration of models into the build system:
 #
 #   add_model_bootloader(generator_model "path/to/generator.json")
-#   add_model_bootloader(recognizer_model "path/to/recognizer.json")
 #
 # This function automatically:
 # 1. Detects the compile_model_bootloader.py script

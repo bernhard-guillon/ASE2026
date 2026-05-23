@@ -26,7 +26,7 @@ class LayerDef:
 @dataclass
 class ModelDef:
     """Complete model definition."""
-    model_type: str  # "generator" or "recognizer"
+    model_type: str
     num_layers: int
     layers: List[LayerDef]
     total_weights: int  # Total number of float32 values
@@ -41,7 +41,7 @@ class IntermediateFormat:
     Structure:
     {
         "metadata": {
-            "model_type": "generator" | "recognizer",
+            "model_type": "generator",
             "version": 1,
             "architecture": "fully-connected",
             "precision": "float32"
@@ -71,7 +71,7 @@ class IntermediateFormat:
         
         Args:
             model: PyTorch model instance
-            model_type: "generator" or "recognizer"
+            model_type: str
             layer_configs: List of dicts with keys:
                 - "layer_param": name of the fc layer (e.g., "fc1", "fc2")
                 - "activation": "relu", "sigmoid", or "none"
@@ -141,7 +141,7 @@ class BinaryFormat:
     [Header: 32 bytes]
         - magic: 4 bytes = 0x4E52414E ("NRAL" = Neural)
         - version: 4 bytes = 1
-        - model_type: 4 bytes (0 = generator, 1 = recognizer)
+        - model_type: 4 bytes (0 = generator)
         - num_layers: 4 bytes
         - total_weight_floats: 4 bytes
         - total_bias_floats: 4 bytes
@@ -167,7 +167,7 @@ class BinaryFormat:
     
     MAGIC = 0x4E52414E  # "NRAL"
     VERSION = 1
-    MODEL_TYPES = {"generator": 0, "recognizer": 1}
+    MODEL_TYPES = {"generator": 0}
     ACTIVATIONS = {"relu": 0, "sigmoid": 1, "none": 2}
     
     HEADER_SIZE = 32

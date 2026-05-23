@@ -26,7 +26,7 @@ class ModelCompiler:
     # Binary format constants (must match projects/weight-export/model_formats.py)
     MAGIC = 0x4E52414E  # "NRAL"
     VERSION = 1
-    MODEL_TYPES = {"generator": 0, "recognizer": 1}
+    MODEL_TYPES = {"generator": 0, "chained": 0}
     ACTIVATIONS = {"relu": 0, "sigmoid": 1, "none": 2}
     
     HEADER_SIZE = 32
@@ -36,7 +36,6 @@ class ModelCompiler:
     MEMORY_LAYOUT = {
         "code_base": 0x00001000,
         "generator_base": 0x00010000,
-        "recognizer_base": 0x00110000,
         "buffer_base": 0x00150000,
         "framebuffer_base": 0x00020000,
     }
@@ -244,12 +243,11 @@ class ModelCompiler:
         model_type = self.metadata.get("model_type", "unknown")
         num_layers = len(self.layers)
         input_size = self.layers[0]["input_size"] if self.layers else 0
-        output_size = self.layers[-1]["output_size"] if self.layers else 0
+        # Use metadata output_size if available (for models with framebuffer_size != last layer output)
+        output_size = self.metadata.get("output_size", self.layers[-1]["output_size"] if self.layers else 0)
         
         # Determine model base address
-        model_base = (self.MEMORY_LAYOUT["generator_base"] 
-                     if model_type == "generator" 
-                     else self.MEMORY_LAYOUT["recognizer_base"])
+        model_base = self.MEMORY_LAYOUT["generator_base"]
         
         # Build complete assembly file
         asm_parts = []
@@ -322,7 +320,6 @@ class ModelCompiler:
 # Memory Map:
 #   0x00000 - 0x0FFFF: Bootloader code and embedded model data
 #   0x10000 - 0xF3C7F: Generator model (loaded by bootloader)
-#   0xF4ABC - 0xFFFFF: Recognizer model (loaded by bootloader)
 
 .section .data
 .align 4
@@ -376,7 +373,6 @@ model_data_end:
 _start:
     # Bootloader code will copy embedded model data to correct addresses:
     # - Generator model data -> 0x10000
-    # - Recognizer model data -> 0xF4ABC
     #
     # Implementation in Phase 2
 
@@ -400,10 +396,8 @@ _start:
             RISC-V assembly code for bootloader initialization
         """
         # Calculate model addresses and sizes
-        # Models are embedded in .data section in order: generator, then recognizer
-        
         if self.metadata is None or self.metadata.get("model_type") != "generator":
-            # For single model (either generator or recognizer)
+            # For single model (either generator or chained)
             return self._generate_single_model_bootloader()
         
         # For now, assume we're compiling a single model
@@ -411,16 +405,13 @@ _start:
         return self._generate_single_model_bootloader()
     
     def _generate_single_model_bootloader(self) -> str:
-        """Generate bootloader for a single model (generator or recognizer)."""
+        """Generate bootloader for a single model."""
         model_type = self.metadata.get("model_type", "unknown")
         binary_size = len(self.binary_data) if self.binary_data else 0
         
         if model_type == "generator":
             dest_addr = 0x10000
             model_name = "generator"
-        elif model_type == "recognizer":
-            dest_addr = 0xF4ABC
-            model_name = "recognizer"
         else:
             dest_addr = 0x10000
             model_name = "unknown"
@@ -591,77 +582,6 @@ verify_model:
         
         return "\n".join(checks)
     
-    def _generate_dual_model_bootloader(self, gen_size: int, rec_size: int) -> str:
-        """
-        Generate bootloader for both generator and recognizer models.
-        
-        Note: This is for future use when both models are embedded.
-        For Phase 2, we handle single models only.
-        """
-        return f"""# RISC-V Bootloader Phase 2: Dual Model Initialization
-# Copies both generator and recognizer models to target addresses
-
-.section .text
-.align 4
-.globl _start
-
-_start:
-    # Initialize stack pointer to 0x20000
-    lui sp, 0x20
-    
-    # === Copy Generator Model ===
-    # Destination: 0x10000
-    # Size: {gen_size} bytes
-    
-    lui a1, 0x10            # a1 = 0x10000 (dest for generator)
-    
-    la a0, model_data_start # a0 = source (start of embedded data)
-    li a2, {gen_size}       # a2 = size of generator
-    
-    xor a3, a3, a3          # a3 = 0 (loop counter)
-    
-.Lcopy_gen_loop:
-    bge a3, a2, .Lcopy_gen_done
-    add a4, a0, a3
-    lbu a5, 0(a4)
-    add a4, a1, a3
-    sb a5, 0(a4)
-    addi a3, a3, 1
-    j .Lcopy_gen_loop
-    
-.Lcopy_gen_done:
-    # === Copy Recognizer Model ===
-    # Destination: 0xF4ABC
-    # Offset from generator: {gen_size} bytes
-    # Size: {rec_size} bytes
-    
-    # a1 = 0xF4ABC (dest for recognizer)
-    lui a1, 0xF5
-    addi a1, a1, -1348
-    
-    # a0 already has model_data_start
-    # a0 = model_data_start + {gen_size} (offset to recognizer)
-    addi a0, a0, {gen_size}
-    
-    li a2, {rec_size}       # a2 = size of recognizer
-    xor a3, a3, a3          # a3 = 0 (loop counter)
-    
-.Lcopy_rec_loop:
-    bge a3, a2, .Lcopy_rec_done
-    add a4, a0, a3
-    lbu a5, 0(a4)
-    add a4, a1, a3
-    sb a5, 0(a4)
-    addi a3, a3, 1
-    j .Lcopy_rec_loop
-    
-.Lcopy_rec_done:
-    # Both models copied successfully
-    li a0, 0                # exit code 0 (success)
-    li a7, 93               # SYS_exit
-    ecall
-
-"""
     def _generate_sigmoid_piecewise(self) -> str:
         """Generate piecewise linear sigmoid approximation function.
         
@@ -960,7 +880,126 @@ layer_{layer_idx}_forward:
     def _generate_input_mapping(self, model_type: str, input_size: int) -> str:
         """Generate code to map character input to network input."""
         input_mapping = (self.metadata or {}).get("input_mapping", "")
+        # Chained model: physics_state (46) + counter_state (11) -> total input
+        if model_type == "chained":
+            return f"""
+# Input mapping: Chained model input (physics_state + counter_state)
+# First tick: seed deterministic initial compact state.
+# Later ticks: feed previous compact output back into compact input.
+map_input_chained:
+    li t0, 0x{self.MEMORY_LAYOUT['buffer_base'] + self.BUFFER_OFFSETS['input']:08X}
+    li t1, 0x{self.MEMORY_LAYOUT['buffer_base'] + self.BUFFER_OFFSETS['output']:08X}
+    li t2, 0x{self.MEMORY_LAYOUT['buffer_base'] + 0x3FF0:08X}   # init flag slot
+    lw t3, 0(t2)
+    bne t3, zero, .Lcopy_prev_chained
+
+    # First tick: clear and seed initial compact state
+    li t4, {input_size * 4}
+    li t5, 0
+.Lclear_input_chained:
+    bge t5, t4, .Lseed_input_chained
+    add t6, t0, t5
+    sw zero, 0(t6)
+    addi t5, t5, 4
+    j .Lclear_input_chained
+
+.Lseed_input_chained:
+    lui t6, 0x3F800                  # 1.0f
+    # physics: x=1, y=10, vx=+1, vy=0
+    li a0, {1 * 4}
+    add a1, t0, a0
+    sw t6, 0(a1)
+    li a0, {30 * 4}
+    add a1, t0, a0
+    sw t6, 0(a1)
+    li a0, {42 * 4}
+    add a1, t0, a0
+    sw t6, 0(a1)
+    li a0, {44 * 4}
+    add a1, t0, a0
+    sw t6, 0(a1)
+    # counter: count=0 one-hot, stop=0
+    li a0, {46 * 4}
+    add a1, t0, a0
+    sw t6, 0(a1)
+    li t3, 1
+    sw t3, 0(t2)
+    ret
+
+.Lcopy_prev_chained:
+    li t4, {input_size * 4}
+    li t5, 0
+.Lcopy_prev_chained_loop:
+    bge t5, t4, .Lcopy_prev_chained_done
+    add t6, t1, t5
+    lw a0, 0(t6)
+    add a1, t0, t5
+    sw a0, 0(a1)
+    addi t5, t5, 4
+    j .Lcopy_prev_chained_loop
+
+.Lcopy_prev_chained_done:
+    ret
+
+"""
         if model_type == "generator":
+            if input_mapping == "counter255_a0_feedback":
+                return f"""
+# Input mapping: counter255 feedback (a0 scalar 0..254 -> one-hot 255)
+map_input_generator:
+    li t0, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]:08X}
+
+    # Zero out full input buffer (255 floats)
+    li t1, {input_size * 4}
+    li t2, 0
+.Lclear_input_counter255:
+    bge t2, t1, .Lset_counter255_input
+    add t3, t0, t2
+    sw zero, 0(t3)
+    addi t2, t2, 4
+    j .Lclear_input_counter255
+
+.Lset_counter255_input:
+    li t1, 255
+    bgeu a0, t1, .Linput_done_counter255
+    slli t2, a0, 2
+    add t2, t0, t2
+    lui t3, 0x3F800                  # 1.0f
+    sw t3, 0(t2)
+
+.Linput_done_counter255:
+    ret
+
+"""
+            if input_mapping == "counter_char_a0_bridge":
+                return f"""
+# Input mapping: staged counter->char bridge seed (a0 scalar 0..254 -> one-hot 255)
+# In staged forward pass, layer0 updates a0 each tick and layer1+ consume it.
+map_input_generator:
+    li t0, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]:08X}
+
+    # Zero out full input buffer (255 floats)
+    li t1, {input_size * 4}
+    li t2, 0
+.Lclear_input_counter_char:
+    bge t2, t1, .Lset_counter_char_input
+    add t3, t0, t2
+    sw zero, 0(t3)
+    addi t2, t2, 4
+    j .Lclear_input_counter_char
+
+.Lset_counter_char_input:
+    li t1, 255
+    bgeu a0, t1, .Linput_done_counter_char
+    slli t2, a0, 2
+    add t2, t0, t2
+    lui t3, 0x3F800                  # 1.0f
+    sw t3, 0(t2)
+
+.Linput_done_counter_char:
+    ret
+
+"""
             if input_mapping == "movement_packed_a0":
                 return f"""
 # Input mapping: packed movement code (a0) -> [board one-hot + action one-hot]
@@ -1050,43 +1089,9 @@ map_input_generator:
 
 """
         else:
-            # For recognizer: read pixels from framebuffer
-            return f"""
-# Input mapping: Framebuffer pixels -> Network input
-# For recognizer: read 400 pixels (20x20) and normalize to [0,1]
-map_input_recognizer:
-    # Read from framebuffer at 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
-    # Write to input buffer at 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]:08X}
-
-    lui t0, {self.MEMORY_LAYOUT["framebuffer_base"] >> 12}
-    lui t1, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) >> 12}
-    addi t1, t1, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]) & 0xFFF}
-
-    li t2, 0                        # t2 = pixel index
-    li t3, 400                      # t3 = num pixels
-
-.Lread_pixels:
-    bge t2, t3, .Lread_done
-
-    # Read byte pixel[i]
-    add t4, t0, t2
-    lbu t5, 0(t4)                   # t5 = pixel value [0-255]
-
-    # Convert to float: divide by 255.0
-    fcvt.s.wu fa0, t5               # fa0 = (float)pixel
-    lui t6, 0x43800                 # 255.0 in float
-    fmv.w.x fa1, t6
-    fdiv.s fa0, fa0, fa1            # fa0 = pixel / 255.0
-
-    # Store to input[i]
-    slli t4, t2, 2                  # t4 = i * 4
-    add t4, t1, t4                  # t4 = input_buf + i*4
-    fsw fa0, 0(t4)
-
-    addi t2, t2, 1
-    j .Lread_pixels
-
-.Lread_done:
+            return """
+# Input mapping: Generic -> Network input
+map_input_generic:
     ret
 
 """
@@ -1094,7 +1099,178 @@ map_input_recognizer:
     def _generate_output_mapping(self, model_type: str, output_size: int) -> str:
         """Generate code to map network output to framebuffer."""
         input_mapping = (self.metadata or {}).get("input_mapping", "")
+        if model_type == "chained":
+            return f"""
+# Output mapping: chained compact state -> framebuffer
+# - draw ball from argmax(ball_x, ball_y)
+# - draw counter as a bottom-row bar (temporary visualization hack)
+# - draw stop indicator at bottom-right when stop > 0.5
+map_output_chained:
+    li t0, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
+    li t1, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
+
+    # Clear framebuffer (400 bytes)
+    li t2, 0
+    li t3, 400
+.Lclear_fb_chained:
+    bge t2, t3, .Largmax_x_init
+    add t4, t0, t2
+    sb zero, 0(t4)
+    addi t2, t2, 1
+    j .Lclear_fb_chained
+
+.Largmax_x_init:
+    li t2, 0
+    li t3, 0
+    li a0, 0xFF800000
+    fmv.w.x fa1, a0
+.Largmax_x_loop:
+    li a1, 20
+    bge t2, a1, .Largmax_y_init
+    slli a2, t2, 2
+    add a2, t1, a2
+    flw fa0, 0(a2)
+    flt.s a3, fa1, fa0
+    beq a3, zero, .Largmax_x_next
+    fsgnj.s fa1, fa0, fa0
+    addi t3, t2, 0
+.Largmax_x_next:
+    addi t2, t2, 1
+    j .Largmax_x_loop
+
+.Largmax_y_init:
+    li t2, 20
+    li t4, 20
+    li a0, 0xFF800000
+    fmv.w.x fa2, a0
+.Largmax_y_loop:
+    li a1, 40
+    bge t2, a1, .Ldraw_ball_chained
+    slli a2, t2, 2
+    add a2, t1, a2
+    flw fa0, 0(a2)
+    flt.s a3, fa2, fa0
+    beq a3, zero, .Largmax_y_next
+    fsgnj.s fa2, fa0, fa0
+    addi t4, t2, 0
+.Largmax_y_next:
+    addi t2, t2, 1
+    j .Largmax_y_loop
+
+.Ldraw_ball_chained:
+    addi t4, t4, -20                # y in 0..19
+    slli a1, t4, 4                  # y * 16
+    slli a2, t4, 2                  # y * 4
+    add a1, a1, a2                  # y * 20
+    add a1, a1, t3                  # y*20 + x
+    add a1, t0, a1
+    li a2, 255
+    sb a2, 0(a1)
+
+    # counter count = argmax(output[46..55])
+    li t2, 46
+    li t5, 46
+    li a0, 0xFF800000
+    fmv.w.x fa3, a0
+.Largmax_count_loop:
+    li a1, 56
+    bge t2, a1, .Ldraw_counter_bar
+    slli a2, t2, 2
+    add a2, t1, a2
+    flw fa0, 0(a2)
+    flt.s a3, fa3, fa0
+    beq a3, zero, .Largmax_count_next
+    fsgnj.s fa3, fa0, fa0
+    addi t5, t2, 0
+.Largmax_count_next:
+    addi t2, t2, 1
+    j .Largmax_count_loop
+
+.Ldraw_counter_bar:
+    addi t5, t5, -46                # count 0..9
+    addi t5, t5, 1                  # show at least one pixel for visibility
+    li a0, 380                      # row 19 base index
+    add a0, t0, a0
+    li t2, 0
+.Ldraw_counter_loop:
+    bge t2, t5, .Ldraw_stop_indicator
+    li a1, 20
+    bge t2, a1, .Ldraw_stop_indicator
+    add a2, a0, t2
+    li a3, 127
+    sb a3, 0(a2)
+    addi t2, t2, 1
+    j .Ldraw_counter_loop
+
+.Ldraw_stop_indicator:
+    li a1, {56 * 4}
+    add a1, t1, a1
+    flw fa0, 0(a1)
+    lui a2, 0x3F000                 # 0.5f
+    fmv.w.x fa4, a2
+    flt.s a3, fa4, fa0              # stop > 0.5 ?
+    beq a3, zero, .Loutput_done_chained
+    li a4, 399
+    add a4, t0, a4
+    li a5, 255
+    sb a5, 0(a4)
+
+.Loutput_done_chained:
+    ret
+
+"""
         if model_type == "generator":
+            if input_mapping == "counter255_a0_feedback":
+                debug_word = self.MEMORY_LAYOUT["buffer_base"] + 0x3FE0
+                return f"""
+# Output mapping: counter255 argmax -> a0 + debug word + framebuffer marker
+map_output_generator:
+    li t0, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
+    li t1, 255
+
+    # Argmax over 255 outputs
+    li t2, 0                          # i
+    li t3, 0                          # max_idx
+    flw fa0, 0(t0)                    # max_val = output[0]
+.Largmax_counter255:
+    bge t2, t1, .Largmax_counter255_done
+    slli t4, t2, 2
+    add t5, t0, t4
+    flw fa1, 0(t5)
+    flt.s t6, fa0, fa1
+    beq t6, zero, .Largmax_counter255_next
+    fsgnj.s fa0, fa1, fa1
+    addi t3, t2, 0
+.Largmax_counter255_next:
+    addi t2, t2, 1
+    j .Largmax_counter255
+
+.Largmax_counter255_done:
+    # Feed back scalar state into a0 for next tick
+    addi a0, t3, 0
+
+    # Persist scalar state for blackbox checks
+    li t2, 0x{debug_word:08X}
+    sw t3, 0(t2)
+
+    # Visual marker: clear framebuffer and set one pixel at index=max_idx
+    li t4, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
+    li t5, 0
+    li t6, 400
+.Lclear_fb_counter255:
+    bge t5, t6, .Ldraw_counter255_pixel
+    add a1, t4, t5
+    sb zero, 0(a1)
+    addi t5, t5, 1
+    j .Lclear_fb_counter255
+
+.Ldraw_counter255_pixel:
+    add a1, t4, t3
+    li a2, 255
+    sb a2, 0(a1)
+    ret
+
+"""
             if input_mapping == "movement_packed_a0":
                 return f"""
 # Output mapping: movement argmax -> single active framebuffer cell
@@ -1210,29 +1386,356 @@ map_output_generator:
 
 """
         else:
-            # For recognizer: show predicted class
-            return f"""
-# Output mapping: Network output -> Display prediction
-# For recognizer: find argmax and display predicted character
-map_output_recognizer:
-    # Read from output buffer at 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
-    # For now: just return (visualization TBD)
-
-    # TODO: Implement argmax and character display
+            return """
+# Output mapping: Generic -> return
+map_output_generic:
     ret
 
 """
 
     def _generate_model_forward_pass(self) -> str:
-        """Generate complete forward pass through all layers."""
+        """Generate complete forward pass through all layers.
+
+        Special-case: chained (dual-model) architecture needs buffer rewiring
+        between the physics and counter sub-networks. For chained models the
+        metadata is expected to contain `sub_networks` with `physics` and
+        `counter` entries that include input_size/output_size and layer lists.
+        """
         if not self.layers:
             return "    # No layers\n    ret\n"
 
         model_type = self.metadata.get("model_type", "generator")
-        model_base = (self.MEMORY_LAYOUT["generator_base"] 
-                     if model_type == "generator" 
-                     else self.MEMORY_LAYOUT["recognizer_base"])
+        architecture = (self.metadata or {}).get("architecture", "")
 
+        # If chained/dual-model metadata present, generate a special forward
+        # pass that:
+        # 1) preserves the counter_state from the global input into a temp
+        #    (we use the output buffer as a temp region),
+        # 2) patches the physics input's stop bit from the global input,
+        # 3) runs the physics sub-network (its layers are the first N layers),
+        # 4) extracts physics.hit_wall and builds the counter input in the
+        #    activation buffer expected by the first counter layer,
+        # 5) runs the counter sub-network layers, leaving the final output in
+        #    the standard output buffer (final layer is compiled to write
+        #    into buffer_base + output).
+        if model_type == "chained" or architecture.startswith("dual-model-chained"):
+            subs = (self.metadata or {}).get("sub_networks", {})
+            physics_meta = subs.get("physics", {})
+            counter_meta = subs.get("counter", {})
+
+            p_layers = physics_meta.get("layers", [])
+            c_layers = counter_meta.get("layers", [])
+            p_count = len(p_layers)
+            c_count = len(c_layers)
+
+            p_input_size = int(physics_meta.get("input_size", 0))
+            p_output_size = int(physics_meta.get("output_size", 0))
+            c_input_size = int(counter_meta.get("input_size", 0))
+            c_output_size = int(counter_meta.get("output_size", 0))
+
+            global_input_size = int(self.metadata.get("input_size", p_input_size + c_input_size))
+
+            input_addr = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["input"]
+            act_a_addr = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["activation_a"]
+            act_b_addr = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["activation_b"]
+            out_addr = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]
+
+            code = f"""
+# Forward pass (chained model: physics + counter)
+run_forward_pass:
+    addi sp, sp, -32
+    sw ra, 28(sp)
+
+    # === Preserve counter_state (count+stop) to temp (output buffer) ===
+    li t0, 0x{input_addr:08X}        # input buffer base
+    li t1, 0x{out_addr:08X}         # temp storage for counter_state
+    li t2, {(p_output_size - 1) * 4}
+    li t3, 0
+    li a0, {c_output_size * 4}
+.Lcopy_counter_to_temp:
+    bge t3, a0, .Lcopy_counter_done
+    add t4, t0, t2
+    lw t5, 0(t4)
+    add t6, t1, t3
+    sw t5, 0(t6)
+    addi t2, t2, 4
+    addi t3, t3, 4
+    j .Lcopy_counter_to_temp
+.Lcopy_counter_done:
+
+    # === Move stop bit from global input[end] -> physics input[last] ===
+    li a1, 0x{input_addr:08X}
+    li a2, {(global_input_size - 1) * 4}
+    add a3, a1, a2
+    lw a4, 0(a3)
+    li a5, 0x{input_addr:08X}
+    li a6, {(p_input_size - 1) * 4}
+    add a7, a5, a6
+    sw a4, 0(a7)
+
+    # === Run physics sub-network layers ===
+"""
+            # call physics layers (assumed to be first p_count layers)
+            for i in range(p_count):
+                code += f"    call layer_{i}_forward\n"
+
+            # compute addresses for physics output and counter input target
+            p_last = p_count - 1
+            phy_out_addr = act_a_addr if (p_last % 2 == 0) else act_b_addr
+            target_buf_addr = act_a_addr if (p_count % 2 == 1) else act_b_addr
+
+            code += f"""
+    # === Extract hit_wall from physics output ===
+    li t0, 0x{phy_out_addr:08X}
+    li t1, {(p_output_size - 1) * 4}
+    add t2, t0, t1
+    lw t3, 0(t2)   # hit_wall (bit pattern)
+
+    # === Preserve next physics_state (46 floats) into input buffer ===
+    li t4, 0x{input_addr:08X}
+    li t5, 0
+    li t6, {(p_output_size - 1) * 4}
+.Lcopy_physics_state_to_input:
+    bge t5, t6, .Lcopy_physics_state_done
+    add a1, t0, t5
+    lw a2, 0(a1)
+    add a3, t4, t5
+    sw a2, 0(a3)
+    addi t5, t5, 4
+    j .Lcopy_physics_state_to_input
+.Lcopy_physics_state_done:
+
+    # === Build counter input in activation buffer ===
+    li t4, 0x{out_addr:08X}        # temp storage where counter_state is saved
+    li t5, 0x{target_buf_addr:08X} # target activation buffer for counter input
+    li t6, 0
+    li a1, {c_output_size * 4}
+.Lcopy_counter_to_act:
+    bge t6, a1, .Lcopy_counter_to_act_done
+    add a2, t4, t6
+    lw a3, 0(a2)
+    add a4, t5, t6
+    sw a3, 0(a4)
+    addi t6, t6, 4
+    j .Lcopy_counter_to_act
+.Lcopy_counter_to_act_done:
+    # Store hit_wall into last position of counter input
+    add a5, t5, {(c_input_size - 1) * 4}
+    sw t3, 0(a5)
+
+    # === Run counter sub-network layers ===
+"""
+            for idx in range(p_count, p_count + c_count):
+                code += f"    call layer_{idx}_forward\n"
+
+            code += f"""
+    # === Compose compact chained output (57 floats) ===
+    # Save counter output[0..10] into input[46..56]
+    li t0, 0x{out_addr:08X}
+    li t1, 0x{input_addr:08X}
+    li t2, {(p_output_size - 1) * 4}
+    li t3, 0
+    li t4, {c_output_size * 4}
+.Lsave_counter_out_to_input:
+    bge t3, t4, .Lsave_counter_done
+    add t5, t0, t3
+    lw t6, 0(t5)
+    add a0, t1, t2
+    sw t6, 0(a0)
+    addi t2, t2, 4
+    addi t3, t3, 4
+    j .Lsave_counter_out_to_input
+.Lsave_counter_done:
+
+    # Write physics_state from input[0..45] to output[0..45]
+    li t0, 0x{input_addr:08X}
+    li t1, 0x{out_addr:08X}
+    li t2, 0
+    li t3, {(p_output_size - 1) * 4}
+.Lwrite_physics_to_output:
+    bge t2, t3, .Lwrite_counter_to_output
+    add t4, t0, t2
+    lw t5, 0(t4)
+    add t6, t1, t2
+    sw t5, 0(t6)
+    addi t2, t2, 4
+    j .Lwrite_physics_to_output
+
+.Lwrite_counter_to_output:
+    # Write counter_state from input[46..56] to output[46..56]
+    li t0, 0x{input_addr:08X}
+    li t1, 0x{out_addr:08X}
+    li t2, {(p_output_size - 1) * 4}
+    li t3, 0
+    li t4, {c_output_size * 4}
+.Lwrite_counter_to_output_loop:
+    bge t3, t4, .Lcompose_done
+    add t5, t0, t2
+    lw t6, 0(t5)
+    add a0, t1, t2
+    sw t6, 0(a0)
+    addi t2, t2, 4
+    addi t3, t3, 4
+    j .Lwrite_counter_to_output_loop
+
+.Lcompose_done:
+    # Restore and return
+    lw ra, 28(sp)
+    addi sp, sp, 32
+    ret
+
+"""
+            return code
+
+        # Counter->char flow:
+        # - render the current character frame from the current a0
+        # - compute the next counter value after the frame is written
+        # - write the next value back to a0 for the following frame
+        if architecture == "counter-char-staged":
+            act_a_addr = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["activation_a"]
+            debug_word = self.MEMORY_LAYOUT["buffer_base"] + 0x3FE0
+
+            code = f"""
+# Forward pass (char-gen frame)
+run_forward_pass:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+
+    # Rewrite activation_a as one-hot(a0) for char-gen layer_1 input
+    li t0, 0x{act_a_addr:08X}
+    li t1, 1020                      # 255 * 4
+    li t2, 0
+.Lclear_acta_counter_char:
+    bge t2, t1, .Lset_acta_counter_char
+    add t4, t0, t2
+    sw zero, 0(t4)
+    addi t2, t2, 4
+    j .Lclear_acta_counter_char
+.Lset_acta_counter_char:
+    li t1, 255
+    bgeu a0, t1, .Lrun_char_layers
+    slli t2, a0, 2
+    add t2, t0, t2
+    lui t3, 0x3F800
+    sw t3, 0(t2)
+
+.Lrun_char_layers:
+"""
+            for i in range(1, len(self.layers)):
+                code += f"    call layer_{i}_forward\n"
+
+            code += """
+    lw ra, 12(sp)
+    addi sp, sp, 16
+    ret
+
+"""
+            code += f"""
+
+# Update counter state after the frame has been rendered
+update_counter_state:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+
+    # Counter layer uses the current a0 from the frame we just rendered
+    call layer_0_forward
+
+    # Argmax over counter output in activation_a -> next a0
+    li t0, 0x{act_a_addr:08X}
+    li t1, 255
+    li t2, 0
+    li t3, 0
+    flw fa0, 0(t0)
+.Largmax_counter_next_loop:
+    bge t2, t1, .Largmax_counter_next_done
+    slli t4, t2, 2
+    add t5, t0, t4
+    flw fa1, 0(t5)
+    flt.s t6, fa0, fa1
+    beq t6, zero, .Largmax_counter_next
+    fsgnj.s fa0, fa1, fa1
+    addi t3, t2, 0
+.Largmax_counter_next:
+    addi t2, t2, 1
+    j .Largmax_counter_next_loop
+.Largmax_counter_next_done:
+    addi a0, t3, 0
+    li t4, 0x{debug_word:08X}
+    sw t3, 0(t4)
+
+    lw ra, 12(sp)
+    addi sp, sp, 16
+    ret
+
+"""
+            return code
+
+        # Block-diagonal-parallel: add update_counter_state function
+        if architecture == "block-diagonal-parallel":
+            output_buf = self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]
+            debug_word = self.MEMORY_LAYOUT["buffer_base"] + 0x3FE0
+            
+            code = f"""
+# Forward pass through all {len(self.layers)} layers
+run_forward_pass:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+
+"""
+            # Generate code for each layer
+            for i, layer in enumerate(self.layers):
+                code += f"    # === Layer {i} ===\n"
+                code += f"    call layer_{i}_forward\n\n"
+
+            code += """    lw ra, 12(sp)
+    addi sp, sp, 16
+    ret
+
+"""
+            # Add update_counter_state function for block-diagonal
+            code += f"""
+# Update a0 from counter output (positions 400-654 in output buffer)
+# Counter has 255 outputs, we take argmax to get the next character code
+update_counter_state:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+
+    # Output buffer is at 0x{output_buf:08X}
+    # Counter outputs are at byte offset {400 * 4} (positions 400-654)
+    li t0, 0x{output_buf:08X}
+    li t1, {400 * 4}
+    add t0, t0, t1                    # t0 = address of counter output[0]
+    li t1, 255                       # Number of counter outputs
+    li t2, 0                         # Loop index
+    li t3, 0                         # Best index (argmax result)
+    flw fa0, 0(t0)                   # Initialize max value
+
+.Largmax_counter_bd_loop:
+    bge t2, t1, .Largmax_counter_bd_done
+    slli t4, t2, 2                   # t4 = index * 4
+    add t5, t0, t4                  # t5 = address of counter_output[index]
+    flw fa1, 0(t5)                  # Load current value
+    flt.s t6, fa0, fa1              # t6 = (fa0 < fa1) ? 1 : 0
+    beq t6, zero, .Largmax_counter_bd_skip
+    fmv.s fa0, fa1                  # New max
+    addi t3, t2, 0                  # New best index
+.Largmax_counter_bd_skip:
+    addi t2, t2, 1
+    j .Largmax_counter_bd_loop
+
+.Largmax_counter_bd_done:
+    addi a0, t3, 0                  # Set a0 to the next character code
+    li t4, 0x{debug_word:08X}
+    sw t3, 0(t4)                    # Debug: store next char code
+
+    lw ra, 12(sp)
+    addi sp, sp, 16
+    ret
+
+"""
+            return code
+
+        # Default sequential forward pass (unchanged)
         code = f"""
 # Forward pass through all {len(self.layers)} layers
 run_forward_pass:
@@ -1242,7 +1745,6 @@ run_forward_pass:
 """
         # Generate code for each layer
         for i, layer in enumerate(self.layers):
-            is_last = (i == len(self.layers) - 1)
             code += f"    # === Layer {i} ===\n"
             code += f"    call layer_{i}_forward\n\n"
 
@@ -1257,7 +1759,87 @@ run_forward_pass:
 
     def _generate_execution_loop(self, model_type: str) -> str:
         """Generate the main cyclic execution loop."""
-        return f"""
+        architecture = self.metadata.get("architecture", "unknown")
+        is_staged = architecture == "counter-char-staged"
+        is_block_diagonal = architecture == "block-diagonal-parallel"
+        
+        if is_staged:
+            return f"""
+# Main execution loop: Input -> Forward Pass -> Output -> Counter Update -> Repeat
+# For staged architecture: counter runs separately after frame is rendered
+.section .text
+.align 4
+.globl _start
+
+_start:
+    # Initialize stack pointer to safe location (within 1MB, below code/data)
+    li sp, 0xF000              # sp = 0x0F000 (61440 bytes)
+    
+    # Main inference loop (infinite)
+inference_loop:
+    # Step 1: Read input and map to network input
+    # a0 already contains the character code (seeded by the emulator runner)
+    call map_input_{model_type}
+    
+    # Step 2: Run forward pass through the character generator layers
+    call run_forward_pass
+    
+    # Step 3: Map output to framebuffer
+    call map_output_{model_type}
+
+    # Step 4: Advance counter state for the next frame
+    call update_counter_state
+    
+    # Step 5: Loop back
+    j inference_loop
+    
+    # Unreachable, but include exit for completeness
+    li a0, 0
+    li a7, 93                    # SYS_exit
+    ecall
+
+"""
+        elif is_block_diagonal:
+            # For block-diagonal-parallel: both networks run in parallel, counter updates a0
+            return f"""
+# Main execution loop: Input -> Forward Pass -> Output -> Counter Update -> Repeat
+# For block-diagonal-parallel: counter and chargen run in parallel, counter updates a0 for next frame
+.section .text
+.align 4
+.globl _start
+
+_start:
+    # Initialize stack pointer to safe location (within 1MB, below code/data)
+    li sp, 0xF000              # sp = 0x0F000 (61440 bytes)
+    
+    # Main inference loop (infinite)
+inference_loop:
+    # Step 1: Read input and map to network input
+    # a0 already contains the character code (seeded by the emulator runner)
+    call map_input_{model_type}
+    
+    # Step 2: Run forward pass through all layers (both counter and chargen in parallel)
+    call run_forward_pass
+    
+    # Step 3: Map output to framebuffer (chargen outputs are first 400)
+    call map_output_{model_type}
+
+    # Step 4: Update a0 to next character based on counter output
+    call update_counter_state
+    
+    # Step 5: Loop back
+    j inference_loop
+    
+    # Unreachable, but include exit for completeness
+    li a0, 0
+    li a7, 93                    # SYS_exit
+    ecall
+
+"""
+        else:
+            # For non-staged, non-block-diagonal architectures
+            # Don't call update_counter_state
+            return f"""
 # Main execution loop: Input -> Forward Pass -> Output -> Repeat
 # Mimics static_char_gen.c behavior but with neural network
 .section .text
@@ -1271,9 +1853,7 @@ _start:
     # Main inference loop (infinite)
 inference_loop:
     # Step 1: Read input and map to network input
-    # For generator: a0 contains character code (set externally or hardcoded for testing)
-    # For now, use a test character 'A' = 65
-    li a0, 65                    # TODO: Read from external source
+    # a0 already contains the character code (seeded by the emulator runner)
     call map_input_{model_type}
     
     # Step 2: Run forward pass through all layers
@@ -1281,8 +1861,8 @@ inference_loop:
     
     # Step 3: Map output to framebuffer
     call map_output_{model_type}
-    
-    # Step 4: Loop back
+
+    # Step 4: Loop back (no counter state update for non-staged architectures)
     j inference_loop
     
     # Unreachable, but include exit for completeness
