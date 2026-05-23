@@ -562,8 +562,17 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_target(neural_elf ALL DEPENDS ${NEURAL_ELF})
 
-        # Rust model-to-header compiler (pre-built, install via `cargo build --release`)
-        set(MODEL_TO_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/model_to_header/target/release/model_to_header")
+        # Rust model-to-header compiler
+        set(MODEL_TO_HEADER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/model_to_header")
+        set(MODEL_TO_HEADER "${MODEL_TO_HEADER_SRC_DIR}/target/release/model_to_header")
+        add_custom_command(
+            OUTPUT ${MODEL_TO_HEADER}
+            COMMAND cargo build --release
+            WORKING_DIRECTORY ${MODEL_TO_HEADER_SRC_DIR}
+            COMMENT "Building Rust model-to-header compiler"
+            VERBATIM
+        )
+        add_custom_target(model_to_header_bin DEPENDS ${MODEL_TO_HEADER})
 
         # Shared runtime for all neural models (char_gen, movement, etc.)
         set(SHARED_RUNTIME_C "${CMAKE_CURRENT_SOURCE_DIR}/runtime.c")
@@ -580,7 +589,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             COMMAND ${MODEL_TO_HEADER}
                 -i ${NEURAL_MODEL_JSON}
                 -o ${CHAR_GEN_H}
-            DEPENDS ${NEURAL_MODEL_JSON}
+            DEPENDS ${NEURAL_MODEL_JSON} ${MODEL_TO_HEADER}
             COMMENT "Generating char_gen model.h via Rust model-to-header"
             VERBATIM
         )
@@ -628,7 +637,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             COMMAND ${MODEL_TO_HEADER}
                 -i ${MOVEMENT_JSON}
                 -o ${MOVEMENT_H}
-            DEPENDS ${MOVEMENT_JSON}
+            DEPENDS ${MOVEMENT_JSON} ${MODEL_TO_HEADER}
             COMMENT "Generating movement model.h via Rust model-to-header"
             VERBATIM
         )
@@ -717,7 +726,7 @@ if(RISCV_TOOLCHAIN_FOUND)
             COMMAND ${MODEL_TO_HEADER}
                 -i ${COUNTER255_JSON}
                 -o ${COUNTER255_H}
-            DEPENDS ${COUNTER255_JSON}
+            DEPENDS ${COUNTER255_JSON} ${MODEL_TO_HEADER}
             COMMENT "Generating counter255 model.h via Rust model-to-header"
             VERBATIM
         )
