@@ -1,6 +1,7 @@
 {
   "input_mapping": "combined_counter_chargen",
   "output_mapping": "combined_counter_chargen",
+  "initial_state": { "model_counter": 97 },
   "models": [
     {
       "name": "counter",

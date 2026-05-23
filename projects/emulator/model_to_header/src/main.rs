@@ -42,6 +42,8 @@ struct Metadata {
     board_size: Option<u32>,
     #[serde(default)]
     actions: Option<Vec<String>>,
+    #[serde(default)]
+    initial_state: Option<HashMap<String, u32>>,
 }
 
 #[allow(dead_code)]
@@ -101,6 +103,8 @@ struct Glue {
     models: Vec<GlueModelRef>,
     merged_layers: Vec<MergedLayerDef>,
     output_ranges: Vec<OutputRange>,
+    #[serde(default)]
+    initial_state: Option<HashMap<String, u32>>,
 }
 
 fn run() -> Result<(), String> {
@@ -193,22 +197,25 @@ fn run() -> Result<(), String> {
     }
     out.push_str("\n};\n\n");
 
-    // Determine the input_mapping to use (from glue or single model metadata)
-    let input_mapping = if let Some(glue_path) = &args.glue {
+    // Determine the input_mapping and initial_state (from glue or single model metadata)
+    let (input_mapping, initial_state) = if let Some(glue_path) = &args.glue {
         let glue_str =
             fs::read_to_string(glue_path).map_err(|e| format!("Failed to read glue: {e}"))?;
         let glue: Glue =
             serde_json::from_str(&glue_str).map_err(|e| format!("Failed to parse glue: {e}"))?;
-        glue.input_mapping
+        (glue.input_mapping, glue.initial_state.unwrap_or_default())
     } else {
         let json_str = fs::read_to_string(args.input.as_ref().unwrap())
             .map_err(|e| format!("Failed to read input: {e}"))?;
         let model: Model =
             serde_json::from_str(&json_str).map_err(|e| format!("Failed to parse JSON: {e}"))?;
-        model
-            .metadata
-            .input_mapping
-            .unwrap_or_else(|| "character_code".into())
+        (
+            model
+                .metadata
+                .input_mapping
+                .unwrap_or_else(|| "character_code".into()),
+            model.metadata.initial_state.unwrap_or_default(),
+        )
     };
 
     match input_mapping.as_str() {
@@ -231,9 +238,10 @@ fn run() -> Result<(), String> {
             out.push_str("} while(0)\n\n");
         }
         "counter255_a0_feedback" => {
+            let cnt_init = initial_state.get("model_counter").copied().unwrap_or(0);
             out.push_str("#define MODEL_READ_A0_EACH_ITER 0\n");
             out.push_str("#define MODEL_HAS_DONE_FLAG 0\n\n");
-            out.push_str("static uint32_t model_counter = 0;\n\n");
+            out.push_str(&format!("static uint32_t model_counter = {cnt_init};\n\n"));
             out.push_str("static uint32_t _counter255_prev_fb = 400;\n\n");
             out.push_str("#define MODEL_MAP_INPUT(buf) do { \\\n");
             out.push_str("    for (uint32_t i = 0; i < MODEL_INPUT_SIZE; i++) buf[i] = 0.0f; \\\n");
@@ -255,12 +263,15 @@ fn run() -> Result<(), String> {
             out.push_str("} while(0)\n\n");
         }
         "combined_counter_chargen" => {
+            let cnt_init = initial_state.get("model_counter").copied().unwrap_or(97);
+            out.push_str("register uint32_t model_key asm(\"s1\");\n\n");
             out.push_str("#define MODEL_READ_A0_EACH_ITER 0\n");
-            out.push_str("#define MODEL_HAS_DONE_FLAG 0\n\n");
-            out.push_str("static uint32_t model_counter = 97;\n\n");
+            out.push_str("#define MODEL_HAS_DONE_FLAG 1\n\n");
+            out.push_str(&format!("static uint32_t model_counter = {cnt_init};\n\n"));
             out.push_str("#define MODEL_MAP_INPUT(buf) do { \\\n");
             out.push_str("    for (uint32_t i = 0; i < MODEL_INPUT_SIZE; i++) buf[i] = 0.0f; \\\n");
             out.push_str("    uint32_t _idx = model_counter; \\\n");
+            out.push_str("    if (model_key >= 32 && model_key < MODEL_INPUT_SIZE) _idx = model_key; \\\n");
             out.push_str("    if (_idx >= MODEL_INPUT_SIZE) _idx = 0; \\\n");
             out.push_str("    buf[_idx] = 1.0f; \\\n");
             out.push_str("} while(0)\n\n");
@@ -285,11 +296,12 @@ fn run() -> Result<(), String> {
             out.push_str("} while(0)\n\n");
         }
         "movement_packed_a0" => {
+            let state_init = initial_state.get("model_state").copied().unwrap_or(200);
             let board_cells = 400;
             out.push_str(&format!("#define MODEL_BOARD_CELLS {board_cells}\n"));
             out.push_str("#define MODEL_READ_A0_EACH_ITER 1\n");
             out.push_str("#define MODEL_HAS_DONE_FLAG 1\n\n");
-            out.push_str("static uint32_t model_state = 200;\n\n");
+            out.push_str(&format!("static uint32_t model_state = {state_init};\n\n"));
             out.push_str("#define MODEL_MAP_INPUT(buf) do { \\\n");
             out.push_str("    for (uint32_t i = 0; i < MODEL_INPUT_SIZE; i++) buf[i] = 0.0f; \\\n");
             out.push_str("    buf[model_state] = 1.0f; \\\n");

@@ -70,6 +70,7 @@ def build_counter255_three_layer() -> dict:
             "precision": "float32",
             "framework": "oracle",
             "input_mapping": "counter255_a0_feedback",
+            "initial_state": { "model_counter": 0 },
             "counter_modulus": COUNTER255_MODULUS,
             "description": "3-layer deterministic modulo-255 counter network matching chargen depth",
         },
