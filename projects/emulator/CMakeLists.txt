@@ -565,13 +565,26 @@ if(RISCV_TOOLCHAIN_FOUND)
         # Rust model-to-header compiler
         set(MODEL_TO_HEADER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/model_to_header")
         set(MODEL_TO_HEADER "${MODEL_TO_HEADER_SRC_DIR}/target/release/model_to_header")
-        add_custom_command(
-            OUTPUT ${MODEL_TO_HEADER}
-            COMMAND cargo build --release
-            WORKING_DIRECTORY ${MODEL_TO_HEADER_SRC_DIR}
-            COMMENT "Building Rust model-to-header compiler"
-            VERBATIM
-        )
+        find_program(CARGO_EXECUTABLE cargo)
+        if(CARGO_EXECUTABLE)
+            add_custom_command(
+                OUTPUT ${MODEL_TO_HEADER}
+                COMMAND cargo build --release
+                WORKING_DIRECTORY ${MODEL_TO_HEADER_SRC_DIR}
+                COMMENT "Building Rust model-to-header compiler"
+                VERBATIM
+            )
+        else()
+            message(WARNING "cargo not found — Rust model-to-header will not be auto-built. "
+                           "Install Rust or run 'cargo build --release' in model_to_header/")
+            # Use a phony target so cmake doesn't fail on missing binary; targets will
+            # fail at link time if model.h is missing.
+            add_custom_command(
+                OUTPUT ${MODEL_TO_HEADER}
+                COMMAND ${CMAKE_COMMAND} -E echo "cargo not found — cannot build model_to_header"
+                COMMAND false
+            )
+        endif()
         add_custom_target(model_to_header_bin DEPENDS ${MODEL_TO_HEADER})
 
         # Shared runtime for all neural models (char_gen, movement, etc.)
