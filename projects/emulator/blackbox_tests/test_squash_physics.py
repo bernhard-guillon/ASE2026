@@ -58,11 +58,12 @@ def test_physics_bottom_wall():
 
 
 def test_physics_out_detection():
-    """Ball exits right boundary → game_state=1."""
+    """Ball exits right boundary → game_state=1, bx clamped."""
     bx, by, vx, vy, py, gs, ku, kd = 19, 7, 1, 0, 5, 0, 0, 0
     nbx, nby, nvx, nvy, npy, ngs = squash_physics(bx, by, vx, vy, py, gs, ku, kd)
     # bx=19, vx=1 → nbx=20, which >= BALL_X_RANGE → out
     assert ngs == 1, f"Expected game_state=1 on out, got {ngs}"
+    assert nbx == BALL_X_RANGE - 1, f"Expected bx clamped to {BALL_X_RANGE-1}, got {nbx}"
 
 
 def test_physics_frozen_on_loss():

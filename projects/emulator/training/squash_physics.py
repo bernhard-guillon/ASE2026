@@ -126,6 +126,7 @@ def squash_physics(bx, by, vx, vy, py, gs, ku, kd):
 
     # Out — ball exits right boundary (only way to lose)
     if nbx >= BALL_X_RANGE:
+        nbx = BALL_X_RANGE - 1  # clamp to rightmost valid position
         ngs = 1
 
     # Paddle movement
