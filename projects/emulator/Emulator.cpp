@@ -500,11 +500,11 @@ void FramebufferRenderer::render(const Memory& memory) {
     // Clear screen and move cursor to home
     clear_screen();
     
-    // Read 400 bytes from framebuffer (0x20000)
-    // Convert each pixel to character and print
+    // Read framebuffer with stride (squash game: 320 bytes per row)
+    // Uses FRAMEBUFFER_STRIDE between rows to handle staggered pixel layout
     for (uint32_t row = 0; row < FRAMEBUFFER_HEIGHT; ++row) {
         for (uint32_t col = 0; col < FRAMEBUFFER_WIDTH; ++col) {
-            uint32_t offset = row * FRAMEBUFFER_WIDTH + col;
+            uint32_t offset = row * FRAMEBUFFER_STRIDE + col;
             uint8_t pixel = memory.read8(FRAMEBUFFER_ADDR + offset);
             std::cout << pixel_to_char(pixel);
         }

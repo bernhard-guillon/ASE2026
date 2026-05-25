@@ -27,6 +27,7 @@ constexpr uint32_t FRAMEBUFFER_ADDR = 0x20000;  // Start address of framebuffer
 constexpr uint32_t FRAMEBUFFER_SIZE = 400;      // 20x20 pixels in bytes
 constexpr uint32_t FRAMEBUFFER_WIDTH = 20;
 constexpr uint32_t FRAMEBUFFER_HEIGHT = 20;
+constexpr uint32_t FRAMEBUFFER_STRIDE = 320;    // Row stride (squash game uses fb[_y * 320 + _x])
 
 /* Framebuffer Renderer for TTY output
  * Renders 20x20 pixel framebuffer to terminal using block characters

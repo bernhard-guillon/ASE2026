@@ -58,9 +58,10 @@ static inline void run_forward_pass(void) {
 
     uint32_t num_layers = model_u32[3];
     uint32_t total_weights = model_u32[4];
+    uint32_t override_data_size = model_u32[6];
 
     uint32_t layer_table_offset = MODEL_HEADER_SIZE;
-    uint32_t weights_base = MODEL_HEADER_SIZE + num_layers * MODEL_LAYER_ENTRY_SIZE;
+    uint32_t weights_base = MODEL_HEADER_SIZE + num_layers * MODEL_LAYER_ENTRY_SIZE + override_data_size;
     uint32_t biases_base = weights_base + total_weights * 4u;
 
     for (uint32_t layer_idx = 0; layer_idx < num_layers; layer_idx++) {
@@ -70,6 +71,8 @@ static inline void run_forward_pass(void) {
         uint32_t activation = layer[2];
         uint32_t weight_offset = layer[3];
         uint32_t bias_offset = layer[4];
+        uint32_t override_offset = layer[5];
+        uint32_t override_count = layer[6];
 
         uint32_t weights_addr = (uint32_t)(model_bytes + weights_base + weight_offset);
         uint32_t biases_addr = (uint32_t)(model_bytes + biases_base + bias_offset);
@@ -103,10 +106,28 @@ static inline void run_forward_pass(void) {
 
         neural_matvec(&desc);
 
+        // Apply main activation
         if (activation == 0u) {
             neural_relu((float *)output_addr, (float *)output_addr, output_size);
         } else if (activation == 1u) {
             neural_sigmoid((float *)output_addr, (float *)output_addr, output_size);
+        }
+
+        // Apply per-block activation overrides (overwrite main activation for specific ranges)
+        if (override_offset != 0u && override_count > 0u) {
+            const uint32_t *ov_list = (const uint32_t *)(model_bytes + override_offset);
+            for (uint32_t oi = 0u; oi < override_count; oi++) {
+                uint32_t o_off = ov_list[oi * 3u + 0u];
+                uint32_t o_sz  = ov_list[oi * 3u + 1u];
+                uint32_t o_act = ov_list[oi * 3u + 2u];
+                float *o_addr = (float *)output_addr + o_off;
+                if (o_act == 0u) {
+                    neural_relu(o_addr, o_addr, o_sz);
+                } else if (o_act == 1u) {
+                    neural_sigmoid(o_addr, o_addr, o_sz);
+                }
+                // activation == 2 (none) intentionally skipped
+            }
         }
     }
 }
