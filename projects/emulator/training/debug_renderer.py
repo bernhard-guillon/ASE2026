@@ -9,7 +9,7 @@ import torch
 from squash_renderer import W, H, generate_all_renderer_samples
 
 # Load model
-model_path = Path("build/squash_renderer.json")
+model_path = Path("models/squash_renderer.json")
 import json
 with open(model_path) as f:
     payload = json.load(f)

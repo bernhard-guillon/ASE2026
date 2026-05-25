@@ -10,7 +10,7 @@ import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EMULATOR_DIR = REPO_ROOT / "projects" / "emulator"
-BUILD_DIR = EMULATOR_DIR / "build"
+MODELS_DIR = EMULATOR_DIR / "models"
 
 sys.path.insert(0, str(EMULATOR_DIR / "training"))
 sys.path.insert(0, str(EMULATOR_DIR))
@@ -26,7 +26,7 @@ from neural_reference import NeuralNetworkReference
 
 
 def _get_model_path():
-    path = BUILD_DIR / "squash_game_state.json"
+    path = MODELS_DIR / "squash_game_state.json"
     if not path.exists():
         pytest.skip(f"Game state model not found: {path}")
     return str(path)

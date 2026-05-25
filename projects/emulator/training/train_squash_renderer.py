@@ -38,7 +38,7 @@ def pixel_accuracy(logits, targets, threshold=0.5):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", default="build/squash_renderer.json")
+    parser.add_argument("--output", default="models/squash_renderer.json")
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=0.002)

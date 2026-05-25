@@ -74,7 +74,7 @@ def group_accuracy(logits, targets):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", default="build/squash_game_state.json")
+    parser.add_argument("--output", default="models/squash_game_state.json")
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--lr", type=float, default=0.002)

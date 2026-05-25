@@ -99,7 +99,9 @@ def decode_output(vec):
 
 
 def squash_physics(bx, by, vx, vy, py, gs, ku, kd):
-    """Deterministic squash physics update. Returns (bx, by, vx, vy, py, gs)."""
+    """Paddle-ball collision physics: ball bounces off paddle (not left wall),
+    off right/top/bottom walls. Loss only on paddle miss.
+    Returns (bx, by, vx, vy, py, gs)."""
     if gs == 1:
         return bx, by, vx, vy, py, gs
 
@@ -119,15 +121,29 @@ def squash_physics(bx, by, vx, vy, py, gs, ku, kd):
         nby = BALL_Y_RANGE - 1
         nvy = 0  # now moving up
 
-    # Left wall bounce (always bounces back, paddle controls return angle)
-    if nbx < 0:
-        nbx = 0
-        nvx = 1  # bounce right
-
-    # Out — ball exits right boundary (only way to lose)
+    # Right wall bounce (ball stays in play)
     if nbx >= BALL_X_RANGE:
-        nbx = BALL_X_RANGE - 1  # clamp to rightmost valid position
-        ngs = 1
+        nbx = BALL_X_RANGE - 1
+        nvx = 0  # now moving left
+
+    # Left edge: paddle check — ball bounces off paddle OR game over
+    if nbx < 0:
+        # Ball rows [by, by+1], paddle rows [py, py+PADDLE_HEIGHT-1] = [py, py+4]
+        # Overlap: ball_top <= paddle_bottom AND ball_bottom >= paddle_top
+        if by <= py + 4 and by + 1 >= py:
+            nbx = 0
+            nvx = 1  # bounce right
+            # Adjust vy based on where ball hits paddle
+            # py+2 = paddle center; by < center → top half → up, by > center → lower half → down
+            if by < py + 2:
+                nvy = 0  # up
+            elif by > py + 2:
+                nvy = 1  # down
+            # by == py+2: center → keep original vy
+        else:
+            # Paddle miss → game over
+            nbx = 0
+            ngs = 1
 
     # Paddle movement
     if ku:

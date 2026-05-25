@@ -18,7 +18,7 @@ from squash_physics import (
 
 
 def test_physics_left_wall_bounce():
-    """Ball always bounces off left wall regardless of paddle."""
+    """Ball bounces off left wall when paddle overlap exists."""
     # Ball at x=0, y=5, moving left — bounces off left wall even without paddle
     bx, by, vx, vy, py, gs, ku, kd = 0, 5, 0, 0, 2, 0, 0, 0
     nbx, nby, nvx, nvy, npy, ngs = squash_physics(bx, by, vx, vy, py, gs, ku, kd)
@@ -28,13 +28,12 @@ def test_physics_left_wall_bounce():
 
 
 def test_physics_left_wall_no_paddle():
-    """Ball bounces off left wall even without paddle overlap."""
+    """Ball exits left edge without paddle overlap → game over."""
     bx, by, vx, vy, py, gs, ku, kd = 0, 0, 0, 0, 5, 0, 0, 0
     nbx, nby, nvx, nvy, npy, ngs = squash_physics(bx, by, vx, vy, py, gs, ku, kd)
-    # Ball misses paddle (ball y=0, paddle at y=5) but still bounces off left wall
-    assert nbx == 0, f"Expected bx=0 after wall bounce, got {nbx}"
-    assert nvx == 1, f"Expected vx→1 after wall bounce, got {nvx}"
-    assert ngs == 0, "Game should still be live"
+    # Ball at y=0, paddle at y=5 → no overlap → game over
+    assert nbx == 0, f"Expected bx=0 at left edge, got {nbx}"
+    assert ngs == 1, f"Expected game_state=1 on paddle miss, got {ngs}"
 
 
 def test_physics_top_wall():
@@ -57,13 +56,22 @@ def test_physics_bottom_wall():
     assert nvy == 0, f"Expected vy→0 (up) after bottom bounce, got {nvy}"
 
 
-def test_physics_out_detection():
-    """Ball exits right boundary → game_state=1, bx clamped."""
+def test_physics_right_wall_bounce():
+    """Ball exits right boundary → bounces left, game stays live."""
     bx, by, vx, vy, py, gs, ku, kd = 19, 7, 1, 0, 5, 0, 0, 0
     nbx, nby, nvx, nvy, npy, ngs = squash_physics(bx, by, vx, vy, py, gs, ku, kd)
-    # bx=19, vx=1 → nbx=20, which >= BALL_X_RANGE → out
-    assert ngs == 1, f"Expected game_state=1 on out, got {ngs}"
+    assert nvx == 0, f"Expected vx→0 (bounce left), got {nvx}"
     assert nbx == BALL_X_RANGE - 1, f"Expected bx clamped to {BALL_X_RANGE-1}, got {nbx}"
+    assert ngs == 0, "Game should still be live"
+
+
+def test_physics_left_edge_paddle_miss():
+    """Ball exits left edge without paddle overlap → game_state=1."""
+    bx, by, vx, vy, py, gs, ku, kd = 0, 10, 0, 0, 5, 0, 0, 0
+    nbx, nby, nvx, nvy, npy, ngs = squash_physics(bx, by, vx, vy, py, gs, ku, kd)
+    # Ball at y=10, paddle at y=5 → no overlap (ball rows [10,11], paddle rows [5,9])
+    assert ngs == 1, f"Expected game_state=1 on paddle miss, got {ngs}"
+    assert nbx == 0, f"Expected bx=0 at left edge, got {nbx}"
 
 
 def test_physics_frozen_on_loss():

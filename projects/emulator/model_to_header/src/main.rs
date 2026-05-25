@@ -80,6 +80,8 @@ struct GlueBlock {
     in_offset: u32,
     #[serde(default)]
     out_offset: u32,
+    #[serde(default)]
+    activation: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -87,6 +89,13 @@ struct MergedLayerDef {
     name: String,
     activation: String,
     blocks: Vec<GlueBlock>,
+}
+
+#[derive(Debug)]
+struct ActivationOverride {
+    output_offset: u32,
+    size: u32,
+    activation: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -110,7 +119,7 @@ struct Glue {
 fn run() -> Result<(), String> {
     let args = Args::parse();
 
-    let (num_layers, total_weights, total_biases, input_size, output_size, layers) =
+    let (num_layers, total_weights, total_biases, input_size, output_size, layers, overrides_per_layer) =
         if let Some(glue_path) = &args.glue {
             build_merged(&args, glue_path)?
         } else {
@@ -120,6 +129,9 @@ fn run() -> Result<(), String> {
             build_single(input)?
         };
 
+    // Compute total override data size (each override = 3 × uint32 = 12 bytes)
+    let override_data_total_size: usize = overrides_per_layer.iter().map(|o| o.len() * 12).sum();
+
     let mut binary: Vec<u8> = Vec::new();
 
     binary.extend_from_slice(&0x4E52414Eu32.to_le_bytes());
@@ -128,10 +140,12 @@ fn run() -> Result<(), String> {
     binary.extend_from_slice(&num_layers.to_le_bytes());
     binary.extend_from_slice(&(total_weights as u32).to_le_bytes());
     binary.extend_from_slice(&(total_biases as u32).to_le_bytes());
-    binary.extend_from_slice(&[0u8; 4]);
+    binary.extend_from_slice(&(override_data_total_size as u32).to_le_bytes()); // header word 6
 
     let mut weight_float_offset: u32 = 0;
     let mut bias_float_offset: u32 = 0;
+    struct LayerEntryPos { start: usize, has_overrides: bool }
+    let mut layer_entry_positions: Vec<LayerEntryPos> = Vec::new();
     for layer in &layers {
         let activation = match layer.activation.as_str() {
             "relu" => 0u32,
@@ -139,16 +153,40 @@ fn run() -> Result<(), String> {
             "none" => 2u32,
             other => return Err(format!("Unknown activation '{other}'")),
         };
+        let entry_start = binary.len();
         binary.extend_from_slice(&layer.input_size.to_le_bytes());
         binary.extend_from_slice(&layer.output_size.to_le_bytes());
         binary.extend_from_slice(&activation.to_le_bytes());
         binary.extend_from_slice(&(weight_float_offset * 4).to_le_bytes());
         binary.extend_from_slice(&(bias_float_offset * 4).to_le_bytes());
-        binary.extend_from_slice(&[0u8; 12]);
+        binary.extend_from_slice(&[0u8; 12]); // words 5, 6, 7 — will patch if overrides exist
 
         weight_float_offset += layer.input_size * layer.output_size;
         bias_float_offset += layer.output_size;
+        layer_entry_positions.push(LayerEntryPos { start: entry_start, has_overrides: false });
     }
+
+    // Write override data after layer table; patch layer entries with offsets
+    let override_data_absolute_base = binary.len(); // byte offset from model_data start
+    let mut override_bytes_written: usize = 0;
+    for (i, overrides) in overrides_per_layer.iter().enumerate() {
+        if overrides.is_empty() { continue; }
+        let this_override_offset = override_data_absolute_base + override_bytes_written;
+        for ov in overrides {
+            binary.extend_from_slice(&ov.output_offset.to_le_bytes());
+            binary.extend_from_slice(&ov.size.to_le_bytes());
+            binary.extend_from_slice(&ov.activation.to_le_bytes());
+        }
+        // Patch words 5 and 6 of this layer's entry
+        let ep = layer_entry_positions[i].start;
+        let patch_off = ep + 20; // word 5 (byte offset from model_data start)
+        binary[patch_off..patch_off+4].copy_from_slice(&(this_override_offset as u32).to_le_bytes());
+        let patch_cnt = ep + 24; // word 6 (override count)
+        binary[patch_cnt..patch_cnt+4].copy_from_slice(&(overrides.len() as u32).to_le_bytes());
+        layer_entry_positions[i].has_overrides = true;
+        override_bytes_written += overrides.len() * 12;
+    }
+    debug_assert_eq!(override_bytes_written, override_data_total_size);
 
     for layer in &layers {
         for row in &layer.weights {
@@ -300,6 +338,62 @@ fn run() -> Result<(), String> {
             out.push_str("    *_debug = model_counter; \\\n");
             out.push_str("} while(0)\n\n");
         }
+        "squash_game" => {
+            let bx_init = initial_state.get("ball_x").copied().unwrap_or(10);
+            let by_init = initial_state.get("ball_y").copied().unwrap_or(7);
+            let vx_init = initial_state.get("ball_vx").copied().unwrap_or(1);
+            let vy_init = initial_state.get("ball_vy").copied().unwrap_or(0);
+            let py_init = initial_state.get("paddle_y").copied().unwrap_or(3);
+            let gs_init = initial_state.get("game_state").copied().unwrap_or(0);
+            out.push_str("#define MODEL_READ_A0_EACH_ITER 1\n");
+            out.push_str("#define MODEL_HAS_DONE_FLAG 1\n\n");
+            out.push_str(&format!("static uint32_t ball_x = {bx_init};\n"));
+            out.push_str(&format!("static uint32_t ball_y = {by_init};\n"));
+            out.push_str(&format!("static uint32_t ball_vx = {vx_init};\n"));
+            out.push_str(&format!("static uint32_t ball_vy = {vy_init};\n"));
+            out.push_str(&format!("static uint32_t paddle_y = {py_init};\n"));
+            out.push_str(&format!("static uint32_t game_state = {gs_init};\n\n"));
+            out.push_str("// Squash input layout: ball_x(20) + ball_y(15) + paddle_y(11) + gs(2) + vx(2) + vy(2) + ku(2) + kd(2)\n");
+            out.push_str("#define MODEL_MAP_INPUT(buf) do { \\\n");
+            out.push_str("    for (uint32_t i = 0; i < MODEL_INPUT_SIZE; i++) buf[i] = 0.0f; \\\n");
+            out.push_str("    if (ball_x < 20) buf[ball_x] = 1.0f; \\\n");
+            out.push_str("    if (ball_y < 15) buf[20 + ball_y] = 1.0f; \\\n");
+            out.push_str("    if (paddle_y < 11) buf[35 + paddle_y] = 1.0f; \\\n");
+            out.push_str("    if (game_state < 2) buf[46 + game_state] = 1.0f; \\\n");
+            out.push_str("    if (ball_vx < 2) buf[48 + ball_vx] = 1.0f; \\\n");
+            out.push_str("    if (ball_vy < 2) buf[50 + ball_vy] = 1.0f; \\\n");
+            out.push_str("    uint32_t _key; \\\n");
+            out.push_str("    __asm__ volatile (\"mv %0, a0\" : \"=r\"(_key)); \\\n");
+            out.push_str("    buf[52] = 1.0f; buf[53] = 0.0f; \\\n");
+            out.push_str("    buf[54] = 1.0f; buf[55] = 0.0f; \\\n");
+            out.push_str("    if (_key == 'w' || _key == 'W') { buf[52] = 0.0f; buf[53] = 1.0f; } \\\n");
+            out.push_str("    if (_key == 's' || _key == 'S') { buf[54] = 0.0f; buf[55] = 1.0f; } \\\n");
+            out.push_str("} while(0)\n\n");
+            out.push_str("// Squash output: fb pixels buf[0..299] + game state buf[300..351] (sigmoid output)\n");
+            out.push_str("#define SQUASH_FB_SIZE 300\n");
+            out.push_str("#define SQUASH_FB_W 20\n");
+            out.push_str("#define SQUASH_FB_H 15\n\n");
+            out.push_str("#define MODEL_MAP_OUTPUT(buf, fb) do { \\\n");
+            out.push_str("    for (uint32_t _y = 0; _y < SQUASH_FB_H; _y++) { \\\n");
+            out.push_str("        for (uint32_t _x = 0; _x < SQUASH_FB_W; _x++) { \\\n");
+            out.push_str("            float _v = (buf)[_y * SQUASH_FB_W + _x]; \\\n");
+            out.push_str("            if (_v < 0.0f) _v = 0.0f; \\\n");
+            out.push_str("            if (_v > 1.0f) _v = 1.0f; \\\n");
+            out.push_str("            uint8_t _p = (uint8_t)(_v * 255.0f); \\\n");
+            out.push_str("            fb[_y * 320 + _x] = _p; \\\n");
+            out.push_str("        } \\\n");
+            out.push_str("    } \\\n");
+            out.push_str("    uint32_t _mi; float _mv; \\\n");
+            out.push_str("    _mi = 0; _mv = buf[300]; for (uint32_t _i = 1; _i < 20; _i++) { if (buf[300+_i] > _mv) { _mv = buf[300+_i]; _mi = _i; } } ball_x = _mi; \\\n");
+            out.push_str("    _mi = 0; _mv = buf[320]; for (uint32_t _i = 1; _i < 15; _i++) { if (buf[320+_i] > _mv) { _mv = buf[320+_i]; _mi = _i; } } ball_y = _mi; \\\n");
+            out.push_str("    _mi = 0; _mv = buf[335]; for (uint32_t _i = 1; _i < 11; _i++) { if (buf[335+_i] > _mv) { _mv = buf[335+_i]; _mi = _i; } } paddle_y = _mi; \\\n");
+            out.push_str("    _mi = 0; _mv = buf[346]; for (uint32_t _i = 1; _i < 2; _i++) { if (buf[346+_i] > _mv) { _mv = buf[346+_i]; _mi = _i; } } game_state = _mi; \\\n");
+            out.push_str("    _mi = 0; _mv = buf[348]; for (uint32_t _i = 1; _i < 2; _i++) { if (buf[348+_i] > _mv) { _mv = buf[348+_i]; _mi = _i; } } ball_vx = _mi; \\\n");
+            out.push_str("    _mi = 0; _mv = buf[350]; for (uint32_t _i = 1; _i < 2; _i++) { if (buf[350+_i] > _mv) { _mv = buf[350+_i]; _mi = _i; } } ball_vy = _mi; \\\n");
+            out.push_str("    volatile uint32_t *_debug = (volatile uint32_t *)0x00153FE0; \\\n");
+            out.push_str("    *_debug = ball_x * 10000 + ball_y * 1000 + paddle_y * 100 + game_state * 10 + ball_vx * 2 + ball_vy; \\\n");
+            out.push_str("} while(0)\n\n");
+        }
         "movement_packed_a0" => {
             let state_init = initial_state.get("model_state").copied().unwrap_or(200);
             let board_cells = 400;
@@ -332,7 +426,7 @@ fn run() -> Result<(), String> {
         }
         other => {
             return Err(format!(
-                "Unknown input_mapping '{other}' — expected 'character_code', 'counter255_a0_feedback', 'combined_counter_chargen', or 'movement_packed_a0'",
+                "Unknown input_mapping '{other}' — expected 'character_code', 'counter255_a0_feedback', 'combined_counter_chargen', 'movement_packed_a0', or 'squash_game'",
             ));
         }
     }
@@ -352,7 +446,7 @@ fn run() -> Result<(), String> {
 }
 
 /// Build a single model from a JSON file (existing path)
-fn build_single(input: &PathBuf) -> Result<(u32, usize, usize, u32, u32, Vec<Layer>), String> {
+fn build_single(input: &PathBuf) -> Result<(u32, usize, usize, u32, u32, Vec<Layer>, Vec<Vec<ActivationOverride>>), String> {
     let json_str =
         fs::read_to_string(input).map_err(|e| format!("Failed to read {}: {e}", input.display()))?;
     let model: Model =
@@ -379,11 +473,22 @@ fn build_single(input: &PathBuf) -> Result<(u32, usize, usize, u32, u32, Vec<Lay
         .or_else(|| model.layers.last().map(|l| l.output_size))
         .unwrap_or(0);
 
-    Ok((num_layers, total_weights, total_biases, input_size, output_size, model.layers))
+    let empty_overrides: Vec<Vec<ActivationOverride>> = model.layers.iter().map(|_| Vec::new()).collect();
+    Ok((num_layers, total_weights, total_biases, input_size, output_size, model.layers, empty_overrides))
+}
+
+/// Convert activation string to numeric code
+fn activation_code(act: &str) -> Result<u32, String> {
+    match act {
+        "relu" => Ok(0u32),
+        "sigmoid" => Ok(1u32),
+        "none" => Ok(2u32),
+        other => Err(format!("Unknown activation '{other}'")),
+    }
 }
 
 /// Build a merged model from a glue description
-fn build_merged(args: &Args, glue_path: &PathBuf) -> Result<(u32, usize, usize, u32, u32, Vec<Layer>), String> {
+fn build_merged(args: &Args, glue_path: &PathBuf) -> Result<(u32, usize, usize, u32, u32, Vec<Layer>, Vec<Vec<ActivationOverride>>), String> {
     let glue_str =
         fs::read_to_string(glue_path).map_err(|e| format!("Failed to read glue: {e}"))?;
     let glue: Glue =
@@ -406,10 +511,12 @@ fn build_merged(args: &Args, glue_path: &PathBuf) -> Result<(u32, usize, usize, 
 
     // Build merged layers
     let mut merged_layers: Vec<Layer> = Vec::new();
+    let mut all_overrides: Vec<Vec<ActivationOverride>> = Vec::new();
     for mldef in &glue.merged_layers {
-        // First pass: determine total input/output sizes
+        // First pass: determine total input/output sizes and collect activation overrides
         let mut total_input: u32 = 0;
         let mut total_output: u32 = 0;
+        let mut overrides: Vec<ActivationOverride> = Vec::new();
         for block in &mldef.blocks {
             let model = models.get(&block.model).ok_or(format!(
                 "Glue references unknown model '{}'", block.model
@@ -422,6 +529,15 @@ fn build_merged(args: &Args, glue_path: &PathBuf) -> Result<(u32, usize, usize, 
             }
             if out_end > total_output {
                 total_output = out_end;
+            }
+            // Check if this block has a per-block activation override
+            let block_act = block.activation.as_deref().unwrap_or(&mldef.activation);
+            if block_act != mldef.activation {
+                overrides.push(ActivationOverride {
+                    output_offset: block.out_offset,
+                    size: layer.output_size,
+                    activation: activation_code(block_act)?,
+                });
             }
         }
 
@@ -467,6 +583,7 @@ fn build_merged(args: &Args, glue_path: &PathBuf) -> Result<(u32, usize, usize, 
             biases_shape: vec![total_output],
             biases: b_flat,
         });
+        all_overrides.push(overrides);
     }
 
     let num_layers = merged_layers.len() as u32;
@@ -478,7 +595,7 @@ fn build_merged(args: &Args, glue_path: &PathBuf) -> Result<(u32, usize, usize, 
     let input_size = merged_layers.first().map(|l| l.input_size).unwrap_or(0);
     let output_size = merged_layers.last().map(|l| l.output_size).unwrap_or(0);
 
-    Ok((num_layers, total_weights, total_biases, input_size, output_size, merged_layers))
+    Ok((num_layers, total_weights, total_biases, input_size, output_size, merged_layers, all_overrides))
 }
 
 fn main() {

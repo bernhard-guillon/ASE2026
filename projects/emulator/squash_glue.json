@@ -1,0 +1,46 @@
+{
+  "input_mapping": "squash_game",
+  "output_mapping": "squash_game",
+  "initial_state": {
+    "ball_x": 10,
+    "ball_y": 7,
+    "ball_vx": 1,
+    "ball_vy": 0,
+    "paddle_y": 3,
+    "game_state": 0
+  },
+  "models": [
+    { "name": "game_state", "path": "models/squash_game_state.json" },
+    { "name": "renderer", "path": "models/squash_renderer.json" }
+  ],
+  "merged_layers": [
+    {
+      "name": "layer_0_parallel",
+      "activation": "relu",
+      "blocks": [
+        { "model": "game_state", "layer": 0, "out_offset": 0 },
+        { "model": "renderer",   "layer": 0, "out_offset": 64 }
+      ]
+    },
+    {
+      "name": "layer_1_parallel",
+      "activation": "relu",
+      "blocks": [
+        { "model": "game_state", "layer": 1, "in_offset": 0,  "out_offset": 0 },
+        { "model": "renderer",   "layer": 1, "in_offset": 64, "out_offset": 64 }
+      ]
+    },
+    {
+      "name": "layer_2_parallel",
+      "activation": "none",
+      "blocks": [
+        { "model": "game_state", "layer": 2, "in_offset": 0,  "out_offset": 300 },
+        { "model": "renderer",   "layer": 2, "in_offset": 64, "out_offset": 0, "activation": "sigmoid" }
+      ]
+    }
+  ],
+  "output_ranges": [
+    { "name": "framebuffer", "offset": 0,   "size": 300 },
+    { "name": "game_state",  "offset": 300, "size": 52 }
+  ]
+}
