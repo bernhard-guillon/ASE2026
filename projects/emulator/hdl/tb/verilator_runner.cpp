@@ -274,7 +274,7 @@ public:
         top_->pause = paused;
     }
     
-    bool run(uint32_t max_cycles, bool hold_char = false, uint32_t char_code = 0) {
+    bool run(uint32_t max_cycles, bool hold_char = false, uint32_t char_code = 0, bool debug_output = false) {
         // Handle syscalls in testbench
         top_->syscall_done = 0;
         top_->syscall_ret = 0;
@@ -321,14 +321,14 @@ public:
             }
             
             // Print first 50 PCs to see the actual execution path
-            if (i < 50) {
+            if (debug_output && i < 50) {
                 std::cout << "CYCLE=" << i << " PC=0x" << std::hex << cur_pc << std::dec << std::endl;
             }
             // Detailed trace around ret instruction
-            if (cur_pc >= 0x440 && cur_pc <= 0x460) {
+            if (debug_output && cur_pc >= 0x440 && cur_pc <= 0x460) {
                 uint32_t saved_ra = readMemWord(0x1FF9C);
                 uint32_t saved_s0 = readMemWord(0x1FF98);
-                std::cout << "@" << i << " PC=0x" << std::hex << cur_pc 
+                std::cout << "@" << i << " PC=0x" << std::hex << cur_pc
                           << " [sp+156]=0x" << saved_ra
                           << " [sp+152]=0x" << saved_s0
                           << std::dec;
@@ -338,7 +338,7 @@ public:
                 std::cout << std::endl;
             }
             // Dump full stack frame at PC=0x450 (ret) to see what ra is being used
-            if (cur_pc == 0x450) {
+            if (debug_output && cur_pc == 0x450) {
                 uint32_t actual_sp = getDebugSp();
                 std::cout << "--- STACK FRAME DUMP at PC=0x450 (ret) ---" << std::endl;
                 std::cout << "  Actual sp=0x" << std::hex << actual_sp << std::dec << std::endl;
@@ -382,8 +382,10 @@ public:
             }
             // Detect jump to model data (invalid instruction execution)
             if (cur_pc >= 0x30000 && cur_pc < 0xE0000) {
-                std::cout << "ERROR: Jump to model/data region at cycle=" << i << " PC=0x" << std::hex << cur_pc << std::dec << std::endl;
-                std::cout << "  This indicates execution of non-instruction data!" << std::endl;
+                if (debug_output) {
+                    std::cout << "ERROR: Jump to model/data region at cycle=" << i << " PC=0x" << std::hex << cur_pc << std::dec << std::endl;
+                    std::cout << "  This indicates execution of non-instruction data!" << std::endl;
+                }
                 // Halt simulation on invalid execution
                 top_->halted = 1;
                 top_->exit_code = 1;
@@ -391,7 +393,7 @@ public:
             }
             // If we just came from PC=0x450 (ret), check what saved_ra value is NOW
             // Watch for writes to 0x1FF7C (where run_forward_pass saves ra)
-            {
+            if (debug_output) {
                 uint32_t guarded_val = readMemWord(0x1FF7C);
                 static uint32_t last_guarded = 0xFFFFFFFF;
                 // Only log interesting changes (after prologue initializes it to 0x06B8)
@@ -407,7 +409,7 @@ public:
                     last_guarded = guarded_val;
                 }
             }
-            if (prev_pc == 0x450) {
+            if (debug_output && prev_pc == 0x450) {
                 iteration_count++;
                 uint32_t saved_ra_now = readMemWord(0x1FF9C);
                 uint32_t saved_s0_now = readMemWord(0x1FFA0);
@@ -454,9 +456,11 @@ public:
             
             // Check if halt was in model/data region
             if (pc_val >= 0x30000 && pc_val < 0xE0000) {
-                std::cout << "  ERROR: Halted in model/data region (0x30000-0xDFFFF)!" << std::endl;
-                std::cout << "  This indicates execution of non-instruction data." << std::endl;
-            } else if (i < 10000) {
+                if (debug_output) {
+                    std::cout << "  ERROR: Halted in model/data region (0x30000-0xDFFFF)!" << std::endl;
+                    std::cout << "  This indicates execution of non-instruction data." << std::endl;
+                }
+            } else if (debug_output && i < 10000) {
                 std::cout << "  WARNING: Early halt at cycle " << i << " (expected ~500K+)" << std::endl;
             }
                 // Print last 128 PC values
@@ -910,16 +914,20 @@ struct TerminalMode {
     }
 };
 
-void process_gui_input(VerilatorRunner& runner, const char* binary_file, uint32_t initial_char, uint32_t cycles_per_frame, uint32_t max_cycles_per_frame) {
+void process_gui_input(VerilatorRunner& runner, const char* binary_file, uint32_t initial_char, uint32_t cycles_per_frame, uint32_t max_cycles_per_frame, bool debug_output) {
     TerminalMode terminal;
     std::signal(SIGINT, signal_handler);
     g_should_exit = 0;
 
     uint32_t current_char = initial_char;
-    std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
-    std::cout << "Starting with character code " << current_char << "..." << std::endl;
-    std::cout << "GUI cycles per frame: " << cycles_per_frame << std::endl;
-    std::cout << "GUI max cycles per frame: " << max_cycles_per_frame << std::endl;
+    if (debug_output) {
+        std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
+        std::cout << "Starting with character code " << current_char << "..." << std::endl;
+        std::cout << "GUI cycles per frame: " << cycles_per_frame << std::endl;
+        std::cout << "GUI max cycles per frame: " << max_cycles_per_frame << std::endl;
+    } else {
+        std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
+    }
 
     while (!g_should_exit) {
         unsigned char ch = 0;
@@ -930,7 +938,7 @@ void process_gui_input(VerilatorRunner& runner, const char* binary_file, uint32_
         // Run for a fixed cycle budget per frame
         // For squash game, don't force a0 to avoid interfering with neural ops
         bool is_squash = (strstr(binary_file, "squash") != nullptr);
-        runner.run(max_cycles_per_frame, !is_squash, current_char);
+        runner.run(max_cycles_per_frame, !is_squash, current_char, debug_output);
 
         std::cout << "\033[2J\033[H";
         runner.renderFramebuffer();
@@ -1064,6 +1072,7 @@ int main(int argc, char** argv) {
     bool movement_mode = false;
     bool render_fb = false;
     bool dump_fb = false;
+    bool gui_debug = false;  // Enable debug output in GUI mode
     bool char_specified = false;
     bool trace_enabled = false;
     uint32_t char_code = 0;
@@ -1089,6 +1098,8 @@ int main(int argc, char** argv) {
             render_fb = true;
         } else if (strcmp(argv[i], "--dump-framebuffer") == 0) {
             dump_fb = true;
+        } else if (strcmp(argv[i], "--gui-debug") == 0) {
+            gui_debug = true;
         } else if (strcmp(argv[i], "--trace") == 0) {
             trace_enabled = true;
         } else if (strcmp(argv[i], "--char") == 0 && i + 1 < argc) {
@@ -1200,7 +1211,7 @@ int main(int argc, char** argv) {
     } else if (gui_mode) {
         // Attempt to match emulator_runner GUI frame cadence by waiting
         // for the done flag, but cap cycles to avoid hanging if it never sets.
-        process_gui_input(runner, binary_file, char_code, gui_cycles, gui_max_cycles);
+        process_gui_input(runner, binary_file, char_code, gui_cycles, gui_max_cycles, gui_debug);
     } else {
         // hold_char=false: key is read from memory-mapped reg 0x154004, not forced a0
         runner.run(max_cycles, false, 0);
