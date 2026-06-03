@@ -388,16 +388,18 @@ int main(int argc, char** argv) {
 
     // Set register x10 (a0, first function argument) with character code if provided
     bool is_counter_char_model = binary_path.find("counter-char") != std::string::npos;
+    bool is_squash_model = binary_path.find("squash") != std::string::npos;
 
     if (char_specified) {
         // Use provided character code
         emulator.getCPU().setReg(10, char_code);
     } else if (gui_mode) {
         // Counter/char demos should start on 'a' so the first rendered frame
-        // matches the standalone character generator. Other GUI demos keep
-        // the previous space default.
+        // matches the standalone character generator. Squash game needs 0 for no input.
         if (is_counter_char_model) {
             emulator.getCPU().setReg(10, 97);
+        } else if (is_squash_model) {
+            emulator.getCPU().setReg(10, 0);  // No input for squash game
         } else {
             emulator.getCPU().setReg(10, 32);
         }
