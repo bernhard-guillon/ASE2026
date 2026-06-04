@@ -390,6 +390,26 @@ if(PYTHON_EXECUTABLE)
     )
 
     add_test(
+        NAME python/squash/verilator_runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_squash_verilator_runtime.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/squash/verilator_runtime_smoke PROPERTIES
+        LABELS "neural;squash;verilator;runtime"
+        TIMEOUT 900
+    )
+
+    add_test(
+        NAME python/squash/verilator_key_input
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_squash_verilator_key.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/squash/verilator_key_input PROPERTIES
+        LABELS "neural;squash;verilator;key"
+        TIMEOUT 900
+    )
+
+    add_test(
         NAME python/squash/physics_reference
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_squash_physics.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -427,6 +447,16 @@ if(PYTHON_EXECUTABLE)
     set_tests_properties(python/squash/renderer_model PROPERTIES
         LABELS "neural;squash;model"
         TIMEOUT 120
+    )
+
+    add_test(
+        NAME python/squash/blackbox_tty
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tty_test.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/squash/blackbox_tty PROPERTIES
+        LABELS "neural;squash;tty"
+        TIMEOUT 180
     )
 
     add_test(
