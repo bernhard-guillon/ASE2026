@@ -16,6 +16,7 @@
 #include <limits>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/select.h>
 #include <csignal>
 
 // DPI-C functions for FPU operations (IEEE 754 single-precision)
@@ -280,8 +281,13 @@ public:
         top_->syscall_ret = 0;
         syscall_error_ = false;
         syscall_error_num_ = 0;
-        top_->force_a0_en = hold_char ? 1 : 0;
-        top_->force_a0_data = char_code;
+        // Write key to register a0 (x10) via setReg before starting cycles.
+        // The game's MODEL_MAP_INPUT reads a0 via "mv %0, a0" at the top of
+        // each loop iteration, so it captures the value before neural inference
+        // can clobber the register.
+        if (hold_char) {
+            setReg(10, char_code);
+        }
         
         // PC trace ring buffer and hang detection
         uint32_t pc_trace[128];
@@ -851,15 +857,18 @@ public:
     }
     
     void renderFramebuffer() {
-        std::cout << "\n";
+        std::cout << "\r\n";
         for (int y = 0; y < 15; ++y) {
             for (int x = 0; x < 20; ++x) {
                 uint8_t pixel = readMem(FRAMEBUFFER_ADDR + y * FRAMEBUFFER_STRIDE + x);
                 std::cout << (pixel > 127 ? '#' : ' ');
             }
-            std::cout << "\n";
+            std::cout << "\r\n";
         }
-        std::cout << std::endl;
+        for (int y = 15; y < 20; ++y) {
+            std::cout << "\r\n";
+        }
+        std::cout << std::flush;
     }
     
     void getFramebuffer(uint8_t* buffer) {
@@ -915,8 +924,12 @@ struct TerminalMode {
 };
 
 void process_gui_input(VerilatorRunner& runner, const char* binary_file, uint32_t initial_char, uint32_t cycles_per_frame, uint32_t max_cycles_per_frame, bool debug_output) {
+    // Skip terminal setup in PTY (e.g., automated testing)
+    bool is_pty = !isatty(STDIN_FILENO);
     TerminalMode terminal;
-    std::signal(SIGINT, signal_handler);
+    if (!is_pty) {
+        std::signal(SIGINT, signal_handler);
+    }
     g_should_exit = 0;
 
     uint32_t current_char = initial_char;
@@ -931,14 +944,20 @@ void process_gui_input(VerilatorRunner& runner, const char* binary_file, uint32_
 
     while (!g_should_exit) {
         unsigned char ch = 0;
-        if (read(STDIN_FILENO, &ch, 1) == 1) {
-            current_char = static_cast<uint32_t>(ch);
+        // Non-blocking key check: only read if data is available
+        fd_set rfds;
+        FD_ZERO(&rfds);
+        FD_SET(STDIN_FILENO, &rfds);
+        struct timeval tv = {0, 0};
+        if (select(STDIN_FILENO + 1, &rfds, nullptr, nullptr, &tv) > 0) {
+            if (read(STDIN_FILENO, &ch, 1) == 1) {
+                current_char = static_cast<uint32_t>(ch);
+            }
         }
 
-        // Run for a fixed cycle budget per frame
-        // For squash game, don't force a0 to avoid interfering with neural ops
-        bool is_squash = (strstr(binary_file, "squash") != nullptr);
-        runner.run(max_cycles_per_frame, !is_squash, current_char, debug_output);
+        // Run for a fixed cycle budget per frame.
+        // Key is injected via setReg(10, key_code) inside run().
+        runner.run(max_cycles_per_frame, true, current_char, debug_output);
 
         std::cout << "\033[2J\033[H";
         runner.renderFramebuffer();

@@ -21,7 +21,7 @@ from pathlib import Path
 
 EMULATOR_DIR = Path(__file__).resolve().parent
 BUILD_DIR = EMULATOR_DIR / "build"
-RUNNER = BUILD_DIR / "emulator_runner"
+DEFAULT_RUNNER = BUILD_DIR / "emulator_runner"
 ELF = BUILD_DIR / "squash.elf"
 
 FRAME_W = 20
@@ -138,10 +138,10 @@ def shutdown(proc, mfd):
             pass
 
 
-def spawn_gui():
+def spawn_gui(runner):
     mfd, sfd = pty.openpty()
     proc = subprocess.Popen(
-        [str(RUNNER), str(ELF), "--gui", "--gui-cycles", "50000"],
+        [str(runner), str(ELF), "--gui", "--gui-cycles", "50000"],
         stdin=sfd,
         stdout=sfd,
         stderr=sfd,
@@ -151,14 +151,22 @@ def spawn_gui():
 
 
 def main():
-    if not RUNNER.exists():
-        print(f"ERROR: emulator_runner not found at {RUNNER}")
+    import argparse
+    parser = argparse.ArgumentParser(description="Blackbox TTY test for squash game")
+    parser.add_argument("--runner", type=Path, default=DEFAULT_RUNNER,
+                        help="Path to emulator_runner or verilator_runner binary")
+    args = parser.parse_args()
+
+    runner = args.runner
+    if not runner.exists():
+        print(f"ERROR: runner not found at {runner}")
         sys.exit(1)
     if not ELF.exists():
         print(f"ERROR: squash.elf not found at {ELF}")
         sys.exit(1)
 
-    proc, mfd = spawn_gui()
+    print(f"Using runner: {runner}")
+    proc, mfd = spawn_gui(runner)
     reader = FrameReader(mfd, FRAME_H)
 
     print("Waiting for emulator to initialize...")

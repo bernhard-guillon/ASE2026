@@ -460,6 +460,16 @@ if(PYTHON_EXECUTABLE)
     )
 
     add_test(
+        NAME python/squash/blackbox_tty_verilator
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tty_test.py --runner ${CMAKE_CURRENT_BINARY_DIR}/verilator_runner
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/squash/blackbox_tty_verilator PROPERTIES
+        LABELS "neural;squash;tty;verilator"
+        TIMEOUT 180
+    )
+
+    add_test(
         NAME python/counter_char/combined_elf_smoke
         COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_counter_char_combined_smoke.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
