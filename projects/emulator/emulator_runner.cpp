@@ -48,7 +48,7 @@ struct TerminalMode {
 };
 
 // Process keyboard input in GUI mode
-void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame) {
+void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool debug_output = false, bool auto_down = false) {
     TerminalMode terminal;
     FramebufferRenderer renderer;
     signal(SIGINT, signal_handler);
@@ -56,17 +56,34 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame) {
     g_emulator = &emulator;
     g_should_exit = false;
     
-    std::cout << "GUI mode active. Keys switch character; auto-advance runs continuously. Ctrl+C to exit." << std::endl;
-    std::cout << std::endl;
+    if (debug_output) {
+        std::cout << "GUI mode active. Keys switch character; auto-advance runs continuously. Ctrl+C to exit." << std::endl;
+        if (auto_down) {
+            std::cout << "Auto-down mode: sending 's' every frame" << std::endl;
+        }
+        std::cout << std::endl;
+    }
     
     // Initial render
     renderer.render(emulator.getMemory());
     
+    uint32_t frame_count = 0;
     while (!g_should_exit) {
-        // Try to read a key without blocking
         unsigned char ch = 0;
         bool key_pressed = false;
-        if (read(STDIN_FILENO, &ch, 1) == 1) {
+        
+        if (auto_down) {
+            ch = 's';
+            key_pressed = true;
+            ++frame_count;
+            if (debug_output) {
+                std::cout << "Frame " << frame_count << ": auto-sending 's'" << std::endl;
+            }
+        } else if (read(STDIN_FILENO, &ch, 1) == 1) {
+            key_pressed = true;
+        }
+        
+        if (key_pressed) {
             uint32_t key_code = static_cast<uint32_t>(ch);
             
             // Store key in registers and memory-mapped 0x154004
@@ -74,12 +91,13 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame) {
             emulator.getCPU().setReg(9, key_code);
             emulator.getMemory().write32(0x154004, key_code);
             
-            if (key_code >= 32 && key_code < 127) {
-                std::cout << "Key: '" << static_cast<char>(key_code) << "' (ASCII " << key_code << ")" << std::endl;
-            } else {
-                std::cout << "Key: (ASCII " << key_code << ")" << std::endl;
+            if (debug_output) {
+                if (key_code >= 32 && key_code < 127) {
+                    std::cout << "Key: '" << static_cast<char>(key_code) << "' (ASCII " << key_code << ")" << std::endl;
+                } else {
+                    std::cout << "Key: (ASCII " << key_code << ")" << std::endl;
+                }
             }
-            key_pressed = true;
         }
         
         // Always run inference — enables auto-advance for models with MODEL_HAS_DONE_FLAG
@@ -99,7 +117,7 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame) {
             }
         }
         
-        if (key_pressed) {
+        if (debug_output && key_pressed) {
             // Read framebuffer to find current position
             uint32_t max_brightness = 0;
             uint32_t current_state = 0;
@@ -123,7 +141,9 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame) {
         usleep(150000);  // 150ms
     }
     
-    std::cout << "\nGUI mode closed." << std::endl;
+    if (debug_output) {
+        std::cout << "\nGUI mode closed." << std::endl;
+    }
 }
 
 // Process keyboard input for interactive movement mode
@@ -207,12 +227,14 @@ void process_movement_input(Emulator& emulator) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--movement] [--char <char>] [--char-code <uint32>] [--cycles <count>] [--gui-cycles <count>] [--render-framebuffer] [--dump-framebuffer] [--verbose]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <binary_file> [--gui] [--gui-debug] [--gui-auto-down] [--movement] [--char <char>] [--char-code <uint32>] [--cycles <count>] [--gui-cycles <count>] [--render-framebuffer] [--dump-framebuffer] [--verbose]" << std::endl;
         return 1;
     }
     
     bool verbose = false;
     bool gui_mode = false;
+    bool gui_debug = false;
+    bool gui_auto_down = false;
     bool movement_mode = false;
     bool render_fb = false;
     bool dump_fb = false;
@@ -232,6 +254,11 @@ int main(int argc, char** argv) {
     for (int i = 2; i < argc; ++i) {
         if (std::strcmp(argv[i], "--gui") == 0) {
             gui_mode = true;
+        } else if (std::strcmp(argv[i], "--gui-debug") == 0) {
+            gui_debug = true;
+        } else if (std::strcmp(argv[i], "--gui-auto-down") == 0) {
+            gui_auto_down = true;
+            gui_mode = true;  // implies --gui
         } else if (std::strcmp(argv[i], "--movement") == 0) {
             movement_mode = true;
         } else if (std::strcmp(argv[i], "--verbose") == 0 || std::strcmp(argv[i], "-v") == 0) {
@@ -429,7 +456,7 @@ int main(int argc, char** argv) {
             process_movement_input(emulator);
         } else if (gui_mode) {
             // Interactive GUI mode
-            process_gui_input(emulator, gui_cycles);
+            process_gui_input(emulator, gui_cycles, gui_debug, gui_auto_down);
         } else {
             // Standard single-execution mode
             uint32_t executed_cycles = 0;

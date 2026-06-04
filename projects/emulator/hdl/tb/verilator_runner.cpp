@@ -493,7 +493,8 @@ public:
         return top_->halted && !syscall_error_;
     }
 
-    bool runUntilDone(uint32_t max_cycles, uint32_t done_addr, bool hold_char = false, uint32_t char_code = 0) {
+    bool runUntilDone(uint32_t max_cycles, uint32_t done_addr, bool hold_char = false, uint32_t char_code = 0,
+                      uint32_t key_addr = 0, uint32_t key_value = 0) {
         // Handle syscalls in testbench
         top_->syscall_done = 0;
         top_->syscall_ret = 0;
@@ -502,6 +503,7 @@ public:
         top_->force_a0_en = hold_char ? 1 : 0;
         top_->force_a0_data = char_code;
 
+        bool key_written = false;
         for (uint32_t i = 0; i < max_cycles && !top_->halted && !syscall_error_; ++i) {
             tick();
 
@@ -510,8 +512,18 @@ public:
             }
 
             if (readMem(done_addr) == 1) {
+                // Done flag just set — write key immediately so it's fresh
+                // for the next MODEL_MAP_INPUT at the top of the game loop.
+                if (key_addr != 0 && !key_written) {
+                    writeMem(key_addr + 0, key_value & 0xFF);
+                    writeMem(key_addr + 1, (key_value >> 8) & 0xFF);
+                    writeMem(key_addr + 2, (key_value >> 16) & 0xFF);
+                    writeMem(key_addr + 3, (key_value >> 24) & 0xFF);
+                    key_written = true;
+                }
                 break;
             }
+            key_written = false;  // Reset when game loop continues
         }
         top_->force_a0_en = 0;
 
@@ -930,7 +942,7 @@ struct TerminalMode {
     }
 };
 
-void process_gui_input(VerilatorRunner& runner, const char* binary_file, uint32_t initial_char, uint32_t cycles_per_frame, uint32_t max_cycles_per_frame, bool debug_output) {
+void process_gui_input(VerilatorRunner& runner, const char* binary_file, uint32_t initial_char, uint32_t cycles_per_frame, uint32_t max_cycles_per_frame, bool debug_output, bool auto_down = false) {
     // Skip terminal setup in PTY (e.g., automated testing)
     bool is_pty = !isatty(STDIN_FILENO);
     TerminalMode terminal;
@@ -945,6 +957,9 @@ void process_gui_input(VerilatorRunner& runner, const char* binary_file, uint32_
         std::cout << "Starting with character code " << current_char << "..." << std::endl;
         std::cout << "GUI cycles per frame: " << cycles_per_frame << std::endl;
         std::cout << "GUI max cycles per frame: " << max_cycles_per_frame << std::endl;
+        if (auto_down) {
+            std::cout << "Auto-down mode: sending 's' every frame" << std::endl;
+        }
     } else {
         std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
     }
@@ -952,23 +967,43 @@ void process_gui_input(VerilatorRunner& runner, const char* binary_file, uint32_
     // Initial render (like emulator_runner) so the first frame is visible
     // before waiting for user input.
     runner.writeMem(0x154004, initial_char & 0xFF);
-    runner.run(max_cycles_per_frame, false, initial_char, debug_output);
+    runner.run(max_cycles_per_frame, false, initial_char, false);
     std::cout << "\033[2J\033[H";
     runner.renderFramebuffer();
 
+    uint32_t frame_count = 0;
     while (!g_should_exit) {
-        unsigned char ch = 0;
-        if (read(STDIN_FILENO, &ch, 1) == 1) {
-            current_char = static_cast<uint32_t>(ch);
+        if (auto_down) {
+            current_char = 's';
+            ++frame_count;
+            if (debug_output) {
+                std::cout << "Frame " << frame_count << ": auto-sending 's'" << std::endl;
+            }
+        } else {
+            unsigned char ch = 0;
+            if (read(STDIN_FILENO, &ch, 1) == 1) {
+                current_char = static_cast<uint32_t>(ch);
+            }
         }
 
-        // Run for a fixed cycle budget per frame.
         // Write key to memory-mapped 0x154004 for the game to read (4 bytes).
-        runner.writeMem(0x154004, current_char & 0xFF);
-        runner.writeMem(0x154005, (current_char >> 8) & 0xFF);
-        runner.writeMem(0x154006, (current_char >> 16) & 0xFF);
-        runner.writeMem(0x154007, (current_char >> 24) & 0xFF);
-        runner.run(max_cycles_per_frame, false, current_char, debug_output);
+
+        if (auto_down) {
+            // Auto-down: run until done flag, key written at done point
+            runner.writeMem(0x154000, 0);
+            runner.writeMem(0x154001, 0);
+            runner.writeMem(0x154002, 0);
+            runner.writeMem(0x154003, 0);
+            runner.runUntilDone(max_cycles_per_frame, 0x154000, false, current_char,
+                                0x154004, current_char);
+        } else {
+            // Interactive: run for fixed cycle budget, write key before run
+            runner.writeMem(0x154004, current_char & 0xFF);
+            runner.writeMem(0x154005, (current_char >> 8) & 0xFF);
+            runner.writeMem(0x154006, (current_char >> 16) & 0xFF);
+            runner.writeMem(0x154007, (current_char >> 24) & 0xFF);
+            runner.run(max_cycles_per_frame, false, current_char, false);
+        }
 
         std::cout << "\033[2J\033[H";
         runner.renderFramebuffer();
@@ -1075,6 +1110,8 @@ void printUsage(const char* prog) {
     std::cerr << "Usage: " << prog << " <binary_file> [options]\n"
               << "Options:\n"
               << "  --gui                 Interactive GUI mode\n"
+              << "  --gui-debug           Enable verbose debug output in GUI mode\n"
+              << "  --gui-auto-down       Auto-send 's' every frame (implies --gui)\n"
               << "  --movement            Interactive movement mode (hjkl keys)\n"
               << "  --char <char>         Set a0 to ASCII code of character\n"
               << "  --char-code <code>    Set a0 to numeric code (uint32)\n"
@@ -1103,6 +1140,7 @@ int main(int argc, char** argv) {
     bool render_fb = false;
     bool dump_fb = false;
     bool gui_debug = false;  // Enable debug output in GUI mode
+    bool gui_auto_down = false;  // Auto-send 's' every frame
     bool char_specified = false;
     bool trace_enabled = false;
     uint32_t char_code = 0;
@@ -1130,6 +1168,9 @@ int main(int argc, char** argv) {
             dump_fb = true;
         } else if (strcmp(argv[i], "--gui-debug") == 0) {
             gui_debug = true;
+        } else if (strcmp(argv[i], "--gui-auto-down") == 0) {
+            gui_auto_down = true;
+            gui_mode = true;  // implies --gui
         } else if (strcmp(argv[i], "--trace") == 0) {
             trace_enabled = true;
         } else if (strcmp(argv[i], "--char") == 0 && i + 1 < argc) {
@@ -1241,7 +1282,7 @@ int main(int argc, char** argv) {
     } else if (gui_mode) {
         // Attempt to match emulator_runner GUI frame cadence by waiting
         // for the done flag, but cap cycles to avoid hanging if it never sets.
-        process_gui_input(runner, binary_file, char_code, gui_cycles, gui_max_cycles, gui_debug);
+        process_gui_input(runner, binary_file, char_code, gui_cycles, gui_max_cycles, gui_debug, gui_auto_down);
     } else {
         // hold_char=false: key is read from memory-mapped reg 0x154004, not forced a0
         runner.run(max_cycles, false, 0);
