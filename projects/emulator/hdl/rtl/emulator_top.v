@@ -31,7 +31,15 @@ module emulator_top #(
     input  wire [31:0] mem_read_addr,
     output wire [7:0]  mem_read_data,
     
+    // PC initialization (for ELF entry point)
+    input  wire        pc_init_en,
+    input  wire [31:0] pc_init_addr,
+
+    // Pause (gates CPU enable so testbench can write memory without CPU advancing)
+    input  wire        pause,
+
     // Syscall interface (directly wire to testbench)
+    output wire [31:0] debug_pc,
     output wire        syscall_valid,
     output wire [31:0] syscall_num,
     output wire [31:0] syscall_a0,
@@ -41,7 +49,11 @@ module emulator_top #(
     output wire [31:0] syscall_a4,
     output wire [31:0] syscall_a5,
     input  wire        syscall_done,
-    input  wire [31:0] syscall_ret
+    input  wire [31:0] syscall_ret,
+
+    // Debug ports
+    output wire [31:0] debug_ra,
+    output wire [31:0] debug_sp
 );
 
     // Internal signals
@@ -69,7 +81,7 @@ module emulator_top #(
     cpu cpu_inst (
         .clk(clk),
         .rst_n(rst_n),
-        .enable(running && !cpu_halted),
+        .enable(running && !cpu_halted && !pause),
         
         // Instruction fetch
         .pc(pc),
@@ -89,6 +101,8 @@ module emulator_top #(
         .mem_size(mem_size),
         
         // Register initialization
+        .pc_init_en(pc_init_en && !running),
+        .pc_init_addr(pc_init_addr),
         .reg_write_en(reg_write_en && !running),
         .reg_write_addr(reg_write_addr),
         .reg_write_data(reg_write_data),
@@ -109,7 +123,11 @@ module emulator_top #(
         
         // Halt signal
         .halted(cpu_halted),
-        .exit_code(cpu_exit_code)
+        .exit_code(cpu_exit_code),
+        
+        // Debug ports
+        .debug_ra(debug_ra),
+        .debug_sp(debug_sp)
     );
     
     // Instantiate Memory
@@ -164,5 +182,6 @@ module emulator_top #(
     assign halted = cpu_halted;
     assign exit_code = cpu_exit_code;
     assign cycle_count = cycles;
+    assign debug_pc = pc;
 
 endmodule

@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.10)
 # HDL (Verilog) Build Integration
 # Adds Verilator simulation target to the emulator project
 

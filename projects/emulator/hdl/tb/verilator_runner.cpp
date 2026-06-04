@@ -281,13 +281,13 @@ public:
         top_->syscall_ret = 0;
         syscall_error_ = false;
         syscall_error_num_ = 0;
-        // Write key to register a0 (x10) via setReg before starting cycles.
-        // The game's MODEL_MAP_INPUT reads a0 via "mv %0, a0" at the top of
-        // each loop iteration, so it captures the value before neural inference
-        // can clobber the register.
-        if (hold_char) {
-            setReg(10, char_code);
-        }
+        // Pulse force_a0 for first N cycles — long enough for MODEL_MAP_INPUT
+        // to read a0 via "mv %0, a0", short enough to avoid corrupting neural
+        // ops that reuse a0 as scratch during run_forward_pass().
+        // force_a0 writes regs[10] every cycle when enabled (RTL line 396-398).
+        const uint32_t FORCE_A0_PULSE = hold_char ? 100 : 0;
+        top_->force_a0_en = hold_char ? 1 : 0;
+        top_->force_a0_data = char_code;
         
         // PC trace ring buffer and hang detection
         uint32_t pc_trace[128];
@@ -301,6 +301,10 @@ public:
         
         for (i = 0; i < max_cycles && !top_->halted && !syscall_error_; ++i) {
             final_cycle_count = i;
+            // Release force_a0 after pulse duration
+            if (FORCE_A0_PULSE > 0 && i == FORCE_A0_PULSE) {
+                top_->force_a0_en = 0;
+            }
             uint32_t cur_pc = getDebugPc();
             pc_trace[pc_trace_idx % 128] = cur_pc;
             pc_trace_idx++;
@@ -904,6 +908,9 @@ struct TerminalMode {
     bool active = false;
 
     TerminalMode() {
+        if (!isatty(STDIN_FILENO)) {
+            return;  // Don't set raw mode on PTY slave (e.g., automated testing)
+        }
         if (tcgetattr(STDIN_FILENO, &original_settings) != 0) {
             return;
         }
@@ -942,22 +949,26 @@ void process_gui_input(VerilatorRunner& runner, const char* binary_file, uint32_
         std::cout << "GUI mode active. Press any key to change character. Ctrl+C to exit." << std::endl;
     }
 
+    // Initial render (like emulator_runner) so the first frame is visible
+    // before waiting for user input.
+    runner.writeMem(0x154004, initial_char & 0xFF);
+    runner.run(max_cycles_per_frame, false, initial_char, debug_output);
+    std::cout << "\033[2J\033[H";
+    runner.renderFramebuffer();
+
     while (!g_should_exit) {
         unsigned char ch = 0;
-        // Non-blocking key check: only read if data is available
-        fd_set rfds;
-        FD_ZERO(&rfds);
-        FD_SET(STDIN_FILENO, &rfds);
-        struct timeval tv = {0, 0};
-        if (select(STDIN_FILENO + 1, &rfds, nullptr, nullptr, &tv) > 0) {
-            if (read(STDIN_FILENO, &ch, 1) == 1) {
-                current_char = static_cast<uint32_t>(ch);
-            }
+        if (read(STDIN_FILENO, &ch, 1) == 1) {
+            current_char = static_cast<uint32_t>(ch);
         }
 
         // Run for a fixed cycle budget per frame.
-        // Key is injected via setReg(10, key_code) inside run().
-        runner.run(max_cycles_per_frame, true, current_char, debug_output);
+        // Write key to memory-mapped 0x154004 for the game to read (4 bytes).
+        runner.writeMem(0x154004, current_char & 0xFF);
+        runner.writeMem(0x154005, (current_char >> 8) & 0xFF);
+        runner.writeMem(0x154006, (current_char >> 16) & 0xFF);
+        runner.writeMem(0x154007, (current_char >> 24) & 0xFF);
+        runner.run(max_cycles_per_frame, false, current_char, debug_output);
 
         std::cout << "\033[2J\033[H";
         runner.renderFramebuffer();

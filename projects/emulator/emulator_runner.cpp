@@ -69,9 +69,10 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame) {
         if (read(STDIN_FILENO, &ch, 1) == 1) {
             uint32_t key_code = static_cast<uint32_t>(ch);
             
-            // Store ASCII code in registers (a0 for a0-based runtimes, s1 for s1-based)
+            // Store key in registers and memory-mapped 0x154004
             emulator.getCPU().setReg(10, key_code);
             emulator.getCPU().setReg(9, key_code);
+            emulator.getMemory().write32(0x154004, key_code);
             
             if (key_code >= 32 && key_code < 127) {
                 std::cout << "Key: '" << static_cast<char>(key_code) << "' (ASCII " << key_code << ")" << std::endl;
@@ -153,6 +154,7 @@ void process_movement_input(Emulator& emulator) {
             // Send raw keycode to firmware (firmware handles mapping + state tracking)
             emulator.getCPU().setReg(10, static_cast<uint32_t>(ch));
             emulator.getCPU().setReg(9, static_cast<uint32_t>(ch));
+            emulator.getMemory().write32(0x154004, static_cast<uint32_t>(ch));
             waiting_for_prediction = true;
             
             std::cout << "Key: '" << ch << "' (waiting for neural prediction)" << std::endl;
@@ -393,13 +395,15 @@ int main(int argc, char** argv) {
     if (char_specified) {
         // Use provided character code
         emulator.getCPU().setReg(10, char_code);
+        emulator.getMemory().write32(0x154004, char_code);
     } else if (gui_mode) {
         // Counter/char demos should start on 'a' so the first rendered frame
         // matches the standalone character generator. Squash game needs 0 for no input.
         if (is_counter_char_model) {
             emulator.getCPU().setReg(10, 97);
         } else if (is_squash_model) {
-            emulator.getCPU().setReg(10, 0);  // No input for squash game
+            emulator.getCPU().setReg(10, 0);
+            emulator.getMemory().write32(0x154004, 0);
         } else {
             emulator.getCPU().setReg(10, 32);
         }

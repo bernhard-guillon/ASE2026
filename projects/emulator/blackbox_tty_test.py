@@ -97,28 +97,41 @@ def frame_text(lines):
 
 
 def find_paddle_top(lines, h=FRAME_H):
+    """Find the top row of the paddle (4+ consecutive rows of #### at left edge)."""
     normed = normalize_frame(lines, FRAME_W)
-    for y in range(1, h - 1):
-        if any(normed[y][x] == "#" for x in range(1, 4)):
-            return y
+    actual_h = min(h, len(normed))
+    # The paddle is 4+ consecutive rows with '####' in columns 0-3
+    consecutive = 0
+    first_row = None
+    for y in range(1, actual_h - 1):
+        if normed[y][:4] == "####":
+            if consecutive == 0:
+                first_row = y
+            consecutive += 1
+            if consecutive >= 3:
+                return first_row
+        else:
+            consecutive = 0
+            first_row = None
     return None
 
 
 def is_game_over(lines):
     """Check if the frame shows the X loss pattern instead of a game scene."""
     normed = normalize_frame(lines, FRAME_W)
+    actual_h = min(FRAME_H, len(normed))
     # X pattern has # at diagonal positions across the frame
     x_count = 0
-    for y in range(1, FRAME_H - 1):
+    for y in range(1, actual_h - 1):
         for x in range(1, FRAME_W - 1):
             d1 = x - y
-            d2 = x - (FRAME_H - 2 - y)
+            d2 = x - (actual_h - 2 - y)
             if (abs(d1) <= 1 or abs(d2) <= 1) and normed[y][x] == "#":
                 x_count += 1
     # A real game scene has paddle (4+ rows of #### in cols 1-3) and walls
     # An X pattern has scattered # across diagonals
     paddle_rows = 0
-    for y in range(1, FRAME_H - 1):
+    for y in range(1, actual_h - 1):
         if normed[y][:4] == "####":
             paddle_rows += 1
     # If very few paddle rows but lots of diagonal #, it's likely an X
