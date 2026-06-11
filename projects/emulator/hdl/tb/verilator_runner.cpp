@@ -130,7 +130,9 @@ constexpr uint32_t PT_LOAD = 1;
 constexpr uint32_t FRAMEBUFFER_ADDR = 0x20000;
 constexpr uint32_t FRAMEBUFFER_SIZE = 400;
 constexpr uint32_t FRAMEBUFFER_STRIDE = 320;
-constexpr uint32_t MEM_SIZE = 0x800000;  // 8MB — keep in sync with emulator_top default
+constexpr uint32_t FRAMEBUFFER_WIDTH = 20;
+constexpr uint32_t FRAMEBUFFER_HEIGHT = 20;
+constexpr uint32_t MEM_SIZE = 0xC00000;  // 12MB — keep in sync with emulator_top default
 
 #include <verilated_vcd_c.h>
 
@@ -888,8 +890,10 @@ public:
     }
     
     void getFramebuffer(uint8_t* buffer) {
-        for (uint32_t i = 0; i < FRAMEBUFFER_SIZE; ++i) {
-            buffer[i] = readMem(FRAMEBUFFER_ADDR + i);
+        for (uint32_t y = 0; y < FRAMEBUFFER_HEIGHT; ++y) {
+            for (uint32_t x = 0; x < FRAMEBUFFER_WIDTH; ++x) {
+                buffer[y * FRAMEBUFFER_WIDTH + x] = readMem(FRAMEBUFFER_ADDR + y * FRAMEBUFFER_STRIDE + x);
+            }
         }
     }
 

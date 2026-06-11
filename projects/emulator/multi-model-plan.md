@@ -306,11 +306,32 @@ static uint32_t mega_mode = 0; // 0=chargen, 1=squash
 3. C code selects squash framebuffer (20×15, 300 pixels, stride 320)
 4. Squash physics continue updating
 
-### State Preservation
-Both models' state variables update every frame regardless of active mode:
-- Counter continues incrementing
-- Squash ball continues moving
-- This ensures smooth transitions when switching modes
+### After Escape Press (switch to chargen + pause)
+1. Router receives Tab state `[1, 0]` → outputs gate `[~1.0, ~0.0]`
+2. Squash state decode is **skipped** in MODEL_MAP_OUTPUT
+3. Static variables (ball_x, ball_y, etc.) retain their last values
+4. Next iteration: MODEL_MAP_INPUT re-encodes the same state → game is frozen
+
+### After \ Press (switch to chargen, no pause)
+1. Router receives Tab state `[1, 0]` → outputs gate `[~1.0, ~0.0]`
+2. Squash state decode **continues** (squash_always_run = 1)
+3. Squash game keeps running in background while chargen is displayed
+
+## Key Bindings
+
+| Key | Action |
+|-----|--------|
+| **Tab** | Switch to squash mode (game runs) |
+| **Escape** | Switch to chargen mode (squash **pauses**) |
+| **\\** | Switch to chargen mode (squash **keeps running**) |
+| **w/s** | Paddle up/down (squash mode) |
+
+### Pause Behavior
+- **Default**: Squash game pauses when chargen is shown (Escape behavior)
+- **Override**: Press `\` to switch to chargen without pausing (old behavior)
+- The `squash_always_run` flag controls this:
+  - `0` = pause when chargen shown (default)
+  - `1` = always run regardless of mode
 
 ## Design Decisions
 

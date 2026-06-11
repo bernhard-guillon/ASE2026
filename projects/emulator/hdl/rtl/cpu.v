@@ -242,7 +242,7 @@ module cpu (
     wire load_pending = (state == ST_LOAD) || (state == ST_LOAD_FP);
 
     // Neural custom-op constants/state
-    localparam [31:0] MEM_SIZE = 32'h800000;
+    localparam [31:0] MEM_SIZE = 32'hC00000;
     localparam [31:0] NEURAL_ERR_OK = 32'd0;
     localparam [31:0] NEURAL_ERR_INVALID_PTR = 32'd1;
     localparam [31:0] NEURAL_ERR_INVALID_LEN = 32'd2;

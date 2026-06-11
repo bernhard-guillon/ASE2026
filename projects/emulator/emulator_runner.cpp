@@ -480,10 +480,12 @@ int main(int argc, char** argv) {
             std::ios::fmtflags old_flags = std::cout.flags();
             char old_fill = std::cout.fill();
             std::cout << "FRAMEBUFFER_HEX:";
-            for (uint32_t i = 0; i < 400; ++i) {
-                uint8_t v = emulator.getMemory().read8(0x20000 + i);
-                std::cout << std::hex << std::setw(2) << std::setfill('0')
-                          << static_cast<unsigned>(v);
+            for (uint32_t y = 0; y < FRAMEBUFFER_HEIGHT; ++y) {
+                for (uint32_t x = 0; x < FRAMEBUFFER_WIDTH; ++x) {
+                    uint8_t v = emulator.getMemory().read8(FRAMEBUFFER_ADDR + y * FRAMEBUFFER_STRIDE + x);
+                    std::cout << std::hex << std::setw(2) << std::setfill('0')
+                              << static_cast<unsigned>(v);
+                }
             }
             std::cout.flags(old_flags);
             std::cout.fill(old_fill);
