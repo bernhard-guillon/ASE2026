@@ -135,7 +135,9 @@ class DifferentialValidator:
             if re.match(r"Execution completed", line):
                 continue
             lines.append(line)
-        return "\n".join(lines)
+        collapsed = re.sub(r"\n{2,}", "\n", "\n".join(lines))
+        collapsed = re.sub(r"\n+(?=FRAMEBUFFER_HEX:)", "", collapsed)
+        return collapsed.strip()
 
     def _assert_same(self, name: str, cpp_res: subprocess.CompletedProcess, vlt_res: subprocess.CompletedProcess):
         if cpp_res.returncode != vlt_res.returncode:
