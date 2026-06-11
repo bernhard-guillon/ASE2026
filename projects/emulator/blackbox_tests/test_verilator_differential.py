@@ -112,11 +112,13 @@ class DifferentialValidator:
     @staticmethod
     def _strip_verilator_debug(output: str) -> str:
         """Strip verilator-specific debug output not emitted by cpp emulator."""
+        # First strip inline HALT at cycle= that may be glued to the end of a
+        # program-output line (program didn't finish with newline).
+        output = re.sub(r"HALT at cycle=\d+ pc=0x[0-9a-fA-F]+.*$", "", output, flags=re.MULTILINE)
+
         lines = []
         skip_pcs = False
         for line in output.splitlines():
-            if line.startswith("HALT at cycle="):
-                continue
             if line.strip().startswith("instruction=0x"):
                 continue
             if line.strip() == "last 128 PCs:":
@@ -126,10 +128,11 @@ class DifferentialValidator:
                 if line.startswith("  ") or line.strip().startswith("0x") or line.strip() == "":
                     continue
                 skip_pcs = False
-            # Normalize: "Execution completed. Cycles: N, Iterations: M" → "Cycles: N"
-            m = re.match(r"Execution completed?\. Cycles:\s*(\d+)", line)
-            if m:
-                lines.append(f"Cycles: {m.group(1)}")
+            # Strip bare "Cycles: N" lines
+            if re.match(r"^Cycles:\s*\d+", line):
+                continue
+            # Strip "Execution completed. Cycles: N, Iterations: M" lines
+            if re.match(r"Execution completed", line):
                 continue
             lines.append(line)
         return "\n".join(lines)
