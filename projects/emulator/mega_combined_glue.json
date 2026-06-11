@@ -1,0 +1,62 @@
+{
+  "input_mapping": "mega_combined",
+  "output_mapping": "mega_combined",
+  "initial_state": {
+    "model_counter": 97,
+    "ball_x": 10,
+    "ball_y": 7,
+    "ball_vx": 1,
+    "ball_vy": 0,
+    "paddle_y": 3,
+    "game_state": 0
+  },
+  "models": [
+    { "name": "router",     "path": "models/router_tab_switch.json" },
+    { "name": "counter",    "path": "build/counter255_three_layer.json" },
+    { "name": "chargen",    "path": "../weight-export/character_generator.json" },
+    { "name": "game_state", "path": "models/squash_game_state.json" },
+    { "name": "renderer",   "path": "models/squash_renderer.json" }
+  ],
+  "merged_layers": [
+    {
+      "name": "layer_0_parallel",
+      "activation": "relu",
+      "blocks": [
+        { "model": "router",     "layer": 0, "in_offset": 311, "out_offset": 0 },
+        { "model": "counter",    "layer": 0, "in_offset": 0,   "out_offset": 16,  "activation": "none" },
+        { "model": "chargen",    "layer": 0, "in_offset": 0,   "out_offset": 272 },
+        { "model": "game_state", "layer": 0, "in_offset": 255, "out_offset": 528 },
+        { "model": "renderer",   "layer": 0, "in_offset": 255, "out_offset": 592 }
+      ]
+    },
+    {
+      "name": "layer_1_parallel",
+      "activation": "relu",
+      "blocks": [
+        { "model": "router",     "layer": 1, "in_offset": 0,   "out_offset": 0,   "activation": "sigmoid" },
+        { "model": "counter",    "layer": 1, "in_offset": 16,  "out_offset": 2,   "activation": "none" },
+        { "model": "chargen",    "layer": 1, "in_offset": 272, "out_offset": 258 },
+        { "model": "game_state", "layer": 1, "in_offset": 528, "out_offset": 514 },
+        { "model": "renderer",   "layer": 1, "in_offset": 592, "out_offset": 578 }
+      ]
+    },
+    {
+      "name": "layer_2_parallel",
+      "activation": "none",
+      "blocks": [
+        { "model": "router",     "layer": 2, "in_offset": 0,   "out_offset": 0 },
+        { "model": "counter",    "layer": 2, "in_offset": 2,   "out_offset": 2 },
+        { "model": "chargen",    "layer": 2, "in_offset": 258, "out_offset": 257, "activation": "sigmoid" },
+        { "model": "game_state", "layer": 2, "in_offset": 514, "out_offset": 657 },
+        { "model": "renderer",   "layer": 2, "in_offset": 578, "out_offset": 709, "activation": "sigmoid" }
+      ]
+    }
+  ],
+  "output_ranges": [
+    { "name": "router_gates",  "offset": 0,   "size": 2 },
+    { "name": "chargen_fb",    "offset": 2,   "size": 400 },
+    { "name": "squash_state",  "offset": 402, "size": 52 },
+    { "name": "squash_fb",     "offset": 454, "size": 300 },
+    { "name": "counter_state", "offset": 754, "size": 255 }
+  ]
+}

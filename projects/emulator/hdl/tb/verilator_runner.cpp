@@ -130,7 +130,7 @@ constexpr uint32_t PT_LOAD = 1;
 constexpr uint32_t FRAMEBUFFER_ADDR = 0x20000;
 constexpr uint32_t FRAMEBUFFER_SIZE = 400;
 constexpr uint32_t FRAMEBUFFER_STRIDE = 320;
-constexpr uint32_t MEM_SIZE = 0x200000;  // Keep in sync with emulator_top default
+constexpr uint32_t MEM_SIZE = 0x800000;  // 8MB — keep in sync with emulator_top default
 
 #include <verilated_vcd_c.h>
 

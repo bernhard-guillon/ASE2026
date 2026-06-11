@@ -363,6 +363,16 @@ if(PYTHON_EXECUTABLE)
     )
 
     add_test(
+        NAME python/mega_combined/runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_mega_combined.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/mega_combined/runtime_smoke PROPERTIES
+        LABELS "neural;mega;combined;runtime"
+        TIMEOUT 600
+    )
+
+    add_test(
         NAME python/neural_char_gen/runtime_smoke
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_neural_char_gen_runtime.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -995,6 +1005,51 @@ if(RISCV_TOOLCHAIN_FOUND)
         )
 
         add_custom_target(squash_elf ALL DEPENDS ${SQUASH_ELF})
+
+        # --- mega combined model (squash + counter-chargen + router) ----------
+        set(MEGA_COMBINED_GLUE "${CMAKE_CURRENT_SOURCE_DIR}/mega_combined_glue.json")
+        set(MEGA_COMBINED_MODEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/mega_combined_model_dir")
+        set(MEGA_COMBINED_H "${MEGA_COMBINED_MODEL_DIR}/model.h")
+        set(MEGA_COMBINED_ELF "${CMAKE_CURRENT_BINARY_DIR}/mega-combined.elf")
+
+        set(MEGA_COMBINED_GLUE_COUNTER_JSON ${COUNTER255_THREE_LAYER_JSON})
+        set(MEGA_COMBINED_GLUE_CHARGEN_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../weight-export/character_generator.json")
+        set(MEGA_COMBINED_GLUE_ROUTER_JSON "${CMAKE_CURRENT_SOURCE_DIR}/models/router_tab_switch.json")
+
+        add_custom_command(
+            OUTPUT ${MEGA_COMBINED_H}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${MEGA_COMBINED_MODEL_DIR}
+            COMMAND ${MODEL_TO_HEADER}
+                --glue ${MEGA_COMBINED_GLUE}
+                -o ${MEGA_COMBINED_H}
+            DEPENDS
+                ${MEGA_COMBINED_GLUE}
+                ${MEGA_COMBINED_GLUE_COUNTER_JSON}
+                ${MEGA_COMBINED_GLUE_CHARGEN_JSON}
+                ${SQUASH_GAME_STATE_JSON}
+                ${SQUASH_RENDERER_JSON}
+                ${MEGA_COMBINED_GLUE_ROUTER_JSON}
+                ${MODEL_TO_HEADER}
+            COMMENT "Generating mega combined model.h via Rust model-to-header (glue mode)"
+            VERBATIM
+        )
+
+        add_custom_command(
+            OUTPUT ${MEGA_COMBINED_ELF}
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+                -I${MEGA_COMBINED_MODEL_DIR}
+                -T ${SHARED_LINKER_SCRIPT}
+                -Wl,--oformat=elf32-littleriscv
+                -Wl,-e,_start
+                -o ${MEGA_COMBINED_ELF}
+                ${SHARED_RUNTIME_C}
+                -lgcc
+            DEPENDS ${MEGA_COMBINED_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
+            COMMENT "Compiling mega-combined.elf"
+            VERBATIM
+        )
+
+        add_custom_target(mega_combined_elf ALL DEPENDS ${MEGA_COMBINED_ELF})
 
         # Phase 5: Combined counter-chargen model
         add_custom_command(

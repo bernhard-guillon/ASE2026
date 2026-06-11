@@ -423,9 +423,127 @@ fn run() -> Result<(), String> {
             out.push_str("    fb[model_state] = 255; \\\n");
             out.push_str("} while(0)\n\n");
         }
+        "mega_combined" => {
+            let cnt_init = initial_state.get("model_counter").copied().unwrap_or(97);
+            let bx_init = initial_state.get("ball_x").copied().unwrap_or(10);
+            let by_init = initial_state.get("ball_y").copied().unwrap_or(7);
+            let vx_init = initial_state.get("ball_vx").copied().unwrap_or(1);
+            let vy_init = initial_state.get("ball_vy").copied().unwrap_or(0);
+            let py_init = initial_state.get("paddle_y").copied().unwrap_or(3);
+            let gs_init = initial_state.get("game_state").copied().unwrap_or(0);
+
+            out.push_str("register uint32_t model_key asm(\"s1\");\n\n");
+            out.push_str("#define MODEL_READ_A0_EACH_ITER 0\n");
+            out.push_str("#define MODEL_HAS_DONE_FLAG 1\n\n");
+
+            // Counter state
+            out.push_str(&format!("static uint32_t model_counter = {cnt_init};\n"));
+            // Squash state
+            out.push_str(&format!("static uint32_t ball_x = {bx_init};\n"));
+            out.push_str(&format!("static uint32_t ball_y = {by_init};\n"));
+            out.push_str(&format!("static uint32_t ball_vx = {vx_init};\n"));
+            out.push_str(&format!("static uint32_t ball_vy = {vy_init};\n"));
+            out.push_str(&format!("static uint32_t paddle_y = {py_init};\n"));
+            out.push_str(&format!("static uint32_t game_state = {gs_init};\n"));
+            // Mega mode: 0=chargen, 1=squash
+            out.push_str("static uint32_t mega_mode = 0;\n\n");
+
+            // MODEL_MAP_INPUT: populates unified input buffer (313 neurons)
+            // [0..254]   = chargen/counter one-hot
+            // [255..310] = squash input encoding
+            // [311..312] = Tab state one-hot
+            out.push_str("// Mega combined input layout: chargen(255) + squash(56) + tab(2) = 313\n");
+            out.push_str("#define MODEL_MAP_INPUT(buf) do { \\\n");
+            out.push_str("    for (uint32_t i = 0; i < MODEL_INPUT_SIZE; i++) buf[i] = 0.0f; \\\n");
+            out.push_str("    /* --- Chargen/counter input (offset 0..254) --- */ \\\n");
+            out.push_str("    uint32_t _idx; \\\n");
+            out.push_str("    if (model_key >= 32 && model_key < 255) { \\\n");
+            out.push_str("        _idx = model_key; \\\n");
+            out.push_str("        model_key = 0; \\\n");
+            out.push_str("    } else { \\\n");
+            out.push_str("        _idx = model_counter; \\\n");
+            out.push_str("    } \\\n");
+            out.push_str("    if (_idx < 255) buf[_idx] = 1.0f; \\\n");
+            out.push_str("    /* --- Squash input (offset 255..310) --- */ \\\n");
+            out.push_str("    if (ball_x < 20) buf[255 + ball_x] = 1.0f; \\\n");
+            out.push_str("    if (ball_y < 15) buf[275 + ball_y] = 1.0f; \\\n");
+            out.push_str("    if (paddle_y < 11) buf[290 + paddle_y] = 1.0f; \\\n");
+            out.push_str("    if (game_state < 2) buf[301 + game_state] = 1.0f; \\\n");
+            out.push_str("    if (ball_vx < 2) buf[303 + ball_vx] = 1.0f; \\\n");
+            out.push_str("    if (ball_vy < 2) buf[305 + ball_vy] = 1.0f; \\\n");
+            out.push_str("    uint32_t _key = *((volatile uint32_t *)0x154004); \\\n");
+            out.push_str("    buf[307] = 1.0f; buf[308] = 0.0f; \\\n");
+            out.push_str("    buf[309] = 1.0f; buf[310] = 0.0f; \\\n");
+            out.push_str("    if (_key == 'w' || _key == 'W') { buf[307] = 0.0f; buf[308] = 1.0f; } \\\n");
+            out.push_str("    if (_key == 's' || _key == 'S') { buf[309] = 0.0f; buf[310] = 1.0f; } \\\n");
+            out.push_str("    /* --- Tab state (offset 311..312) --- */ \\\n");
+            out.push_str("    if (_key == 0x09) { mega_mode = 1; } \\\n");
+            out.push_str("    else if (_key == 0x1B) { mega_mode = 0; } \\\n");
+            out.push_str("    if (mega_mode == 0) { buf[311] = 1.0f; buf[312] = 0.0f; } \\\n");
+            out.push_str("    else { buf[311] = 0.0f; buf[312] = 1.0f; } \\\n");
+            out.push_str("} while(0)\n\n");
+
+            // MODEL_MAP_OUTPUT: reads router gates, selects framebuffer
+            // Output layout: router_gates(2) + chargen_fb(400) + squash_state(52)
+            //                + squash_fb(300) + counter_state(255) = 1009
+            out.push_str("// Mega combined output: gates(2) + chargen_fb(400) + squash_st(52) + squash_fb(300) + counter_st(255)\n");
+            out.push_str("#define MEGA_ROUTER_GATES 0\n");
+            out.push_str("#define MEGA_CHARGEN_FB   2\n");
+            out.push_str("#define MEGA_SQUASH_ST    402\n");
+            out.push_str("#define MEGA_SQUASH_FB    454\n");
+            out.push_str("#define MEGA_COUNTER_ST   754\n");
+            out.push_str("#define MEGA_CHARGEN_FB_SIZE 400\n");
+            out.push_str("#define MEGA_SQUASH_FB_W 20\n");
+            out.push_str("#define MEGA_SQUASH_FB_H 15\n\n");
+
+            out.push_str("#define MODEL_MAP_OUTPUT(buf, fb) do { \\\n");
+            out.push_str("    float _gs = (buf)[MEGA_ROUTER_GATES];     /* gate_squash */ \\\n");
+            out.push_str("    float _gc = (buf)[MEGA_ROUTER_GATES + 1]; /* gate_chargen */ \\\n");
+            out.push_str("    /* --- Always update counter state (argmax over 255) --- */ \\\n");
+            out.push_str("    uint32_t _mi = 0; \\\n");
+            out.push_str("    float _mv = (buf)[MEGA_COUNTER_ST]; \\\n");
+            out.push_str("    for (uint32_t _i = 1; _i < 255; _i++) { \\\n");
+            out.push_str("        if ((buf)[MEGA_COUNTER_ST + _i] > _mv) { _mv = (buf)[MEGA_COUNTER_ST + _i]; _mi = _i; } \\\n");
+            out.push_str("    } \\\n");
+            out.push_str("    model_counter = _mi; \\\n");
+            out.push_str("    /* --- Always decode squash state (argmax per field) --- */ \\\n");
+            out.push_str("    _mi = 0; _mv = (buf)[MEGA_SQUASH_ST]; \\\n");
+            out.push_str("    for (uint32_t _i = 1; _i < 20; _i++) { if ((buf)[MEGA_SQUASH_ST+_i] > _mv) { _mv = (buf)[MEGA_SQUASH_ST+_i]; _mi = _i; } } ball_x = _mi; \\\n");
+            out.push_str("    _mi = 0; _mv = (buf)[MEGA_SQUASH_ST+20]; \\\n");
+            out.push_str("    for (uint32_t _i = 1; _i < 15; _i++) { if ((buf)[MEGA_SQUASH_ST+20+_i] > _mv) { _mv = (buf)[MEGA_SQUASH_ST+20+_i]; _mi = _i; } } ball_y = _mi; \\\n");
+            out.push_str("    _mi = 0; _mv = (buf)[MEGA_SQUASH_ST+35]; \\\n");
+            out.push_str("    for (uint32_t _i = 1; _i < 11; _i++) { if ((buf)[MEGA_SQUASH_ST+35+_i] > _mv) { _mv = (buf)[MEGA_SQUASH_ST+35+_i]; _mi = _i; } } paddle_y = _mi; \\\n");
+            out.push_str("    _mi = 0; _mv = (buf)[MEGA_SQUASH_ST+46]; \\\n");
+            out.push_str("    for (uint32_t _i = 1; _i < 2; _i++) { if ((buf)[MEGA_SQUASH_ST+46+_i] > _mv) { _mv = (buf)[MEGA_SQUASH_ST+46+_i]; _mi = _i; } } game_state = _mi; \\\n");
+            out.push_str("    _mi = 0; _mv = (buf)[MEGA_SQUASH_ST+48]; \\\n");
+            out.push_str("    for (uint32_t _i = 1; _i < 2; _i++) { if ((buf)[MEGA_SQUASH_ST+48+_i] > _mv) { _mv = (buf)[MEGA_SQUASH_ST+48+_i]; _mi = _i; } } ball_vx = _mi; \\\n");
+            out.push_str("    _mi = 0; _mv = (buf)[MEGA_SQUASH_ST+50]; \\\n");
+            out.push_str("    for (uint32_t _i = 1; _i < 2; _i++) { if ((buf)[MEGA_SQUASH_ST+50+_i] > _mv) { _mv = (buf)[MEGA_SQUASH_ST+50+_i]; _mi = _i; } } ball_vy = _mi; \\\n");
+            out.push_str("    /* --- Select framebuffer based on router gates --- */ \\\n");
+            out.push_str("    if (_gc > _gs) { \\\n");
+            out.push_str("        /* Chargers active: buf[2..401] -> fb (20x20 linear) */ \\\n");
+            out.push_str("        for (uint32_t _i = 0; _i < MEGA_CHARGEN_FB_SIZE; _i++) { \\\n");
+            out.push_str("            float _v = (buf)[MEGA_CHARGEN_FB + _i]; \\\n");
+            out.push_str("            if (_v < 0.0f) _v = 0.0f; \\\n");
+            out.push_str("            if (_v > 1.0f) _v = 1.0f; \\\n");
+            out.push_str("            fb[_i] = (uint8_t)(_v * 255.0f); \\\n");
+            out.push_str("        } \\\n");
+            out.push_str("    } else { \\\n");
+            out.push_str("        /* Squash active: buf[454..753] -> fb (20x15, stride 320) */ \\\n");
+            out.push_str("        for (uint32_t _y = 0; _y < MEGA_SQUASH_FB_H; _y++) { \\\n");
+            out.push_str("            for (uint32_t _x = 0; _x < MEGA_SQUASH_FB_W; _x++) { \\\n");
+            out.push_str("                float _v = (buf)[MEGA_SQUASH_FB + _y * MEGA_SQUASH_FB_W + _x]; \\\n");
+            out.push_str("                if (_v < 0.0f) _v = 0.0f; \\\n");
+            out.push_str("                if (_v > 1.0f) _v = 1.0f; \\\n");
+            out.push_str("                fb[_y * 320 + _x] = (uint8_t)(_v * 255.0f); \\\n");
+            out.push_str("            } \\\n");
+            out.push_str("        } \\\n");
+            out.push_str("    } \\\n");
+            out.push_str("} while(0)\n\n");
+        }
         other => {
             return Err(format!(
-                "Unknown input_mapping '{other}' — expected 'character_code', 'counter255_a0_feedback', 'combined_counter_chargen', 'movement_packed_a0', or 'squash_game'",
+                "Unknown input_mapping '{other}' — expected 'character_code', 'counter255_a0_feedback', 'combined_counter_chargen', 'mega_combined', 'movement_packed_a0', or 'squash_game'",
             ));
         }
     }
