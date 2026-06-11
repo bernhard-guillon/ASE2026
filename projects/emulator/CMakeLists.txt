@@ -410,6 +410,26 @@ if(PYTHON_EXECUTABLE)
     )
 
     add_test(
+        NAME python/squash/gui_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_squash_gui.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/squash/gui_smoke PROPERTIES
+        LABELS "neural;squash;gui"
+        TIMEOUT 300
+    )
+
+    add_test(
+        NAME python/squash/gui_tty
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_verilator_gui_tty.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/squash/gui_tty PROPERTIES
+        LABELS "neural;squash;gui;verilator;tty"
+        TIMEOUT 300
+    )
+
+    add_test(
         NAME python/squash/physics_reference
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_squash_physics.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
