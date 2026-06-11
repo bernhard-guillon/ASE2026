@@ -168,6 +168,9 @@ target_link_libraries(run_memory_layout_test emulator cpu memory instruction)
 add_executable(emulator_runner emulator_runner.cpp)
 target_link_libraries(emulator_runner emulator cpu memory instruction)
 
+add_executable(squash_tty_harness squash_tty_harness.cpp)
+target_link_libraries(squash_tty_harness emulator cpu memory instruction)
+
 # Register tests with CTest
 include(GoogleTest)
 gtest_discover_tests(test_memory)
