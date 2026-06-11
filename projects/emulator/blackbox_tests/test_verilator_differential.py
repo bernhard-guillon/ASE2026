@@ -109,14 +109,46 @@ class DifferentialValidator:
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         return res, elapsed_ms
 
+    @staticmethod
+    def _strip_verilator_debug(output: str) -> str:
+        """Strip verilator-specific debug output not emitted by cpp emulator."""
+        # First strip inline HALT at cycle= that may be glued to the end of a
+        # program-output line (program didn't finish with newline).
+        output = re.sub(r"HALT at cycle=\d+ pc=0x[0-9a-fA-F]+.*$", "", output, flags=re.MULTILINE)
+
+        lines = []
+        skip_pcs = False
+        for line in output.splitlines():
+            if line.strip().startswith("instruction=0x"):
+                continue
+            if line.strip() == "last 128 PCs:":
+                skip_pcs = True
+                continue
+            if skip_pcs:
+                if line.startswith("  ") or line.strip().startswith("0x") or line.strip() == "":
+                    continue
+                skip_pcs = False
+            # Strip bare "Cycles: N" lines
+            if re.match(r"^Cycles:\s*\d+", line):
+                continue
+            # Strip "Execution completed. Cycles: N, Iterations: M" lines
+            if re.match(r"Execution completed", line):
+                continue
+            lines.append(line)
+        collapsed = re.sub(r"\n{2,}", "\n", "\n".join(lines))
+        collapsed = re.sub(r"\n+(?=FRAMEBUFFER_HEX:)", "", collapsed)
+        return collapsed.strip()
+
     def _assert_same(self, name: str, cpp_res: subprocess.CompletedProcess, vlt_res: subprocess.CompletedProcess):
         if cpp_res.returncode != vlt_res.returncode:
             raise AssertionError(
                 f"{name}: rc mismatch cpp={cpp_res.returncode} vlt={vlt_res.returncode}"
             )
-        if cpp_res.stdout != vlt_res.stdout:
+        cpp_out = self._strip_verilator_debug(cpp_res.stdout)
+        vlt_out = self._strip_verilator_debug(vlt_res.stdout)
+        if cpp_out != vlt_out:
             raise AssertionError(
-                f"{name}: stdout mismatch\ncpp={cpp_res.stdout[:200]!r}\nvlt={vlt_res.stdout[:200]!r}"
+                f"{name}: stdout mismatch\ncpp={cpp_out[:200]!r}\nvlt={vlt_out[:200]!r}"
             )
         if cpp_res.stderr != vlt_res.stderr:
             cpp_sys = re.search(r"(?:Unsupported|Unknown) syscall:\s*(\d+)", cpp_res.stderr)

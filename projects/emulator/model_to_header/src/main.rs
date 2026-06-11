@@ -362,8 +362,7 @@ fn run() -> Result<(), String> {
             out.push_str("    if (game_state < 2) buf[46 + game_state] = 1.0f; \\\n");
             out.push_str("    if (ball_vx < 2) buf[48 + ball_vx] = 1.0f; \\\n");
             out.push_str("    if (ball_vy < 2) buf[50 + ball_vy] = 1.0f; \\\n");
-            out.push_str("    uint32_t _key; \\\n");
-            out.push_str("    __asm__ volatile (\"mv %0, a0\" : \"=r\"(_key)); \\\n");
+            out.push_str("    uint32_t _key = *((volatile uint32_t *)0x154004); \\\n");
             out.push_str("    buf[52] = 1.0f; buf[53] = 0.0f; \\\n");
             out.push_str("    buf[54] = 1.0f; buf[55] = 0.0f; \\\n");
             out.push_str("    if (_key == 'w' || _key == 'W') { buf[52] = 0.0f; buf[53] = 1.0f; } \\\n");

@@ -29,6 +29,8 @@ module cpu (
     input  wire [31:0] reg_write_data,
     input  wire        force_a0_en,
     input  wire [31:0] force_a0_data,
+    input  wire        pc_init_en,
+    input  wire [31:0] pc_init_addr,
     
     // Syscall interface
     output reg         syscall_valid,
@@ -44,8 +46,15 @@ module cpu (
     
     // Halt interface
     output reg         halted,
-    output reg  [31:0] exit_code
+    output reg  [31:0] exit_code,
+    
+    // Debug ports
+    output wire [31:0] debug_ra,
+    output wire [31:0] debug_sp
 );
+
+    assign debug_ra = regs[1];
+    assign debug_sp = regs[2];
     // DPI-C helpers reused for neural custom ops
     import "DPI-C" function int unsigned fp_add(input int unsigned a, input int unsigned b);
     import "DPI-C" function int unsigned fp_mul(input int unsigned a, input int unsigned b);
@@ -373,6 +382,10 @@ module cpu (
                 end
             end
             
+        end else if (pc_init_en && !enable) begin
+            // External PC write (for ELF entry point)
+            pc <= pc_init_addr;
+
         end else if (reg_write_en && !enable) begin
             // External register write (for initialization)
             if (reg_write_addr != 5'd0) begin
@@ -468,6 +481,15 @@ module cpu (
                                     10'b0100000_101: regs[rd] <= $signed(rs1_val) >>> rs2_val[4:0]; // SRA
                                     10'b0000000_110: regs[rd] <= rs1_val | rs2_val;        // OR
                                     10'b0000000_111: regs[rd] <= rs1_val & rs2_val;        // AND
+                                    // M-extension support
+                                    10'b0000001_000: regs[rd] <= rs1_val * rs2_val;        // MUL (low 32 bits)
+                                    10'b0000001_001: regs[rd] <= ($signed(rs1_val) * $signed(rs2_val)) >>> 32; // MULH
+                                    10'b0000001_010: regs[rd] <= ($signed(rs1_val) * rs2_val) >>> 32; // MULHSU
+                                    10'b0000001_011: regs[rd] <= (rs1_val * rs2_val) >>> 32; // MULHU
+                                    10'b0000001_100: regs[rd] <= (rs2_val == 0) ? 32'hFFFFFFFF : $signed(rs1_val) / $signed(rs2_val); // DIV
+                                    10'b0000001_101: regs[rd] <= (rs2_val == 0) ? 32'hFFFFFFFF : (rs1_val / rs2_val); // DIVU
+                                    10'b0000001_110: regs[rd] <= (rs2_val == 0) ? rs1_val : $signed(rs1_val) % $signed(rs2_val); // REM
+                                    10'b0000001_111: regs[rd] <= (rs2_val == 0) ? rs1_val : (rs1_val % rs2_val); // REMU
                                 endcase
                             end
                             pc <= pc + 4;

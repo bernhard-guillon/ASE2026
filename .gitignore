@@ -48,3 +48,11 @@ test_lex
 
 # Generated paper intermediate
 documentation/ase2026.tex
+
+# Simulation/test output artifacts
+*.ppm
+*.vcd
+
+# Tool session files
+opencode-session.txt
+vibe-resume
