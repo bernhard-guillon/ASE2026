@@ -43,9 +43,9 @@ module fpu (
     import "DPI-C" function int unsigned fp_sub(input int unsigned a, input int unsigned b);
     import "DPI-C" function int unsigned fp_mul(input int unsigned a, input int unsigned b);
     import "DPI-C" function int unsigned fp_div(input int unsigned a, input int unsigned b);
-    import "DPI-C" function bit fp_cmp_lt(input int unsigned a, input int unsigned b);
-    import "DPI-C" function bit fp_cmp_le(input int unsigned a, input int unsigned b);
-    import "DPI-C" function bit fp_cmp_eq(input int unsigned a, input int unsigned b);
+    import "DPI-C" function int unsigned fp_cmp_lt(input int unsigned a, input int unsigned b);
+    import "DPI-C" function int unsigned fp_cmp_le(input int unsigned a, input int unsigned b);
+    import "DPI-C" function int unsigned fp_cmp_eq(input int unsigned a, input int unsigned b);
     import "DPI-C" function int unsigned fp_cvt_w_s(input int unsigned a);   // float to int
     import "DPI-C" function int unsigned fp_cvt_s_w(input int signed a);     // int to float
 

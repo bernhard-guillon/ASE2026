@@ -58,8 +58,8 @@ module cpu (
     // DPI-C helpers reused for neural custom ops
     import "DPI-C" function int unsigned fp_add(input int unsigned a, input int unsigned b);
     import "DPI-C" function int unsigned fp_mul(input int unsigned a, input int unsigned b);
-    import "DPI-C" function bit fp_cmp_lt(input int unsigned a, input int unsigned b);
-    import "DPI-C" function bit fp_cmp_le(input int unsigned a, input int unsigned b);
+    import "DPI-C" function int unsigned fp_cmp_lt(input int unsigned a, input int unsigned b);
+    import "DPI-C" function int unsigned fp_cmp_le(input int unsigned a, input int unsigned b);
     import "DPI-C" function int unsigned fp_cvt_w_s(input int unsigned a);
 
     // Opcodes (RISC-V encoding)
