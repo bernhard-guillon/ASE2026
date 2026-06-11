@@ -414,7 +414,7 @@ if(PYTHON_EXECUTABLE)
 
     add_test(
         NAME python/squash/gui_smoke
-        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_squash_gui.py -v
+        COMMAND ${PYTHON_EXECUTABLE} blackbox_tests/test_squash_gui.py
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     set_tests_properties(python/squash/gui_smoke PROPERTIES

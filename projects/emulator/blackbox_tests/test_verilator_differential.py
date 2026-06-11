@@ -109,14 +109,41 @@ class DifferentialValidator:
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         return res, elapsed_ms
 
+    @staticmethod
+    def _strip_verilator_debug(output: str) -> str:
+        """Strip verilator-specific debug output not emitted by cpp emulator."""
+        lines = []
+        skip_pcs = False
+        for line in output.splitlines():
+            if line.startswith("HALT at cycle="):
+                continue
+            if line.strip().startswith("instruction=0x"):
+                continue
+            if line.strip() == "last 128 PCs:":
+                skip_pcs = True
+                continue
+            if skip_pcs:
+                if line.startswith("  ") or line.strip() == "":
+                    continue
+                skip_pcs = False
+            # Normalize: "Execution completed. Cycles: N, Iterations: M" → "Cycles: N"
+            m = re.match(r"Execution completed?\. Cycles:\s*(\d+)", line)
+            if m:
+                lines.append(f"Cycles: {m.group(1)}")
+                continue
+            lines.append(line)
+        return "\n".join(lines)
+
     def _assert_same(self, name: str, cpp_res: subprocess.CompletedProcess, vlt_res: subprocess.CompletedProcess):
         if cpp_res.returncode != vlt_res.returncode:
             raise AssertionError(
                 f"{name}: rc mismatch cpp={cpp_res.returncode} vlt={vlt_res.returncode}"
             )
-        if cpp_res.stdout != vlt_res.stdout:
+        cpp_out = self._strip_verilator_debug(cpp_res.stdout)
+        vlt_out = self._strip_verilator_debug(vlt_res.stdout)
+        if cpp_out != vlt_out:
             raise AssertionError(
-                f"{name}: stdout mismatch\ncpp={cpp_res.stdout[:200]!r}\nvlt={vlt_res.stdout[:200]!r}"
+                f"{name}: stdout mismatch\ncpp={cpp_out[:200]!r}\nvlt={vlt_out[:200]!r}"
             )
         if cpp_res.stderr != vlt_res.stderr:
             cpp_sys = re.search(r"(?:Unsupported|Unknown) syscall:\s*(\d+)", cpp_res.stderr)
