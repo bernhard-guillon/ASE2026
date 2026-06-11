@@ -123,7 +123,7 @@ class DifferentialValidator:
                 skip_pcs = True
                 continue
             if skip_pcs:
-                if line.startswith("  ") or line.strip() == "":
+                if line.startswith("  ") or line.strip().startswith("0x") or line.strip() == "":
                     continue
                 skip_pcs = False
             # Normalize: "Execution completed. Cycles: N, Iterations: M" → "Cycles: N"
