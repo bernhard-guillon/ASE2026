@@ -454,17 +454,9 @@ map_output_generator:
 
 .Ldraw_counter255_pixel:
     # t3 = argmax index; compute stride-320 offset
-    li a5, 20
-    divu a6, t3, a5                 # a6 = row (only if div available; fallback below)
-    remu a3, t3, a5                 # a3 = col
-    # Since rv32if may not have divu/remu, use shift-based approach
-    slli a5, t3, 0                  # identity (will be replaced)
-    # Actually, use the same row/col tracking approach:
-    # For a single pixel write, just compute offset from t3
-    # row = t3 / 20, col = t3 % 20; offset = row * 320 + col
-    # Use repeated subtraction for division by 20 (small value)
+    # Use repeated subtraction for division by 20 (rv32if has no divu/remu)
     li a6, 0                        # row counter
-    li a3, 20
+    li a3, 20                       # divisor
     mv a5, t3
 .Ldiv20_loop:
     blt a5, a3, .Ldiv20_done
@@ -857,6 +849,7 @@ void _start(void) {
             '-march=rv32if',
             '-mabi=ilp32f',
             '-nostdlib',
+            '-O1',
             '-Wl,-Ttext=0',
             '-Wl,--oformat=elf32-littleriscv',
             '-o', output_elf,

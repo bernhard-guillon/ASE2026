@@ -759,14 +759,13 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_command(
             OUTPUT ${CHAR_GEN_ELF}
-            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib -O1
                 -I${CHAR_GEN_MODEL_DIR}
                 -T ${SHARED_LINKER_SCRIPT}
                 -Wl,--oformat=elf32-littleriscv
                 -Wl,-e,_start
                 -o ${CHAR_GEN_ELF}
                 ${SHARED_RUNTIME_C}
-                -lgcc
             DEPENDS ${CHAR_GEN_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
             COMMENT "Compiling char_gen.elf"
             VERBATIM
@@ -807,14 +806,13 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_command(
             OUTPUT ${MOVEMENT_ELF}
-            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib -O1
                 -I${MOVEMENT_MODEL_DIR}
                 -T ${SHARED_LINKER_SCRIPT}
                 -Wl,--oformat=elf32-littleriscv
                 -Wl,-e,_start
                 -o ${MOVEMENT_ELF}
                 ${SHARED_RUNTIME_C}
-                -lgcc
             DEPENDS ${MOVEMENT_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
             COMMENT "Compiling movement.elf"
             VERBATIM
@@ -896,14 +894,13 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_command(
             OUTPUT ${COUNTER255_ELF}
-            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib -O1
                 -I${COUNTER255_MODEL_DIR}
                 -T ${SHARED_LINKER_SCRIPT}
                 -Wl,--oformat=elf32-littleriscv
                 -Wl,-e,_start
                 -o ${COUNTER255_ELF}
                 ${SHARED_RUNTIME_C}
-                -lgcc
             DEPENDS ${COUNTER255_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
             COMMENT "Compiling counter255.elf"
             VERBATIM
@@ -950,14 +947,13 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_command(
             OUTPUT ${COUNTER_CHARGEN_COMBINED_ELF}
-            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib -O1
                 -I${COUNTER_CHARGEN_COMBINED_MODEL_DIR}
                 -T ${SHARED_LINKER_SCRIPT}
                 -Wl,--oformat=elf32-littleriscv
                 -Wl,-e,_start
                 -o ${COUNTER_CHARGEN_COMBINED_ELF}
                 ${SHARED_RUNTIME_C}
-                -lgcc
             DEPENDS ${COUNTER_CHARGEN_COMBINED_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
             COMMENT "Compiling counter-chargen-combined.elf"
             VERBATIM
@@ -991,14 +987,13 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_command(
             OUTPUT ${SQUASH_ELF}
-            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib -O1
                 -I${SQUASH_MODEL_DIR}
                 -T ${SHARED_LINKER_SCRIPT}
                 -Wl,--oformat=elf32-littleriscv
                 -Wl,-e,_start
                 -o ${SQUASH_ELF}
                 ${SHARED_RUNTIME_C}
-                -lgcc
             DEPENDS ${SQUASH_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
             COMMENT "Compiling squash.elf"
             VERBATIM
@@ -1036,14 +1031,13 @@ if(RISCV_TOOLCHAIN_FOUND)
 
         add_custom_command(
             OUTPUT ${MEGA_COMBINED_ELF}
-            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib
+            COMMAND ${RISCV_GCC} -march=rv32if -mabi=ilp32f -nostdlib -O1
                 -I${MEGA_COMBINED_MODEL_DIR}
                 -T ${SHARED_LINKER_SCRIPT}
                 -Wl,--oformat=elf32-littleriscv
                 -Wl,-e,_start
                 -o ${MEGA_COMBINED_ELF}
                 ${SHARED_RUNTIME_C}
-                -lgcc
             DEPENDS ${MEGA_COMBINED_H} ${SHARED_RUNTIME_C} ${SHARED_LINKER_SCRIPT}
             COMMENT "Compiling mega-combined.elf"
             VERBATIM

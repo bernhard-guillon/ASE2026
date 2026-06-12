@@ -266,13 +266,13 @@ fn run() -> Result<(), String> {
             out.push_str("    if (model_key < MODEL_INPUT_SIZE) buf[model_key] = 1.0f; \\\n");
             out.push_str("} while(0)\n\n");
             out.push_str("#define MODEL_MAP_OUTPUT(buf, fb) do { \\\n");
+            out.push_str("    uint32_t _row = 0; uint32_t _col = 0; \\\n");
             out.push_str("    for (uint32_t _i = 0; _i < MODEL_OUTPUT_SIZE; _i++) { \\\n");
             out.push_str("        float _v = (buf)[_i]; \\\n");
             out.push_str("        if (_v < 0.0f) _v = 0.0f; \\\n");
             out.push_str("        if (_v > 255.0f) _v = 255.0f; \\\n");
-            out.push_str("        uint32_t _row = _i / 20; \\\n");
-            out.push_str("        uint32_t _col = _i % 20; \\\n");
             out.push_str("        fb[_row * 320 + _col] = (uint8_t)_v; \\\n");
+            out.push_str("        _col++; if (_col >= 20) { _col = 0; _row++; } \\\n");
             out.push_str("    } \\\n");
             out.push_str("} while(0)\n\n");
         }
@@ -298,14 +298,14 @@ fn run() -> Result<(), String> {
             out.push_str("    volatile uint32_t *_debug = (volatile uint32_t *)0x00153FE0; \\\n");
             out.push_str("    *_debug = model_counter; \\\n");
             out.push_str("    if (_counter255_prev_fb < 400) { \\\n");
-            out.push_str("        uint32_t _py = _counter255_prev_fb / 20; \\\n");
-            out.push_str("        uint32_t _px = _counter255_prev_fb % 20; \\\n");
-            out.push_str("        fb[_py * 320 + _px] = 0; \\\n");
+            out.push_str("        uint32_t _pv = _counter255_prev_fb; uint32_t _py = 0; \\\n");
+            out.push_str("        while (_pv >= 20) { _pv -= 20; _py++; } \\\n");
+            out.push_str("        fb[_py * 320 + _pv] = 0; \\\n");
             out.push_str("    } \\\n");
             out.push_str("    if (model_counter < 400) { \\\n");
-            out.push_str("        uint32_t _cy = model_counter / 20; \\\n");
-            out.push_str("        uint32_t _cx = model_counter % 20; \\\n");
-            out.push_str("        fb[_cy * 320 + _cx] = 255; \\\n");
+            out.push_str("        uint32_t _cv = model_counter; uint32_t _cy = 0; \\\n");
+            out.push_str("        while (_cv >= 20) { _cv -= 20; _cy++; } \\\n");
+            out.push_str("        fb[_cy * 320 + _cv] = 255; \\\n");
             out.push_str("        _counter255_prev_fb = model_counter; \\\n");
             out.push_str("    } \\\n");
             out.push_str("} while(0)\n\n");
@@ -332,13 +332,13 @@ fn run() -> Result<(), String> {
             out.push_str("#define CB_FB_SIZE 400\n");
             out.push_str("#define CB_CNT_SIZE 255\n\n");
             out.push_str("#define MODEL_MAP_OUTPUT(buf, fb) do { \\\n");
+            out.push_str("    uint32_t _row = 0; uint32_t _col = 0; \\\n");
             out.push_str("    for (uint32_t _i = 0; _i < CB_FB_SIZE; _i++) { \\\n");
             out.push_str("        float _v = (buf)[_i]; \\\n");
             out.push_str("        if (_v < 0.0f) _v = 0.0f; \\\n");
             out.push_str("        if (_v > 1.0f) _v = 1.0f; \\\n");
-            out.push_str("        uint32_t _row = _i / 20; \\\n");
-            out.push_str("        uint32_t _col = _i % 20; \\\n");
             out.push_str("        fb[_row * 320 + _col] = (uint8_t)(_v * 255.0f); \\\n");
+            out.push_str("        _col++; if (_col >= 20) { _col = 0; _row++; } \\\n");
             out.push_str("    } \\\n");
             out.push_str("    uint32_t _mi = 0; \\\n");
             out.push_str("    float _mv = (buf)[CB_FB_SIZE]; \\\n");
@@ -431,14 +431,14 @@ fn run() -> Result<(), String> {
             out.push_str("        if (buf[_i] > _mv) { _mv = buf[_i]; _mi = _i; } \\\n");
             out.push_str("    } \\\n");
             out.push_str("    if (_mi < MODEL_BOARD_CELLS) model_state = _mi; \\\n");
+            out.push_str("    uint32_t _r = 0; uint32_t _c = 0; \\\n");
             out.push_str("    for (uint32_t _i = 0; _i < MODEL_BOARD_CELLS; _i++) { \\\n");
-            out.push_str("        uint32_t _row = _i / 20; \\\n");
-            out.push_str("        uint32_t _col = _i % 20; \\\n");
-            out.push_str("        fb[_row * 320 + _col] = 0; \\\n");
+            out.push_str("        fb[_r * 320 + _c] = 0; \\\n");
+            out.push_str("        _c++; if (_c >= 20) { _c = 0; _r++; } \\\n");
             out.push_str("    } \\\n");
-            out.push_str("    uint32_t _sr = model_state / 20; \\\n");
-            out.push_str("    uint32_t _sc = model_state % 20; \\\n");
-            out.push_str("    fb[_sr * 320 + _sc] = 255; \\\n");
+            out.push_str("    uint32_t _sv = model_state; uint32_t _sr = 0; \\\n");
+            out.push_str("    while (_sv >= 20) { _sv -= 20; _sr++; } \\\n");
+            out.push_str("    fb[_sr * 320 + _sv] = 255; \\\n");
             out.push_str("} while(0)\n\n");
         }
         "mega_combined" => {
