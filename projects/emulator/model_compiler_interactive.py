@@ -56,45 +56,60 @@ inference_loop:
 """
     
     def _generate_framebuffer_output(self) -> str:
-        """Generate output mapping that writes directly to framebuffer at 0x20000."""
+        """Generate output mapping that writes directly to framebuffer at 0x20000 with stride-320 layout."""
         return """
-# Output mapping: Network output -> Framebuffer pixels (direct)
-# Writes 400 bytes to framebuffer at 0x20000 (matching static_char_gen.c)
+# Output mapping: Network output -> Framebuffer pixels (stride-320 layout)
+# Writes 400 bytes to framebuffer at 0x20000 using row*320+col addressing
 map_output_framebuffer:
     # Read from output buffer at 0x00153000
     lui t0, 0x153
     addi t0, t0, 0
     lui t1, 0x20            # Framebuffer at 0x20000
     
-    li t2, 0                # t2 = pixel index
+    li t2, 0                # t2 = pixel index (0..399)
     li t3, 400              # t3 = num pixels (20x20)
+    li t4, 0                # t4 = col (0..19)
+    li t5, 0                # t5 = row (0..19)
 
 .Lwrite_pixels_fb:
     bge t2, t3, .Lwrite_done_fb
     
     # Load float output[i]
-    slli t4, t2, 2          # t4 = i * 4
-    add t4, t0, t4          # t4 = output_buf + i*4
-    flw fa0, 0(t4)          # fa0 = output[i]
+    slli t6, t2, 2          # t6 = i * 4
+    add t6, t0, t6          # t6 = output_buf + i*4
+    flw fa0, 0(t6)          # fa0 = output[i]
     
     # Clamp to [0.0, 1.0]
     fmv.w.x fa1, zero
     fmax.s fa0, fa0, fa1    # fa0 = max(fa0, 0.0)
-    lui t5, 0x3F800         # 1.0 in float
-    fmv.w.x fa1, t5
+    lui t6, 0x3F800         # 1.0 in float
+    fmv.w.x fa1, t6
     fmin.s fa0, fa0, fa1    # fa0 = min(fa0, 1.0)
     
     # Convert to byte: multiply by 255.0
-    lui t5, 0x43800         # 255.0 in float
-    fmv.w.x fa1, t5
+    lui t6, 0x43800         # 255.0 in float
+    fmv.w.x fa1, t6
     fmul.s fa0, fa0, fa1    # fa0 = fa0 * 255.0
     
     # Convert to unsigned int
-    fcvt.wu.s t5, fa0       # t5 = (uint)fa0
+    fcvt.wu.s t6, fa0       # t6 = (uint)fa0
     
-    # Store byte to framebuffer[i]
-    add t4, t1, t2          # t4 = framebuf + i
-    sb t5, 0(t4)
+    # Compute framebuffer offset: row * 320 + col
+    # row * 320 = (row << 8) + (row << 6) = row*256 + row*64
+    slli a5, t5, 8          # a5 = row * 256
+    slli a6, t5, 6          # a6 = row * 64
+    add a5, a5, a6          # a5 = row * 320
+    add a5, a5, t4          # a5 = row * 320 + col
+    add a5, t1, a5          # a5 = framebuf + offset
+    sb t6, 0(a5)            # Store byte to framebuffer
+    
+    # Advance col; wrap to next row if col reaches 20
+    addi t4, t4, 1
+    li a5, 20
+    bne t4, a5, .Lno_row_inc
+    li t4, 0                # col = 0
+    addi t5, t5, 1          # row++
+.Lno_row_inc:
     
     addi t2, t2, 1
     j .Lwrite_pixels_fb

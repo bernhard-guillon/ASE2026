@@ -118,14 +118,16 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool debug
         }
         
         if (debug_output && key_pressed) {
-            // Read framebuffer to find current position
+            // Read framebuffer to find current position (stride-320 layout)
             uint32_t max_brightness = 0;
             uint32_t current_state = 0;
-            for (uint32_t i = 0; i < 400; ++i) {
-                uint8_t pixel = emulator.getMemory().read8(0x20000 + i);
-                if (pixel > max_brightness) {
-                    max_brightness = pixel;
-                    current_state = i;
+            for (uint32_t y = 0; y < FRAMEBUFFER_HEIGHT; ++y) {
+                for (uint32_t x = 0; x < FRAMEBUFFER_WIDTH; ++x) {
+                    uint8_t pixel = emulator.getMemory().read8(FRAMEBUFFER_ADDR + y * FRAMEBUFFER_STRIDE + x);
+                    if (pixel > max_brightness) {
+                        max_brightness = pixel;
+                        current_state = y * FRAMEBUFFER_WIDTH + x;
+                    }
                 }
             }
             if (max_brightness > 0) {
@@ -198,13 +200,15 @@ void process_movement_input(Emulator& emulator) {
                 }
             }
             
-            // Read framebuffer to find current position
+            // Read framebuffer to find current position (stride-320 layout)
             uint32_t max_brightness = 0;
-            for (uint32_t i = 0; i < 400; ++i) {
-                uint8_t pixel = emulator.getMemory().read8(0x20000 + i);
-                if (pixel > max_brightness) {
-                    max_brightness = pixel;
-                    current_state = i;
+            for (uint32_t y = 0; y < FRAMEBUFFER_HEIGHT; ++y) {
+                for (uint32_t x = 0; x < FRAMEBUFFER_WIDTH; ++x) {
+                    uint8_t pixel = emulator.getMemory().read8(FRAMEBUFFER_ADDR + y * FRAMEBUFFER_STRIDE + x);
+                    if (pixel > max_brightness) {
+                        max_brightness = pixel;
+                        current_state = y * FRAMEBUFFER_WIDTH + x;
+                    }
                 }
             }
             
