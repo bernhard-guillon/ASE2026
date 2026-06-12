@@ -1149,6 +1149,7 @@ int main(int argc, char** argv) {
     bool trace_enabled = false;
     uint32_t char_code = 0;
     uint32_t max_cycles = 10000000;  // 10M cycles (~17 iterations)
+    uint32_t num_iterations = 0;     // If >0, run N done-flag iterations instead of cycles
     uint32_t gui_cycles = 600000;   // 600K cycles per frame (enough for 1 iteration)
     uint32_t gui_max_cycles = 5000000;
 
@@ -1192,6 +1193,8 @@ int main(int argc, char** argv) {
             char_code = static_cast<uint32_t>(parsed);
         } else if (strcmp(argv[i], "--cycles") == 0 && i + 1 < argc) {
             max_cycles = std::strtoul(argv[++i], nullptr, 0);
+        } else if (strcmp(argv[i], "--iterations") == 0 && i + 1 < argc) {
+            num_iterations = std::strtoul(argv[++i], nullptr, 0);
         } else if (strcmp(argv[i], "--gui-cycles") == 0 && i + 1 < argc) {
             gui_cycles = std::strtoul(argv[++i], nullptr, 0);
         } else if (strcmp(argv[i], "--gui-max-cycles") == 0 && i + 1 < argc) {
@@ -1287,6 +1290,12 @@ int main(int argc, char** argv) {
         // Attempt to match emulator_runner GUI frame cadence by waiting
         // for the done flag, but cap cycles to avoid hanging if it never sets.
         process_gui_input(runner, binary_file, char_code, gui_cycles, gui_max_cycles, gui_debug, gui_auto_down);
+    } else if (num_iterations > 0) {
+        // Iteration mode: run N done-flag iterations
+        for (uint32_t iter = 0; iter < num_iterations && !runner.isHalted(); ++iter) {
+            runner.writeMem(0x154000, 0);
+            runner.runUntilDone(max_cycles, 0x154000, false, 0);
+        }
     } else {
         // hold_char=false: key is read from memory-mapped reg 0x154004, not forced a0
         runner.run(max_cycles, false, 0);

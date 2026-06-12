@@ -245,6 +245,7 @@ int main(int argc, char** argv) {
     bool char_specified = false;
     uint32_t char_code = 0;
     uint32_t max_cycles = 1000000;  // Default 1M cycles
+    uint32_t num_iterations = 0;    // If >0, run N done-flag iterations instead of cycles
     uint32_t gui_cycles = 50000;    // Default 50K cycles per frame for GUI
     const char* binary_file = argv[1];
     
@@ -315,6 +316,17 @@ int main(int argc, char** argv) {
                 ++i;  // Skip next argument
             } else {
                 std::cerr << "Error: --cycles requires a number" << std::endl;
+                return 1;
+            }
+        } else if (std::strcmp(argv[i], "--iterations") == 0) {
+            if (i + 1 < argc) {
+                num_iterations = std::atoi(argv[i + 1]);
+                if (verbose) {
+                    std::cout << "Iterations set to: " << num_iterations << std::endl;
+                }
+                ++i;
+            } else {
+                std::cerr << "Error: --iterations requires a number" << std::endl;
                 return 1;
             }
         } else if (std::strcmp(argv[i], "--gui-cycles") == 0) {
@@ -461,6 +473,31 @@ int main(int argc, char** argv) {
         } else if (gui_mode) {
             // Interactive GUI mode
             process_gui_input(emulator, gui_cycles, gui_debug, gui_auto_down);
+        } else if (num_iterations > 0) {
+            // Iteration mode: run N done-flag iterations
+            uint32_t total_cycles = 0;
+            for (uint32_t iter = 0; iter < num_iterations && !emulator.isHalted(); ++iter) {
+                emulator.getMemory().write32(0x154000, 0);
+                uint32_t iter_cycles = 0;
+                for (; iter_cycles < max_cycles; ++iter_cycles) {
+                    try {
+                        emulator.step();
+                        if (emulator.isHalted()) break;
+                        if (emulator.getMemory().read32(0x154000) == 1) break;
+                    } catch (const std::exception& e) { break; }
+                }
+                total_cycles += iter_cycles;
+            }
+            if (verbose) {
+                std::cout << "----------------------------------------" << std::endl;
+                if (emulator.isHalted()) {
+                    std::cout << "Program exited normally" << std::endl;
+                } else {
+                    std::cout << "Completed " << num_iterations << " iterations" << std::endl;
+                }
+                std::cout << "Cycles: " << total_cycles << std::endl;
+                std::cout << "Final PC: 0x" << std::hex << emulator.getCPU().getPC() << std::endl;
+            }
         } else {
             // Standard single-execution mode
             uint32_t executed_cycles = 0;
