@@ -118,14 +118,16 @@ void process_gui_input(Emulator& emulator, uint32_t cycles_per_frame, bool debug
         }
         
         if (debug_output && key_pressed) {
-            // Read framebuffer to find current position
+            // Read framebuffer to find current position (stride-320 layout)
             uint32_t max_brightness = 0;
             uint32_t current_state = 0;
-            for (uint32_t i = 0; i < 400; ++i) {
-                uint8_t pixel = emulator.getMemory().read8(0x20000 + i);
-                if (pixel > max_brightness) {
-                    max_brightness = pixel;
-                    current_state = i;
+            for (uint32_t y = 0; y < FRAMEBUFFER_HEIGHT; ++y) {
+                for (uint32_t x = 0; x < FRAMEBUFFER_WIDTH; ++x) {
+                    uint8_t pixel = emulator.getMemory().read8(FRAMEBUFFER_ADDR + y * FRAMEBUFFER_STRIDE + x);
+                    if (pixel > max_brightness) {
+                        max_brightness = pixel;
+                        current_state = y * FRAMEBUFFER_WIDTH + x;
+                    }
                 }
             }
             if (max_brightness > 0) {
@@ -198,13 +200,15 @@ void process_movement_input(Emulator& emulator) {
                 }
             }
             
-            // Read framebuffer to find current position
+            // Read framebuffer to find current position (stride-320 layout)
             uint32_t max_brightness = 0;
-            for (uint32_t i = 0; i < 400; ++i) {
-                uint8_t pixel = emulator.getMemory().read8(0x20000 + i);
-                if (pixel > max_brightness) {
-                    max_brightness = pixel;
-                    current_state = i;
+            for (uint32_t y = 0; y < FRAMEBUFFER_HEIGHT; ++y) {
+                for (uint32_t x = 0; x < FRAMEBUFFER_WIDTH; ++x) {
+                    uint8_t pixel = emulator.getMemory().read8(FRAMEBUFFER_ADDR + y * FRAMEBUFFER_STRIDE + x);
+                    if (pixel > max_brightness) {
+                        max_brightness = pixel;
+                        current_state = y * FRAMEBUFFER_WIDTH + x;
+                    }
                 }
             }
             
@@ -241,6 +245,7 @@ int main(int argc, char** argv) {
     bool char_specified = false;
     uint32_t char_code = 0;
     uint32_t max_cycles = 1000000;  // Default 1M cycles
+    uint32_t num_iterations = 0;    // If >0, run N done-flag iterations instead of cycles
     uint32_t gui_cycles = 50000;    // Default 50K cycles per frame for GUI
     const char* binary_file = argv[1];
     
@@ -311,6 +316,17 @@ int main(int argc, char** argv) {
                 ++i;  // Skip next argument
             } else {
                 std::cerr << "Error: --cycles requires a number" << std::endl;
+                return 1;
+            }
+        } else if (std::strcmp(argv[i], "--iterations") == 0) {
+            if (i + 1 < argc) {
+                num_iterations = std::atoi(argv[i + 1]);
+                if (verbose) {
+                    std::cout << "Iterations set to: " << num_iterations << std::endl;
+                }
+                ++i;
+            } else {
+                std::cerr << "Error: --iterations requires a number" << std::endl;
                 return 1;
             }
         } else if (std::strcmp(argv[i], "--gui-cycles") == 0) {
@@ -457,6 +473,31 @@ int main(int argc, char** argv) {
         } else if (gui_mode) {
             // Interactive GUI mode
             process_gui_input(emulator, gui_cycles, gui_debug, gui_auto_down);
+        } else if (num_iterations > 0) {
+            // Iteration mode: run N done-flag iterations
+            uint32_t total_cycles = 0;
+            for (uint32_t iter = 0; iter < num_iterations && !emulator.isHalted(); ++iter) {
+                emulator.getMemory().write32(0x154000, 0);
+                uint32_t iter_cycles = 0;
+                for (; iter_cycles < max_cycles; ++iter_cycles) {
+                    try {
+                        emulator.step();
+                        if (emulator.isHalted()) break;
+                        if (emulator.getMemory().read32(0x154000) == 1) break;
+                    } catch (const std::exception& e) { break; }
+                }
+                total_cycles += iter_cycles;
+            }
+            if (verbose) {
+                std::cout << "----------------------------------------" << std::endl;
+                if (emulator.isHalted()) {
+                    std::cout << "Program exited normally" << std::endl;
+                } else {
+                    std::cout << "Completed " << num_iterations << " iterations" << std::endl;
+                }
+                std::cout << "Cycles: " << total_cycles << std::endl;
+                std::cout << "Final PC: 0x" << std::hex << emulator.getCPU().getPC() << std::endl;
+            }
         } else {
             // Standard single-execution mode
             uint32_t executed_cycles = 0;
@@ -480,10 +521,12 @@ int main(int argc, char** argv) {
             std::ios::fmtflags old_flags = std::cout.flags();
             char old_fill = std::cout.fill();
             std::cout << "FRAMEBUFFER_HEX:";
-            for (uint32_t i = 0; i < 400; ++i) {
-                uint8_t v = emulator.getMemory().read8(0x20000 + i);
-                std::cout << std::hex << std::setw(2) << std::setfill('0')
-                          << static_cast<unsigned>(v);
+            for (uint32_t y = 0; y < FRAMEBUFFER_HEIGHT; ++y) {
+                for (uint32_t x = 0; x < FRAMEBUFFER_WIDTH; ++x) {
+                    uint8_t v = emulator.getMemory().read8(FRAMEBUFFER_ADDR + y * FRAMEBUFFER_STRIDE + x);
+                    std::cout << std::hex << std::setw(2) << std::setfill('0')
+                              << static_cast<unsigned>(v);
+                }
             }
             std::cout.flags(old_flags);
             std::cout.fill(old_fill);

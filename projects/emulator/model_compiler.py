@@ -1109,13 +1109,25 @@ map_output_chained:
     li t0, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
     li t1, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
 
-    # Clear framebuffer (400 bytes)
+    # Clear framebuffer (400 bytes, stride-320 layout)
     li t2, 0
     li t3, 400
+    li t4, 0                        # col
+    li t5, 0                        # row
 .Lclear_fb_chained:
     bge t2, t3, .Largmax_x_init
-    add t4, t0, t2
-    sb zero, 0(t4)
+    slli a5, t5, 8                  # a5 = row * 256
+    slli a6, t5, 6                  # a6 = row * 64
+    add a5, a5, a6                  # a5 = row * 320
+    add a5, a5, t4                  # a5 = row * 320 + col
+    add a5, t0, a5
+    sb zero, 0(a5)
+    addi t4, t4, 1
+    li a5, 20
+    bne t4, a5, .Lclear_no_row_inc_ch
+    li t4, 0
+    addi t5, t5, 1
+.Lclear_no_row_inc_ch:
     addi t2, t2, 1
     j .Lclear_fb_chained
 
@@ -1159,10 +1171,10 @@ map_output_chained:
 
 .Ldraw_ball_chained:
     addi t4, t4, -20                # y in 0..19
-    slli a1, t4, 4                  # y * 16
-    slli a2, t4, 2                  # y * 4
-    add a1, a1, a2                  # y * 20
-    add a1, a1, t3                  # y*20 + x
+    slli a1, t4, 8                  # y * 256
+    slli a2, t4, 6                  # y * 64
+    add a1, a1, a2                  # y * 320
+    add a1, a1, t3                  # y*320 + x
     add a1, t0, a1
     li a2, 255
     sb a2, 0(a1)
@@ -1189,7 +1201,7 @@ map_output_chained:
 .Ldraw_counter_bar:
     addi t5, t5, -46                # count 0..9
     addi t5, t5, 1                  # show at least one pixel for visibility
-    li a0, 380                      # row 19 base index
+    li a0, 6080                     # row 19 base index (19 * 320)
     add a0, t0, a0
     li t2, 0
 .Ldraw_counter_loop:
@@ -1210,7 +1222,7 @@ map_output_chained:
     fmv.w.x fa4, a2
     flt.s a3, fa4, fa0              # stop > 0.5 ?
     beq a3, zero, .Loutput_done_chained
-    li a4, 399
+    li a4, 6099                     # bottom-right corner (19*320 + 19)
     add a4, t0, a4
     li a5, 255
     sb a5, 0(a4)
@@ -1253,19 +1265,45 @@ map_output_generator:
     li t2, 0x{debug_word:08X}
     sw t3, 0(t2)
 
-    # Visual marker: clear framebuffer and set one pixel at index=max_idx
+    # Visual marker: clear framebuffer and set one pixel at index=max_idx (stride-320)
     li t4, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
     li t5, 0
     li t6, 400
+    li a3, 0                        # col
+    li a4, 0                        # row
 .Lclear_fb_counter255:
     bge t5, t6, .Ldraw_counter255_pixel
-    add a1, t4, t5
+    slli a5, a4, 8
+    slli a6, a4, 6
+    add a5, a5, a6
+    add a5, a5, a3
+    add a1, t4, a5
     sb zero, 0(a1)
+    addi a3, a3, 1
+    li a5, 20
+    bne a3, a5, .Lclear_no_row_inc_c255
+    li a3, 0
+    addi a4, a4, 1
+.Lclear_no_row_inc_c255:
     addi t5, t5, 1
     j .Lclear_fb_counter255
 
 .Ldraw_counter255_pixel:
-    add a1, t4, t3
+    # t3 = argmax index; compute row/col for stride-320
+    li a6, 0
+    li a3, 20
+    mv a5, t3
+.Ldiv20_loop_c255:
+    blt a5, a3, .Ldiv20_done_c255
+    sub a5, a5, a3
+    addi a6, a6, 1
+    j .Ldiv20_loop_c255
+.Ldiv20_done_c255:
+    slli a1, a6, 8
+    slli a2, a6, 6
+    add a1, a1, a2
+    add a1, a1, a5
+    add a1, t4, a1
     li a2, 255
     sb a2, 0(a1)
     ret
@@ -1273,18 +1311,30 @@ map_output_generator:
 """
             if input_mapping == "movement_packed_a0":
                 return f"""
-# Output mapping: movement argmax -> single active framebuffer cell
+# Output mapping: movement argmax -> single active framebuffer cell (stride-320)
 map_output_generator:
     li t0, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
     li t1, 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
 
-    # Clear framebuffer
+    # Clear framebuffer (stride-320)
     li t2, 0
     li t3, {output_size}
+    li a3, 0                        # col
+    li a4, 0                        # row
 .Lclear_fb_movement:
     bge t2, t3, .Largmax_start_movement
-    add t5, t0, t2
-    sb zero, 0(t5)
+    slli a5, a4, 8
+    slli a6, a4, 6
+    add a5, a5, a6
+    add a5, a5, a3
+    add a5, t0, a5
+    sb zero, 0(a5)
+    addi a3, a3, 1
+    li a5, 20
+    bne a3, a5, .Lclear_no_row_inc_mv
+    li a3, 0
+    addi a4, a4, 1
+.Lclear_no_row_inc_mv:
     addi t2, t2, 1
     j .Lclear_fb_movement
 
@@ -1316,9 +1366,23 @@ map_output_generator:
     j .Largmax_loop_movement
 
 .Largmax_done_movement:
-    add t5, t0, t4
-    li t6, 255
-    sb t6, 0(t5)
+    # t4 = argmax index; compute stride-320 offset
+    li a6, 0
+    li a3, 20
+    mv a5, t4
+.Ldiv20_loop_mv:
+    blt a5, a3, .Ldiv20_done_mv
+    sub a5, a5, a3
+    addi a6, a6, 1
+    j .Ldiv20_loop_mv
+.Ldiv20_done_mv:
+    slli a1, a6, 8
+    slli a2, a6, 6
+    add a1, a1, a2
+    add a1, a1, a5
+    add a1, t0, a1
+    li a2, 255
+    sb a2, 0(a1)
     ret
 
 """
@@ -1336,10 +1400,10 @@ map_output_generator:
     ret
 
 """
-            # For generator: convert 400 floats to pixels and write to framebuffer
+            # For generator: convert 400 floats to pixels and write to framebuffer with stride-320
             return f"""
-# Output mapping: Network output -> Framebuffer pixels
-# For generator: convert 400 floats to grayscale pixels
+# Output mapping: Network output -> Framebuffer pixels (stride-320 layout)
+# For generator: convert {output_size} floats to grayscale pixels
 map_output_generator:
     # Read from output buffer at 0x{self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]:08X}
     # Write to framebuffer at 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
@@ -1348,35 +1412,49 @@ map_output_generator:
     addi t0, t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]) & 0xFFF}
     lui t1, {self.MEMORY_LAYOUT["framebuffer_base"] >> 12}
 
-    li t2, 0                        # t2 = pixel index
+    li t2, 0                        # t2 = pixel index (0..{output_size-1})
     li t3, {output_size}            # t3 = num pixels (400)
+    li t4, 0                        # t4 = col (0..19)
+    li t5, 0                        # t5 = row (0..19)
 
 .Lwrite_pixels:
     bge t2, t3, .Lwrite_done
 
     # Load float output[i]
-    slli t4, t2, 2                  # t4 = i * 4
-    add t4, t0, t4                  # t4 = output_buf + i*4
-    flw fa0, 0(t4)                  # fa0 = output[i]
+    slli t6, t2, 2                  # t6 = i * 4
+    add t6, t0, t6                  # t6 = output_buf + i*4
+    flw fa0, 0(t6)                  # fa0 = output[i]
 
     # Clamp to [0.0, 1.0]
     fmv.w.x fa1, zero
     fmax.s fa0, fa0, fa1            # fa0 = max(fa0, 0.0)
-    lui t5, 0x3F800                 # 1.0 in float
-    fmv.w.x fa1, t5
+    lui t6, 0x3F800                 # 1.0 in float
+    fmv.w.x fa1, t6
     fmin.s fa0, fa0, fa1            # fa0 = min(fa0, 1.0)
 
     # Convert to byte: multiply by 255.0
-    lui t5, 0x43800                 # 255.0 in float
-    fmv.w.x fa1, t5
+    lui t6, 0x43800                 # 255.0 in float
+    fmv.w.x fa1, t6
     fmul.s fa0, fa0, fa1            # fa0 = fa0 * 255.0
 
     # Convert to unsigned int
-    fcvt.wu.s t5, fa0               # t5 = (uint)fa0
+    fcvt.wu.s t6, fa0               # t6 = (uint)fa0
 
-    # Store byte to framebuffer[i]
-    add t4, t1, t2                  # t4 = framebuf + i
-    sb t5, 0(t4)
+    # Compute framebuffer offset: row * 320 + col
+    slli a5, t5, 8                  # a5 = row * 256
+    slli a6, t5, 6                  # a6 = row * 64
+    add a5, a5, a6                  # a5 = row * 320
+    add a5, a5, t4                  # a5 = row * 320 + col
+    add a5, t1, a5                  # a5 = framebuf + offset
+    sb t6, 0(a5)                    # Store byte to framebuffer
+
+    # Advance col; wrap to next row if col reaches 20
+    addi t4, t4, 1
+    li a5, 20
+    bne t4, a5, .Lno_row_inc
+    li t4, 0
+    addi t5, t5, 1
+.Lno_row_inc:
 
     addi t2, t2, 1
     j .Lwrite_pixels

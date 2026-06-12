@@ -2,7 +2,7 @@
 // Synthesizable design for simulation with Verilator
 
 module emulator_top #(
-    parameter MEM_SIZE = 32'h200000,  // 2MB default for simulation
+    parameter MEM_SIZE = 32'hC00000,  // 12MB default for simulation
     parameter FRAMEBUFFER_ADDR = 32'h20000,
     parameter FRAMEBUFFER_SIZE = 400    // 20x20 pixels
 )(

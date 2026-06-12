@@ -429,25 +429,53 @@ map_output_generator:
     li t2, 0x{debug_word:08X}
     sw t3, 0(t2)
 
-    # Visual marker: clear and set one pixel
+    # Visual marker: clear and set one pixel (stride-320 layout)
     li t4, 0x{self.MEMORY_LAYOUT["framebuffer_base"]:08X}
     li t5, 0
     li t6, 400
+    li a3, 0                        # col
+    li a4, 0                        # row
 .Lclear_fb_counter255:
     bge t5, t6, .Ldraw_counter255_pixel
-    add a1, t4, t5
+    slli a5, a4, 8                  # a5 = row * 256
+    slli a6, a4, 6                  # a6 = row * 64
+    add a5, a5, a6                  # a5 = row * 320
+    add a5, a5, a3                  # a5 = row * 320 + col
+    add a1, t4, a5
     sb zero, 0(a1)
+    addi a3, a3, 1
+    li a5, 20
+    bne a3, a5, .Lclear_no_row_inc_c255
+    li a3, 0
+    addi a4, a4, 1
+.Lclear_no_row_inc_c255:
     addi t5, t5, 1
     j .Lclear_fb_counter255
 
 .Ldraw_counter255_pixel:
-    add a1, t4, t3
+    # t3 = argmax index; compute stride-320 offset
+    # Use repeated subtraction for division by 20 (rv32if has no divu/remu)
+    li a6, 0                        # row counter
+    li a3, 20                       # divisor
+    mv a5, t3
+.Ldiv20_loop:
+    blt a5, a3, .Ldiv20_done
+    sub a5, a5, a3
+    addi a6, a6, 1
+    j .Ldiv20_loop
+.Ldiv20_done:
+    # a6 = row, a5 = col
+    slli a1, a6, 8                  # a1 = row * 256
+    slli a2, a6, 6                  # a2 = row * 64
+    add a1, a1, a2                  # a1 = row * 320
+    add a1, a1, a5                  # a1 = row * 320 + col
+    add a1, t4, a1
     li a2, 255
     sb a2, 0(a1)
     ret
 """
-            # Default: convert floats to pixels
-            return f"""# Output mapping: Network output -> Framebuffer pixels
+            # Default: convert floats to pixels with stride-320 layout
+            return f"""# Output mapping: Network output -> Framebuffer pixels (stride-320 layout)
 map_output_generator:
     lui t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]) >> 12}
     addi t0, t0, {(self.MEMORY_LAYOUT["buffer_base"] + self.BUFFER_OFFSETS["output"]) & 0xFFF}
@@ -455,23 +483,37 @@ map_output_generator:
 
     li t2, 0
     li t3, {output_size}
+    li t4, 0                        # col
+    li t5, 0                        # row
 
 .Lwrite_pixels:
     bge t2, t3, .Lwrite_done
-    slli t4, t2, 2
-    add t4, t0, t4
-    flw fa0, 0(t4)
+    slli t6, t2, 2
+    add t6, t0, t6
+    flw fa0, 0(t6)
     fmv.w.x fa1, zero
     fmax.s fa0, fa0, fa1
-    lui t5, 0x3F800
-    fmv.w.x fa1, t5
+    lui t6, 0x3F800
+    fmv.w.x fa1, t6
     fmin.s fa0, fa0, fa1
-    lui t5, 0x43800
-    fmv.w.x fa1, t5
+    lui t6, 0x43800
+    fmv.w.x fa1, t6
     fmul.s fa0, fa0, fa1
-    fcvt.wu.s t5, fa0
-    add t4, t1, t2
-    sb t5, 0(t4)
+    fcvt.wu.s t6, fa0
+    # Compute offset: row * 320 + col
+    slli a5, t5, 8
+    slli a6, t5, 6
+    add a5, a5, a6
+    add a5, a5, t4
+    add a5, t1, a5
+    sb t6, 0(a5)
+    # Advance col/row
+    addi t4, t4, 1
+    li a5, 20
+    bne t4, a5, .Lno_row_inc_c2c
+    li t4, 0
+    addi t5, t5, 1
+.Lno_row_inc_c2c:
     addi t2, t2, 1
     j .Lwrite_pixels
 
@@ -807,6 +849,7 @@ void _start(void) {
             '-march=rv32if',
             '-mabi=ilp32f',
             '-nostdlib',
+            '-O1',
             '-Wl,-Ttext=0',
             '-Wl,--oformat=elf32-littleriscv',
             '-o', output_elf,

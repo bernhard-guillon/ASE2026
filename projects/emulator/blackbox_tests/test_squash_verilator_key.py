@@ -55,6 +55,20 @@ def _run(runner: Path, char_code: int, cycles: int) -> int:
     pytest.fail(f"Debug word not found.\nstdout:\n{res.stdout}\nstderr:\n{res.stderr}")
 
 
+def _run_iterations(runner: Path, char_code: int, iterations: int) -> int:
+    cmd = [str(runner), str(BUILD_DIR / "squash.elf"),
+           "--char-code", str(char_code),
+           "--iterations", str(iterations),
+           "--dump-memory", DEBUG_WORD_ADDR, "1"]
+    res = subprocess.run(cmd, cwd=EMULATOR_DIR, capture_output=True,
+                         text=True, timeout=300)
+    for line in res.stdout.splitlines():
+        m = MEM_LINE_RE.search(line)
+        if m:
+            return int(m.group(1), 16)
+    pytest.fail(f"Debug word not found.\nstdout:\n{res.stdout}\nstderr:\n{res.stderr}")
+
+
 def _decode_debug(val: int) -> dict:
     ball_vy = val & 1
     ball_vx = (val >> 1) & 1
@@ -69,9 +83,9 @@ def _decode_debug(val: int) -> dict:
                 game_state=game_state, ball_vx=ball_vx, ball_vy=ball_vy)
 
 
-def _compare_emu_vlt(char_code: int, cycles_emu: int, cycles_vlt: int) -> None:
-    emu_val = _run(BUILD_DIR / "emulator_runner", char_code, cycles_emu)
-    vlt_val = _run(BUILD_DIR / "verilator_runner", char_code, cycles_vlt)
+def _compare_emu_vlt(char_code: int, iterations: int) -> None:
+    emu_val = _run_iterations(BUILD_DIR / "emulator_runner", char_code, iterations)
+    vlt_val = _run_iterations(BUILD_DIR / "verilator_runner", char_code, iterations)
     emu = _decode_debug(emu_val)
     vlt = _decode_debug(vlt_val)
     for key in ("ball_x", "ball_y", "paddle_y", "game_state"):
@@ -88,12 +102,12 @@ class TestSquashKeyInput:
 
     def test_no_key_same_state(self):
         """Both runners produce same game state without key input."""
-        _compare_emu_vlt(0, 25000, 1000000)
+        _compare_emu_vlt(0, 5)
 
     def test_w_key_paddle_moves_up(self):
         """'w' key moves paddle up (paddle_y decreases)."""
-        emu_val = _run(BUILD_DIR / "emulator_runner", ord("w"), 25000)
-        vlt_val = _run(BUILD_DIR / "verilator_runner", ord("w"), 1000000)
+        emu_val = _run_iterations(BUILD_DIR / "emulator_runner", ord("w"), 5)
+        vlt_val = _run_iterations(BUILD_DIR / "verilator_runner", ord("w"), 5)
         emu = _decode_debug(emu_val)
         vlt = _decode_debug(vlt_val)
         assert emu["paddle_y"] < 3, f"Expected paddle_y < 3 with 'w', got emu={emu['paddle_y']}"
@@ -103,8 +117,8 @@ class TestSquashKeyInput:
 
     def test_s_key_paddle_moves_down(self):
         """'s' key moves paddle down (paddle_y increases)."""
-        emu_val = _run(BUILD_DIR / "emulator_runner", ord("s"), 25000)
-        vlt_val = _run(BUILD_DIR / "verilator_runner", ord("s"), 1000000)
+        emu_val = _run_iterations(BUILD_DIR / "emulator_runner", ord("s"), 3)
+        vlt_val = _run_iterations(BUILD_DIR / "verilator_runner", ord("s"), 3)
         emu = _decode_debug(emu_val)
         vlt = _decode_debug(vlt_val)
         assert emu["paddle_y"] > 3, f"Expected paddle_y > 3 with 's', got emu={emu['paddle_y']}"

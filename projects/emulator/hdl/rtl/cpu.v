@@ -58,8 +58,8 @@ module cpu (
     // DPI-C helpers reused for neural custom ops
     import "DPI-C" function int unsigned fp_add(input int unsigned a, input int unsigned b);
     import "DPI-C" function int unsigned fp_mul(input int unsigned a, input int unsigned b);
-    import "DPI-C" function bit fp_cmp_lt(input int unsigned a, input int unsigned b);
-    import "DPI-C" function bit fp_cmp_le(input int unsigned a, input int unsigned b);
+    import "DPI-C" function int unsigned fp_cmp_lt(input int unsigned a, input int unsigned b);
+    import "DPI-C" function int unsigned fp_cmp_le(input int unsigned a, input int unsigned b);
     import "DPI-C" function int unsigned fp_cvt_w_s(input int unsigned a);
 
     // Opcodes (RISC-V encoding)
@@ -242,7 +242,7 @@ module cpu (
     wire load_pending = (state == ST_LOAD) || (state == ST_LOAD_FP);
 
     // Neural custom-op constants/state
-    localparam [31:0] MEM_SIZE = 32'h200000;
+    localparam [31:0] MEM_SIZE = 32'hC00000;
     localparam [31:0] NEURAL_ERR_OK = 32'd0;
     localparam [31:0] NEURAL_ERR_INVALID_PTR = 32'd1;
     localparam [31:0] NEURAL_ERR_INVALID_LEN = 32'd2;
