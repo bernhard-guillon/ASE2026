@@ -23,7 +23,7 @@ The test pipeline follows a layered approach:
 4. **Build ELF** — Assemble with `rv32as`, link with `riscv64-elf-ld`
 5. **Blackbox tests** — Run on both `emulator_runner` and `verilator_runner` via CTest
 
-For **combined models** (counter+chargen, mega-combined), specialized test targets are created in CMakeLists.txt. Currently only the squash model has dedicated verilator tests; counter+chargen and mega-combined are tested via emulator only.
+For **combined models** (counter+chargen, mega-combined), verilator-specific test targets exist (`python/counter_chargen_combined/verilator_runtime_smoke`, `python/mega_combined/verilator_runtime_smoke`). These detect that the RTL backend does not yet produce valid output for combined models (all-zero framebuffer).
 
 For **interactive UI tests** (GUI, key input), the newest approach uses **TTY emulation** via `pty.openpty()`. This allows injecting real keystrokes and capturing ASCII framebuffer output. Three TTY test targets exist: `python/squash/gui_tty`, `python/squash/blackbox_tty`, `python/squash/blackbox_tty_verilator`.
 
