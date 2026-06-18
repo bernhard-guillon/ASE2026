@@ -14,6 +14,8 @@ $endif$
 \usepackage{longtable,booktabs,array}
 \usepackage{fancyvrb}
 \usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning}
 \DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\},fontsize=\small}
 \usepackage{color}
