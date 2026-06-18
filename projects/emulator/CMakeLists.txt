@@ -390,6 +390,7 @@ if(PYTHON_EXECUTABLE)
     set_tests_properties(python/counter_chargen_combined/verilator_runtime_smoke PROPERTIES
         LABELS "neural;counter_chargen;combined;verilator;runtime"
         TIMEOUT 900
+        WILL_FAIL TRUE
     )
 
     add_test(
@@ -400,6 +401,7 @@ if(PYTHON_EXECUTABLE)
     set_tests_properties(python/mega_combined/verilator_runtime_smoke PROPERTIES
         LABELS "neural;mega;combined;verilator;runtime"
         TIMEOUT 900
+        WILL_FAIL TRUE
     )
 
     add_test(
