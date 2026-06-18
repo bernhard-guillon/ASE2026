@@ -1,139 +1,108 @@
-# ASE2026 Research Project - Professor Evaluation
+# Project Audit
 
-## 🎓 Academic Assessment
-
-**Course:** Advanced Research Topics in Computer Systems
 **Project:** Neural-Driven Computing on Minimal RISC-V Stack
-**Evaluator:** Professor of Computer Science
-**Evaluation Date:** 2024
+**Course:** ASE2026
+**Last audited:** 2026-06-18
+**How to audit:** See `AUDIT_GUIDE.md`
 
 ---
 
-## 🔍 Research Topic Evaluation
+## Research Quality
 
-### Topic Selection: ✅ Excellent
-**Novelty:** 9/10 - Unique intersection of neural networks and minimal RISC-V hardware
-**Practical Value:** 8/10 - Direct hardware execution has real-world applications
-**Feasibility:** 9/10 - Working implementation demonstrates viability
-**Impact Potential:** 8/10 - Could influence edge AI computing approaches
+| Question | Status | Evidence |
+|----------|--------|----------|
+| What is the novel contribution? | ✅ | Descriptor-based neural ISA, block-diagonal composition, dual-backend validation |
+| How does it compare to related work? | ✅ | `block-diagonal-composition.md` — nCPU, MARVEL, RV-SCNN, NVDLA |
+| Is there measurable evidence? | ✅ | 26.67x speedup (PMAC4), 100% accuracy, deterministic tests |
+| What is the impact potential? | ✅ | Edge AI, tiny RISC-V cores, neural-as-OS pattern |
 
-### For Computer Scientists (Non-Experts):
-This project explores **how to run neural networks directly on simple RISC-V chips** without complex software layers. Imagine teaching a basic microprocessor to execute AI models natively - bridging the gap between AI algorithms and hardware execution.
-
-### For Domain Experts:
-- **Neural Execution Toolchain**: PyTorch → RISC-V assembly pipeline
-- **Custom Instructions**: Extended ISA for neural operations
-- **Dual Backends**: Emulator (dev) + Verilator (hardware)
-- **Deterministic Model**: 20×20 navigation neural network
+**Rating:** 8/10 — Unique combination of contributions. Related work coverage could expand to more recent papers.
 
 ---
 
-## ✅ Strengths (Good Checklist)
+## Implementation Quality
 
-### Research Quality:
-✅ **Novel Approach** - Unique neural-RISC-V integration
-✅ **Working Implementation** - Not just theoretical
-✅ **Measurable Results** - 100% prediction accuracy
-✅ **Hardware Focus** - Real RISC-V execution target
+| Question | Status | Evidence |
+|----------|--------|----------|
+| Does the end-to-end pipeline work? | ✅ | train → export → compile → assemble → run |
+| Are both backends functional? | ✅ | emulator_runner + verilator_runner |
+| Is there CI/CD? | ✅ | `.github/workflows/emulator-tests.yml` |
+| Are there tests? | ✅ | ~200 unit tests, blackbox tests, differential tests |
 
-### Implementation:
-✅ **Complete Toolchain** - Training → Export → Execution
-✅ **Cross-Platform** - Emulator + Verilator support
-✅ **Error Handling** - Robust build system
-✅ **CI Compatible** - Builds without PyTorch dependencies
+**How to verify:**
+```bash
+cmake -S projects/emulator -B projects/emulator/build
+cmake --build projects/emulator/build -j$(nproc)
+ctest --test-dir projects/emulator/build --output-on-failure
+```
 
-### Documentation:
-✅ **Clear Structure** - Logical problem → solution flow
-✅ **Code Comments** - Well-documented components
-✅ **Build Instructions** - Step-by-step guides available
-✅ **Visual Aids** - Architecture diagrams included
+**Rating:** 9/10 — Working end-to-end pipeline with dual-backend validation.
 
 ---
 
-## ❌ Weaknesses (Improvement Checklist)
+## Documentation Quality
 
-### Research Depth:
-❌ **Theoretical Analysis** - Needs performance benchmarks
-❌ **Comparative Study** - Missing vs. similar systems
-❌ **Formal Verification** - No proof of instruction correctness
-❌ **Related Work** - Limited prior art citations
+| Question | Status | Evidence |
+|----------|--------|----------|
+| Is there a clear project overview? | ✅ | README.md, AGENTS.md |
+| Are build instructions accurate? | ✅ | BUILD_DIRECTORY.md, AGENTS.md |
+| Is architecture documented? | ✅ | COMBINING.md, combined-mlp.md, architecture.md |
+| Are code conventions followed? | ✅ | No comments unless asked, existing patterns |
 
-### Presentation:
-❌ **Assumes Knowledge** - RISC-V/neural terms need explanation
-❌ **Technical Jargon** - Could simplify for broader audience
-❌ **Visualization** - More architecture diagrams needed
-❌ **Setup Docs** - Installation could be clearer
+**Known issues:**
+- `architecture.md` — "Current Limitation" claims block-diagonal not implemented (it was)
 
-### Code Quality:
-❌ **Hardcoded Paths** - Some config could be flexible
-❌ **Error Handling** - Basic, could be more robust
-❌ **Test Coverage** - Edge cases need more tests
-❌ **Documentation** - Some components undocumented
+**Rating:** 7/10 — Core docs are accurate. Some stale sections need updating.
 
 ---
 
-## 🎯 Professor's Rating
+## Publication Readiness
 
-### Research Potential: 8.5/10
-```
-Excellent practical implementation with clear real-world applications.
-Strong foundation for further research. Lacks some theoretical depth
-but makes up for it with working system and measurable results.
-```
+| Question | Status | Evidence |
+|----------|--------|----------|
+| Is there a paper draft? | ✅ | `documentation/paper/` |
+| Are there benchmarks? | ✅ | `documentation/collected-data/` |
+| Is there related work comparison? | ✅ | `block-diagonal-composition.md` |
+| What would make it stronger? | — | See suggestions below |
 
-### Presentation Quality: 7.5/10
-```
-Good structure and problem-solving approach. Needs better
-explanations for non-experts and more visual aids. Technical
-merit is high but presentation polish could be improved.
-```
+**Suggestions for strengthening:**
+1. Position paper arguing descriptor-based ISA vs SIMD/vector/coprocessor
+2. Comparison benchmark against software-only baseline
+3. Generalize composition framework to more model types
+4. Formalize AI-as-OS pattern with taxonomy
 
-### Overall Grade: B+ (8/10)
-```
-Strong research project with working implementation. Excellent
-for conference submission with minor improvements. Good foundation
-for thesis or publication work.
-```
+**Rating:** 7/10 — Paper exists with benchmarks. Needs positioning and comparison.
 
 ---
 
-## 📋 Improvement Roadmap
+## Code Quality
 
-### High Priority (1-2 Weeks):
-- [ ] Add performance benchmarks vs. similar systems
-- [ ] Create comprehensive architecture diagrams
-- [ ] Write beginner-friendly setup guide
-- [ ] Add unit tests for edge cases
+| Question | Status | Evidence |
+|----------|--------|----------|
+| Is error handling robust? | ✅ | Core emulator handles edge cases |
+| Are there hardcoded paths? | ⚠️ | Some config could be more flexible |
+| Is test coverage sufficient? | ✅ | Critical paths covered |
+| Any stale TODO/FIXME? | ⚠️ | Check with `grep -r "TODO\|FIXME\|HACK"` |
 
-### Medium Priority (1 Month):
-- [ ] Comparative study with related work
-- [ ] Formal verification of neural instructions
-- [ ] Expand related work citations
-- [ ] Enhance error handling robustness
-
-### Low Priority (Future):
-- [ ] Model quantization research
-- [ ] GPU acceleration options
-- [ ] Expanded neural instruction set
-- [ ] Hardware co-design exploration
+**Rating:** 7/10 — Functional but could improve flexibility and coverage.
 
 ---
 
-## 🏁 Final Assessment
+## Summary
 
-### Strengths Summary:
-✅ Novel neural-RISC-V integration
-✅ Working implementation with results
-✅ CI-compatible build system
-✅ Cross-platform execution
+| Dimension | Rating | Notes |
+|-----------|--------|-------|
+| Research Quality | 8/10 | Novel contributions, good related work |
+| Implementation Quality | 9/10 | Working end-to-end pipeline |
+| Documentation Quality | 7/10 | Core accurate, some stale sections |
+| Publication Readiness | 7/10 | Paper exists, needs positioning |
+| Code Quality | 7/10 | Functional, could improve flexibility |
+| **Overall** | **7.6/10** | Strong project, ready for refinement |
 
-### Recommendation:
-**Grade: B+ (8/10)** - Strong work with improvement potential
+---
 
-**Next Steps:**
-1. Address high-priority improvements
-2. Prepare for conference submission
-3. Consider journal publication
-4. Explore research extensions
+## Next Audit
 
-**Final Note:** Excellent foundation. With targeted improvements, this could become A-level publication material.
+- **After major changes:** Re-run full test suite, verify documentation
+- **Before publication:** Full audit with checklist from `AUDIT_GUIDE.md`
+- **Quarterly:** Quick check of build/test/docs
