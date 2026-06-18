@@ -28,7 +28,28 @@ pandoc documentation/ase2026.md \
 
 #### Figures
 
-Use LaTeX figure environments in the Markdown source:
+Use LaTeX figure environments in the Markdown source. **Do not use ASCII art** - use proper TikZ diagrams or LaTeX tables instead.
+
+**TikZ Diagram Example:**
+
+```latex
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=0.8cm and 1.2cm,
+    box/.style={rectangle, draw, minimum width=2.2cm, minimum height=0.8cm, align=center, font=\footnotesize},
+    arrow/.style={-{Stealth[length=2mm]}, thick}
+]
+\node[box] (a) {Node A};
+\node[box, right=of a] (b) {Node B};
+\draw[arrow] (a) -- (b);
+\end{tikzpicture}
+\caption{Figure caption.}
+\label{fig:label}
+\end{figure}
+```
+
+**Table Example:**
 
 ```latex
 \begin{figure}[h]
@@ -41,7 +62,7 @@ Column 1 & Column 2 \\
 Data & Data \\
 \hline
 \end{tabular}
-\caption{Figure caption.}
+\caption{Table caption.}
 \label{fig:label}
 \end{figure}
 ```
