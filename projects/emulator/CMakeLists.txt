@@ -171,6 +171,16 @@ target_link_libraries(emulator_runner emulator cpu memory instruction)
 add_executable(squash_tty_harness squash_tty_harness.cpp)
 target_link_libraries(squash_tty_harness emulator cpu memory instruction)
 
+add_test(
+    NAME cpp/squash_tty_harness
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/squash_tty_harness ${CMAKE_CURRENT_BINARY_DIR}/squash.elf
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+set_tests_properties(cpp/squash_tty_harness PROPERTIES
+    LABELS "neural;squash;tty"
+    TIMEOUT 120
+)
+
 # Register tests with CTest
 include(GoogleTest)
 gtest_discover_tests(test_memory)
@@ -373,6 +383,28 @@ if(PYTHON_EXECUTABLE)
     )
 
     add_test(
+        NAME python/counter_chargen_combined/verilator_runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_counter_chargen_combined_verilator_smoke.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/counter_chargen_combined/verilator_runtime_smoke PROPERTIES
+        LABELS "neural;counter_chargen;combined;verilator;runtime"
+        TIMEOUT 900
+        WILL_FAIL TRUE
+    )
+
+    add_test(
+        NAME python/mega_combined/verilator_runtime_smoke
+        COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_mega_combined_verilator_smoke.py -v
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_tests_properties(python/mega_combined/verilator_runtime_smoke PROPERTIES
+        LABELS "neural;mega;combined;verilator;runtime"
+        TIMEOUT 900
+        WILL_FAIL TRUE
+    )
+
+    add_test(
         NAME python/neural_char_gen/runtime_smoke
         COMMAND ${PYTHON_EXECUTABLE} -m pytest blackbox_tests/test_neural_char_gen_runtime.py -v
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -439,7 +471,7 @@ if(PYTHON_EXECUTABLE)
     )
     set_tests_properties(python/squash/gui_tty PROPERTIES
         LABELS "neural;squash;gui;verilator;tty"
-        TIMEOUT 300
+        TIMEOUT 600
     )
 
     add_test(

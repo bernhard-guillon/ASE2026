@@ -392,6 +392,127 @@ for (uint32_t _i = 1; _i < CB_CNT_SIZE; _i++) {
 model_counter = _mi;
 ```
 
+## Mega Combined Model (Squash + Counter-Chargen + Router)
+
+The mega combined model merges four sub-networks into one: a **router MLP**
+that learns to switch between a chargen mode and a squash game mode via
+the Tab key.
+
+### Architecture
+
+```
+Input Buffer (313 neurons):
+┌──────────────────────────────────────────────────────────────────────┐
+│ chargen/counter (255) │ squash input (56) │ Tab state (2)           │
+└──────────────┬────────┴────────┬──────────┴────────┬────────────────┘
+               │                 │                   │
+               ▼                 ▼                   ▼
+╔══════════════════════════════════════════════════════════════════════╗
+║                     Merged Layer 0 (772 output)                     ║
+║  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌───────────┐   ║
+║  │ Router  │ │ Counter  │ │ Chargers │ │GameSt  │ │ Renderer  │   ║
+║  │  2 →  4 │ │ 255 → 256│ │ 255 → 256│ │ 56 → 64│ │  48 → 128 │   ║
+║  │  (relu) │ │  (relu)  │ │  (relu)  │ │ (relu) │ │  (relu)   │   ║
+║  └────┬────┘ └────┬─────┘ └────┬─────┘ └───┬────┘ └─────┬─────┘   ║
+║       │4          │256         │256        │64          │128       ║
+╠═══════╪═══════════╪════════════╪═══════════╪════════════╪══════════╣
+║                     Merged Layer 1 (1010 output)                    ║
+║  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌───────────┐   ║
+║  │ Router  │ │ Counter  │ │ Chargers │ │GameSt  │ │ Renderer  │   ║
+║  │  4 →  2 │ │ 256 → 256│ │ 256 → 256│ │ 64 → 64│ │ 128 → 256 │   ║
+║  │ (sigmoid│ │  (relu)  │ │  (relu)  │ │ (relu) │ │  (relu)   │   ║
+║  └────┬────┘ └────┬─────┘ └────┬─────┘ └───┬────┘ └─────┬─────┘   ║
+║       │2          │256         │256        │64          │256       ║
+╠═══════╪═══════════╪════════════╪═══════════╪════════════╪══════════╣
+║                     Merged Layer 2 (1013 output)                    ║
+║  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌───────────┐   ║
+║  │ Router  │ │ Counter  │ │ Chargers │ │GameSt  │ │ Renderer  │   ║
+║  │  2 →  2 │ │ 256 → 255│ │ 256 → 400│ │ 64 → 52│ │ 256 → 300 │   ║
+║  │ (none)  │ │  (none)  │ │ (sigmoid)│ │ (none) │ │ (sigmoid) │   ║
+║  └────┬────┘ └────┬─────┘ └────┬─────┘ └───┬────┘ └─────┬─────┘   ║
+╚═══════╪═══════════╪════════════╪═══════════╪════════════╪══════════╝
+        │2          │255         │400        │52          │300
+        ▼           ▼            ▼           ▼            ▼
+Output Buffer (1009 neurons):
+┌────────┬───────────┬────────────┬───────────┬────────────┐
+│ Router │ Counter   │ Chargers   │ Squash    │ Squash     │
+│ Gates  │ State     │ Framebuf   │ State     │ Framebuf   │
+│  (2)   │  (255)    │  (400)     │  (52)     │  (300)     │
+│[0..1]  │[768..1008]│ [4..403]   │[404..455] │[456..755]  │
+└────┬───┴───────────┴─────┬──────┴───────────┴─────┬──────┘
+     │                     │                        │
+     ▼                     ▼                        ▼
+  gate values        gate_chargen > gate_squash → display chargen FB
+  (0=chargen,        gate_squash > gate_chargen → display squash FB
+   1=squash)
+```
+
+### Router MLP
+
+The router is a small 3-layer MLP that learns to switch between the two
+sub-models based on the Tab key state.
+
+**Architecture:** `2 → 4 → 2 → 2` (relu, sigmoid, none)
+
+**Training approach:**
+- Input: Tab state one-hot `[tab_chargen, tab_squash]`
+- Target: Same as input (identity mapping)
+- Loss: MSE between output and target
+- Optimizer: Adam, lr=0.01, ~200 iterations
+- Convergence: Near-perfect (< 1e-6 loss)
+
+The L2 layer is initialized as identity (not trained) to preserve gate
+values into the final output buffer where C code can read them.
+
+### Key Bindings
+
+| Key | Action |
+|-----|--------|
+| **Tab** | Switch to squash mode (game runs) |
+| **Escape** | Switch to chargen mode (squash **pauses**) |
+| **\\** | Switch to chargen mode (squash **keeps running**) |
+| **w/s** | Paddle up/down (squash mode) |
+
+### Pause Behavior
+
+- **Default**: Squash game pauses when chargen is shown (Escape behavior)
+- **Override**: Press `\` to switch to chargen without pausing
+- The `squash_always_run` flag controls this:
+  - `0` = pause when chargen shown (default)
+  - `1` = always run regardless of mode
+
+### Runtime Behavior
+
+1. **Default mode (chargen)**: Router receives Tab state `[1, 0]` →
+   outputs gate `[~1.0, ~0.0]`. Chargen sub-model produces character
+   glyphs. Counter auto-advances each frame.
+
+2. **After Tab press**: Router receives Tab state `[0, 1]` → outputs
+   gate `[~0.0, ~1.0]`. Squash sub-model produces game rendering.
+   Squash physics continue updating.
+
+3. **After Escape press**: Router returns to `[1, 0]`. Squash state
+   decode is **skipped** in MODEL_MAP_OUTPUT. Static variables retain
+   last values → game is frozen.
+
+4. **After \\ press**: Router returns to `[1, 0]`. Squash state decode
+   **continues** (`squash_always_run = 1`). Game keeps running in
+   background while chargen is displayed.
+
+### Glue JSON
+
+The mega combined glue is at `mega_combined_glue.json`. It references
+five sub-networks: router, counter, chargen, game_state, and renderer.
+Output ranges:
+
+| Region | Offset | Size | Content |
+|--------|--------|------|---------|
+| Router gates | 0 | 2 | gate_chargen, gate_squash |
+| Chargers FB | 4 | 400 | 20×20 character pixels |
+| Squash state | 404 | 52 | ball_x, ball_y, paddle_y, etc. |
+| Squash FB | 456 | 300 | 20×15 game pixels |
+| Counter state | 768 | 255 | counter argmax output |
+
 ## Adding a New Combination
 
 1. **Export sub-network JSONs** with matching layer depths.
@@ -425,9 +546,12 @@ model_counter = _mi;
 | `runtime.c` | Shared C runtime — `inference_loop()` drives the network |
 | `emulator_runner.cpp` | C++ emulator with GUI and batch modes |
 | `combined_glue.json` | Glue description for counter+chargen merge |
+| `mega_combined_glue.json` | Glue description for mega combined (squash + counter-chargen + router) |
+| `models/router_tab_switch.json` | Trained router MLP weights |
 | `export_counter255_three_layer.py` | Exports 3-layer counter to match chargen depth |
 | `export_counter255_plain.py` | Exports 1-layer counter (standalone use) |
-| `CMakeLists.txt` | Build rules for `counter255_elf` and `counter_chargen_combined_elf` |
-| `blackbox_tests/test_counter_chargen_combined_smoke.py` | Combined model tests |
+| `CMakeLists.txt` | Build rules for `counter255_elf`, `counter_chargen_combined_elf`, `mega_combined_elf` |
+| `blackbox_tests/test_counter_chargen_combined_smoke.py` | Counter+chargen combined model tests |
 | `blackbox_tests/test_counter255_runtime_smoke.py` | Standalone counter tests |
-| `combined-mlp.md` | ASCII-art diagram of the block-diagonal structure |
+| `blackbox_tests/test_mega_combined.py` | Mega combined model tests |
+| `combined-mlp.md` | ASCII-art diagram of the counter+chargen block-diagonal structure |

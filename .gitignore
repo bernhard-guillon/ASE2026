@@ -12,8 +12,6 @@ __pycache__/
 .Python
 *.egg-info/
 dist/
-build/
-emulator_build/
 
 # IDE
 .vscode/
@@ -23,11 +21,27 @@ emulator_build/
 *~
 
 # Generated model outputs (for the character generation project)
+projects/character-generation/model.pth
+projects/character-generation/metrics.json
+projects/character-generation/dataset.npz
+projects/character-generation/char_map.json
+projects/character-generation/generated_chars.json
+projects/character-generation/generated_chars.npz
+projects/character-generation/pytorch_256_metadata.json
+projects/character-generation/debug_chars/
 projects/character-generation/src/model.pth
-projects/character-generation/src/dataset.npz
 projects/character-generation/src/metrics.json
+projects/character-generation/src/dataset.npz
 projects/character-generation/src/char_map.json
 projects/character-generation/src/debug_chars/
+
+# Generated model outputs (for the game movement project)
+projects/game-movement/movement_model.pth
+projects/game-movement/movement_metrics.json
+projects/game-movement/movement_dataset.npz
+projects/game-movement/movement_transitions.json
+projects/game-movement/src/movement_model.pth
+projects/game-movement/src/movement_transitions.json
 
 # OS
 .DS_Store

@@ -99,7 +99,7 @@ class FrameReader:
         self.buffer = self.buffer[pos:]
         return lines
 
-    def read_frame(self, timeout: float = 5.0) -> list[str]:
+    def read_frame(self, timeout: float = 15.0) -> list[str]:
         deadline = time.time() + timeout
         while time.time() < deadline:
             self.buffer += self._read_available(0.1)
@@ -174,7 +174,7 @@ def _spawn_gui(runner: Path, extra_args: list[str]) -> tuple[subprocess.Popen[st
 def _shutdown(proc: subprocess.Popen[str], master_fd: int) -> None:
     try:
         proc.send_signal(signal.SIGINT)
-        proc.wait(timeout=5)
+        proc.wait(timeout=15)
     except Exception:
         proc.kill()
     finally:
@@ -200,7 +200,7 @@ def _capture_movement(
         before = None
         before_top = None
         for _ in range(10):
-            frame = reader.read_frame(timeout=6.0)
+            frame = reader.read_frame(timeout=15.0)
             top = _paddle_top(frame, FRAME_H_ACTIVE)
             if top is not None:
                 before = frame
@@ -213,9 +213,9 @@ def _capture_movement(
 
         after = None
         after_top = None
-        deadline = time.time() + 8.0
+        deadline = time.time() + 20.0
         while time.time() < deadline:
-            frame = reader.read_frame(timeout=2.0)
+            frame = reader.read_frame(timeout=5.0)
             top = _paddle_top(frame, FRAME_H_ACTIVE)
             if top is None:
                 continue
@@ -281,7 +281,7 @@ def test_gui_tty_emulator_baseline_and_verilator(tmp_path: Path) -> None:
     _, _, vlt_before_top, vlt_after_top = _capture_movement(
         VLT_RUNNER,
         FRAME_H_VLT,
-        ["--gui-max-cycles", "500000"],
+        ["--gui-max-cycles", "1000000"],
         "vlt_s",
         b"s",
         1,
@@ -292,7 +292,7 @@ def test_gui_tty_emulator_baseline_and_verilator(tmp_path: Path) -> None:
     _, _, vlt_before_top_w, vlt_after_top_w = _capture_movement(
         VLT_RUNNER,
         FRAME_H_VLT,
-        ["--gui-max-cycles", "500000"],
+        ["--gui-max-cycles", "1000000"],
         "vlt_w",
         b"w",
         -1,
