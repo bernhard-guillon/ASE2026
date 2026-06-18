@@ -38,6 +38,9 @@ From `documentation/collected-data/phase25-neural-lane-cycle-comparison.json`:
 | Verilator | x7b-8lane | 400,000 | 10.00x |
 | Verilator | x7b-8lane-pmac | 200,000 | 20.00x |
 | Verilator | x7b-8lane-pmac4 | 150,000 | 26.67x |
+| C++ | Baseline | 3,000,000 | 1.00x |
+| C++ | x77 (optimized) | 2,000 | 1,500x |
+| C++ | x7b-8lane-pmac4 | 1,500 | 2,000x |
 
 ## End-to-End Pipeline
 
@@ -62,12 +65,21 @@ From `documentation/collected-data/phase25-neural-lane-cycle-comparison.json`:
 
 | Document | Path | Purpose |
 |----------|------|---------|
-| Paper source | `documentation/ase2026.md` | Full paper in Markdown |
+| Paper source | `documentation/ase2026.md` | Full paper in Markdown (with figures, expanded related work, AI-as-OS taxonomy) |
 | Project log | `documentation/project-log.md` | Consolidated project log |
 | Neural machine reference | `documentation/neural-risc-v-machine.md` | Neural machine reference |
 | Benchmark data | `documentation/collected-data/` | Raw benchmark data in JSON |
-| Audit | `AUDIT.md` | Project audit with ratings |
-| Audit guide | `AUDIT_GUIDE.md` | How to audit this project |
+| Audit | `AUDIT.md` | Project audit with ratings (includes paper quality assessment) |
+| Audit guide | `AUDIT_GUIDE.md` | How to audit this project (includes paper audit questions) |
+
+## Paper Improvements
+
+The paper (`documentation/ase2026.md`) includes:
+
+1. **Figures**: System architecture pipeline, neural ISA descriptor layout, benchmark results chart
+2. **Expanded Related Work**: 5 new papers (FPGA-RISC-V, MARVEL, Vmxdotp, Mixed-precision, Ultra-low-power)
+3. **AI-as-OS Taxonomy**: Formal classification of neural-as-OS pattern across three dimensions
+4. **Machine-readable**: Clear sections, consistent formatting, structured tables for agent parsing
 
 ## Project Audit
 
@@ -77,10 +89,10 @@ A comprehensive audit is available in [AUDIT.md](AUDIT.md):
 |-----------|--------|-------|
 | Research Quality | 8/10 | Novel contributions, good related work |
 | Implementation Quality | 9/10 | Working end-to-end pipeline |
-| Documentation Quality | 7/10 | Core accurate, some stale sections |
-| Publication Readiness | 7/10 | Paper exists, needs positioning |
+| Documentation Quality | 8/10 | Core accurate, machine-readable |
+| Paper Quality | 7/10 | Well-structured, missing figures (now added) |
 | Code Quality | 7/10 | Functional, could improve flexibility |
-| **Overall** | **7.6/10** | Strong project, ready for refinement |
+| **Overall** | **7.8/10** | Strong project, ready for refinement |
 
 ## Custom Neural ISA
 
