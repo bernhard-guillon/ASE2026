@@ -12,9 +12,6 @@ __pycache__/
 .Python
 *.egg-info/
 dist/
-/build/
-/build_cmake/
-/emulator_build/
 
 # IDE
 .vscode/

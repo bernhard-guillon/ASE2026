@@ -125,3 +125,4 @@ cargo build --release --manifest-path projects/rv32_assembler/Cargo.toml
 |----------|---------|---------|
 | `emulator-tests.yml` | Push to main/develop | Build and test emulator |
 | `build-pdf.yml` | Push to main/develop | Rebuild paper PDF |
+| `train-character-generation.yml` | Push to main/develop | Train character generation model |
