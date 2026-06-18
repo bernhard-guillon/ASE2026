@@ -13,7 +13,23 @@ cmake --build build -j$(nproc)
 
 Build output goes to `build/` (gitignored).
 
-## Testing
+## Test Strategy
+
+The test pipeline follows a layered approach:
+
+1. **Train model** — Python training scripts produce `.pth` checkpoints (in `character-generation/`, `game-movement/`)
+2. **Export weights** — `weight-export/export_generator.py` converts to JSON + binary
+3. **Model compiler** — CMake custom commands run `model_compiler_interactive.py` to generate assembly from JSON
+4. **Build ELF** — Assemble with `rv32as`, link with `riscv64-elf-ld`
+5. **Blackbox tests** — Run on both `emulator_runner` and `verilator_runner` via CTest
+
+For **combined models** (counter+chargen, mega-combined), specialized test targets are created in CMakeLists.txt. Currently only the squash model has dedicated verilator tests; counter+chargen and mega-combined are tested via emulator only.
+
+For **interactive UI tests** (GUI, key input), the newest approach uses **TTY emulation** via `pty.openpty()`. This allows injecting real keystrokes and capturing ASCII framebuffer output. Three TTY test targets exist: `python/squash/gui_tty`, `python/squash/blackbox_tty`, `python/squash/blackbox_tty_verilator`.
+
+All tests are registered in CMake and run in CI via `ctest`.
+
+## Testing Commands
 
 ```bash
 # Unit tests (fast, ~200 tests)
@@ -25,6 +41,8 @@ ctest --test-dir build --output-on-failure
 # Specific blackbox test categories
 ctest --test-dir build -R "asm"
 ctest --test-dir build -R "parity"
+ctest --test-dir build -R "verilator"
+ctest --test-dir build -R "tty"
 ```
 
 ### Test structure
@@ -33,6 +51,8 @@ ctest --test-dir build -R "parity"
 - `blackbox_tests/asm/` — assembly test programs run on the emulator
 - `blackbox_tests/c/` — C test programs compiled with riscv64-elf-gcc
 - `blackbox_tests/*.py` — Python-based integration tests (pytest)
+- `blackbox_tty_test.py` — TTY-based interactive UI test (PTY emulation)
+- `cmake/BlackboxTests.cmake` — registers assembly and C blackbox tests
 - `cmake/PurityTesting.cmake` — Rust vs GNU assembler parity tests
 
 ## Running
