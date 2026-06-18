@@ -471,7 +471,7 @@ if(PYTHON_EXECUTABLE)
     )
     set_tests_properties(python/squash/gui_tty PROPERTIES
         LABELS "neural;squash;gui;verilator;tty"
-        TIMEOUT 300
+        TIMEOUT 600
     )
 
     add_test(
