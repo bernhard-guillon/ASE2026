@@ -131,13 +131,47 @@ ctest --test-dir projects/emulator/build -R "verilator" --output-on-failure
 - Are references properly formatted?
 - Is the reference list complete?
 - Are recent references included?
+- Do references actually exist (not hallucinated)?
+- Do reference details (authors, titles, years, venues) match reality?
+- Are non-peer-reviewed sources flagged?
 
 **How to check:**
 - Verify each claim has a citation
 - Check that references are relevant (not just filler)
-- Verify IEEE citation format
+- Verify IEEE citation format (see IEEE Format Rules below)
 - Check that references are recent (last 5 years for most)
 - Verify all references appear in the text
+- **For each reference, search online to confirm it exists**
+- **Verify author names, titles, years, and venues match the actual publication**
+- **Flag any reference that cannot be found online as potentially hallucinated**
+
+**Reference Verification Rules (mandatory for every audit):**
+
+1. **Existence check**: Every reference must be verifiable online (Google Scholar, arXiv, IEEE Xplore, ACM DL, GitHub). If a reference cannot be found, mark it as `⚠️ UNVERIFIED` and investigate.
+2. **Author verification**: Author names in the paper must match the actual publication. Initials vs full names, ordering, and "et al." usage must be correct.
+3. **Title verification**: The reference title must match the actual publication title exactly (or be a faithful abbreviation).
+4. **Year verification**: The publication year must match. arXiv preprint year ≠ conference/journal publication year — use the actual publication year.
+5. **Venue verification**: The publication venue (journal, conference, workshop) must be correct. "arXiv" is not a venue — provide the actual venue if published.
+6. **DOI verification**: If a DOI is claimed, it must resolve. If no DOI exists, do not fabricate one.
+7. **Internal references**: References to repository files (e.g., `[5]`, `[6]`, `[7]`) must point to files that actually exist in the repo.
+8. **Non-peer-reviewed flag**: GitHub repos, blog posts, and preprints without peer review should be flagged. They are not invalid but should be noted.
+
+**IEEE Format Rules for References:**
+
+IEEE references follow this structure:
+```
+[A] Author1, Author2, and Author3, "Title of paper," *Journal/Conference Name*, vol. X, no. Y, pp. N–M, Month Year. [Online]. Available: URL
+```
+
+Key rules:
+- Authors: Last name + initials (e.g., "A. B. Smith"), "and" before last author
+- Title: In quotation marks, sentence case
+- Journal/Conference: In italics, abbreviated where standard
+- Volume/Issue/Pages: Included when available
+- DOI: Included when available (format: `doi: 10.XXXX/XXXXXXX`)
+- URLs: Only for online-only sources; include access date if content may change
+- Preprints: Cite as "arXiv:XXXX.XXXXX" with the actual submission year
+- GitHub repos: Cite with repository URL, version/tag, and access date
 
 ### 8. Code Quality
 
@@ -190,6 +224,11 @@ Use this checklist when auditing the project:
 - [ ] Conclusion summarizes contributions and future work
 - [ ] All claims properly cited
 - [ ] References are relevant and complete
+- [ ] **Every reference verified to exist online (not hallucinated)**
+- [ ] **Author names match actual publications**
+- [ ] **Publication years match actual publications**
+- [ ] **Venue/journal names are correct**
+- [ ] **IEEE citation format followed for all references**
 - [ ] Figures are clear and properly referenced
 - [ ] IEEE format requirements met
 
