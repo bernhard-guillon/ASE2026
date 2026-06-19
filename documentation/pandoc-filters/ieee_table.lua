@@ -42,11 +42,15 @@ function Table(tbl)
   end
 
   local out = {}
-  table.insert(out, "\\begin{table}[t]")
-  table.insert(out, "\\centering")
+  local has_caption = tbl.caption and tbl.caption.long and #tbl.caption.long > 0
 
-  if tbl.caption and tbl.caption.long and #tbl.caption.long > 0 then
+  if has_caption then
+    table.insert(out, "\\vspace{2mm}")
+    table.insert(out, "\\begin{table}[ht]")
+    table.insert(out, "\\centering")
     table.insert(out, "\\caption{" .. escape_latex(get_inlines_text(tbl.caption.long)) .. "}")
+  else
+    table.insert(out, "\\vspace{1mm}")
   end
 
   table.insert(out, "\\begin{tabular}{" .. spec .. "}")
@@ -79,7 +83,13 @@ function Table(tbl)
 
   table.insert(out, "\\hline")
   table.insert(out, "\\end{tabular}")
-  table.insert(out, "\\end{table}")
+
+  if has_caption then
+    table.insert(out, "\\end{table}")
+    table.insert(out, "\\vspace{2mm}")
+  else
+    table.insert(out, "\\vspace{1mm}")
+  end
 
   return pandoc.RawBlock("latex", table.concat(out, "\n"))
 end
