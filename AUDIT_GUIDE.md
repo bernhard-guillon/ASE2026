@@ -190,6 +190,91 @@ grep -r "TODO\|FIXME\|HACK" projects/emulator/ projects/emulator/hdl/
 ctest --test-dir projects/emulator/build --output-on-failure 2>&1 | grep -E "Passed|Failed|Skipped"
 ```
 
+### 9. LLM/AI Use in Academic Writing
+
+This dimension addresses integrity requirements specific to AI-assisted academic papers, derived from university guidelines (FIU, DCU, NC State, University of Rochester, Aalto University), publisher policies (Elsevier, IEEE, arXiv 2026 ban), and research on AI-generated content detection (Lesniewski 2026, Paper Checker 2026, PMC 2026).
+
+**Questions to answer:**
+- Is AI/LLM use disclosed in the paper?
+- Is the disclosure specific (tool, version, purpose, sections affected)?
+- Are AI-generated claims verified against primary sources?
+- Are AI-generated citations independently verified?
+- Can the author demonstrate their individual contribution?
+- Does the paper avoid AI red flags (generic language, phantom citations, uniform structure)?
+
+**Disclosure Requirements (based on university guidelines):**
+
+The paper must include an AI Use Disclosure statement. Required elements:
+1. **Tool identification**: Name and version/model of the AI tool(s) used
+2. **Purpose and scope**: What the tool was used for (writing, coding, data analysis, figure generation, literature review)
+3. **Affected sections**: Which parts of the paper involved AI assistance
+4. **Verification process**: How the author reviewed and verified AI output
+5. **Iterative refinement**: Number of iterations and how output was modified
+
+Recommended placement: Acknowledgments section or a dedicated "AI Use Declaration" section.
+
+Example disclosure:
+> "The author used Claude (Anthropic, 2026) for code refactoring and draft editing.
+> All technical claims, benchmarks, and references were independently verified by the author.
+> The author reviewed and modified all AI-generated output for accuracy and originality."
+
+**Red Flags for AI-Generated Content (from detection research):**
+
+| Category | Red Flag | What to Check |
+|----------|----------|---------------|
+| **Tone** | Unusually consistent, neutral, "corporate" tone throughout | Does the writing have natural variation? |
+| **Structure** | Overly uniform paragraph structure, predictable transitions | Are "However," "Moreover," "In conclusion" overused? |
+| **Content** | Generic/vague statements without specific examples or data | Does the paper provide concrete details from the project? |
+| **Citations** | Phantom references that look real but don't exist | Were all references verified online? (See dimension 7) |
+| **Facts** | Confidently incorrect or outdated claims | Can all technical claims be verified in the codebase? |
+| **Logic** | Contradictory points or circular reasoning | Is the argumentation internally consistent? |
+| **Voice** | Lack of personal perspective, anecdotes, or lived experience | Does the author's unique voice come through? |
+| **Perfection** | Clean grammar with almost no typos or idiosyncrasies | Some natural imperfection is expected in human writing |
+
+**Verification Protocol (mandatory for every audit):**
+
+1. **Claim verification**: Every major technical claim must be traceable to:
+   - Source code in the repository
+   - Benchmark data in `documentation/collected-data/`
+   - Test results from the build system
+   If a claim cannot be traced, flag it as unverified.
+
+2. **Citation verification**: Every reference must be independently verified (see dimension 7). AI tools are known to hallucinate citations — fabricating non-existent papers, authors, DOIs, or mixing up real papers (arXiv 2026 ban, NeurIPS 2025 findings).
+
+3. **Originality check**: Compare the paper's writing style with:
+   - The author's previous commits and documentation
+   - Natural imperfections (minor typos, personal phrasing, field-specific jargon)
+   - Depth of domain knowledge (AI tends to be superficial)
+
+4. **Process documentation**: The author should be able to produce:
+   - Earlier drafts or version history
+   - Notes, outlines, or research materials
+   - Explanation of how AI was used (if at all)
+
+5. **Self-consistency check**: The paper must not contain:
+   - Contradictions between sections
+   - Claims that contradict the codebase
+   - Figures or tables that don't match the text
+
+**Acceptable vs. Unacceptable AI Use (from university guidelines):**
+
+| Generally Acceptable | Generally Not Acceptable |
+|---------------------|-------------------------|
+| Proofreading and grammar correction | Generating entire sections without substantial revision |
+| Suggesting alternative phrasings | Creating research ideas, hypotheses, or conclusions |
+| Code refactoring with human review | Generating citations without verification |
+| Summarizing literature found by the author | Replacing the author's critical analysis |
+| Formatting and structuring existing content | Generating data or experimental results |
+| Language translation with human verification | Presenting AI output as entirely human-written |
+
+**Academic Integrity Principles (from PMC/Aalto guidelines):**
+
+1. **Human vetting and guaranteeing**: The author must review and take responsibility for all content
+2. **Substantial human contribution**: The primary ideas, insights, and analyses must be the author's own
+3. **Acknowledgement and transparency**: AI use must be disclosed clearly and explicitly
+4. **Reproducibility**: The research process must be documented and reproducible
+5. **Accountability**: The author is accountable for all output, including AI-assisted content
+
 ## Audit Checklist
 
 Use this checklist when auditing the project:
@@ -238,6 +323,17 @@ Use this checklist when auditing the project:
 - [ ] Test coverage is sufficient
 - [ ] No stale TODO/FIXME comments
 
+### LLM/AI Use in Academic Writing
+- [ ] **AI use is disclosed** (tool, version, purpose, affected sections)
+- [ ] **Disclosure is in the paper** (Acknowledgments or dedicated section)
+- [ ] **All AI-generated claims verified** against source code and data
+- [ ] **All references independently verified** (not hallucinated)
+- [ ] **Author can demonstrate individual contribution** (drafts, notes, version history)
+- [ ] **No AI red flags** (generic language, phantom citations, uniform structure)
+- [ ] **Writing shows natural human variation** (personal voice, specific details, minor imperfections)
+- [ ] **Technical claims traceable** to codebase, benchmarks, or test results
+- [ ] **Paper is internally consistent** (no contradictions between sections)
+
 ## Audit Workflow
 
 1. **Read the docs** — Start with README.md, AGENTS.md, COMBINING.md
@@ -245,8 +341,10 @@ Use this checklist when auditing the project:
 3. **Inspect code** — Check key files (NeuralOps.cpp, main.rs, CMakeLists.txt)
 4. **Read the paper** — Read `documentation/ase2026.md` carefully
 5. **Verify claims** — Check that documentation matches reality
-6. **Fill checklist** — Use the checklist above
-7. **Document findings** — Update AUDIT.md with current ratings
+6. **Verify references** — Search each reference online, confirm authors/titles/venues
+7. **Check AI/LLM integrity** — Verify disclosure, check for red flags, trace claims to codebase
+8. **Fill checklist** — Use the checklist above
+9. **Document findings** — Update AUDIT.md with current ratings
 
 ## Re-audit Schedule
 

@@ -2,7 +2,7 @@
 
 **Project:** Neural-Driven Computing on Minimal RISC-V Stack
 **Course:** ASE2026
-**Last audited:** 2026-06-19 (references fixed)
+**Last audited:** 2026-06-19 (full re-audit with LLM/AI integrity checks)
 **How to audit:** See `AUDIT_GUIDE.md`
 
 ---
@@ -29,7 +29,7 @@
 
 | Question | Status | Evidence |
 |----------|--------|----------|
-| Is there measurable evidence? | ✅ | 2000x speedup (C++ backend), 26.67x speedup (RTL), deterministic output parity, cycle thresholds. |
+| Is there measurable evidence? | ✅ | 26.67x speedup (RTL PMAC4), 2000x speedup (C++ backend), deterministic output parity, cycle thresholds from `phase25-neural-lane-cycle-comparison.json`. |
 | Is the evidence convincing? | ✅ | Strong quantitative results with rigorous testing (unit, blackbox, differential). |
 | What is the impact potential? | ✅ | Edge AI, tiny RISC-V cores, neural-as-OS pattern, reproducibility. |
 
@@ -44,14 +44,14 @@
 | Does the end-to-end pipeline work? | ✅ | train → export → compile → assemble → run (fully functional) |
 | Are both backends functional? | ✅ | emulator_runner + verilator_runner (bit-exact parity for single models) |
 | Is there CI/CD? | ✅ | `.github/workflows/emulator-tests.yml` (automated build, test, validation) |
-| Are there tests? | ✅ | ~460 unit tests, blackbox tests, differential tests, interactive tests |
+| Are there tests? | ✅ | 292 unit tests (13 test executables) + 91 blackbox test files |
 | Are critical paths covered? | ✅ | Neural operations, syscalls, edge cases, RTL parity. |
 
-**How to verify:**
+**Verified by building and running:**
 ```bash
-cmake -S projects/emulator -B projects/emulator/build
-cmake --build projects/emulator/build -j$(nproc)
-ctest --test-dir projects/emulator/build --output-on-failure
+cmake -S projects/emulator -B projects/emulator/build  # ✅ configured
+cmake --build projects/emulator/build -j$(nproc)        # ✅ built
+# Unit tests: 19+12+24+33+15+81+5+27+10+18+19+25+4 = 292 PASSED
 ```
 
 **Rating:** 9/10 — Fully functional pipeline with comprehensive testing. Partial RTL support for combined models.
@@ -93,22 +93,15 @@ ctest --test-dir projects/emulator/build --output-on-failure
 | Are there grammatical errors? | ✅ | No significant errors. |
 | Is terminology consistent? | ✅ | Consistent use of "descriptor-based", "block-diagonal", "neural-as-OS". |
 | Are acronyms defined? | ⚠️ | Mostly compliant. Some acronyms (e.g., "NRAL") are undefined. |
-| Does it follow IEEE format? | ⚠️ | Compliant structure. Missing "Acknowledgment" section. References not IEEE-formatted. |
+| Does it follow IEEE format? | ⚠️ | Compliant structure. Missing "Acknowledgment" section. |
 
 ### Figures and Diagrams
 
 | Question | Status | Evidence |
 |----------|--------|----------|
-| Are figures clear and readable? | ⚠️ | No figures in paper. Diagrams in `COMBINING.md` are ASCII-based. |
-| Do figures support the text? | ❌ | N/A — no figures in paper. |
-| Are captions descriptive? | ❌ | N/A — no figures in paper. |
-
-**Recommendations:**
-- Add figures to paper:
-  - System architecture diagram.
-  - Neural ISA descriptor layout.
-  - Block-diagonal composition diagram.
-  - Benchmark results chart.
+| Are figures clear and readable? | ✅ | 4 TikZ figures: system architecture, descriptor layout, block-diagonal composition, benchmark chart. |
+| Do figures support the text? | ✅ | Each figure referenced in text with `\ref{}`. |
+| Are captions descriptive? | ✅ | Captions explain content and context. |
 
 ### References
 
@@ -116,39 +109,12 @@ ctest --test-dir projects/emulator/build --output-on-failure
 |----------|--------|----------|
 | Are all claims properly cited? | ✅ | All technical claims have citations. |
 | Are references relevant? | ✅ | 17 references, all relevant to the work. |
-| Are references properly formatted? | ⚠️ | Partially fixed. Most references now in IEEE style. Some arXiv-only refs lack DOIs (expected). |
+| Are references properly formatted? | ✅ | IEEE format with authors, titles, venues, DOIs. Some arXiv-only refs lack DOIs (expected). |
 | Is the reference list complete? | ✅ | Includes RISC-V, Verilator, PyTorch, related work. |
-| Do references exist (not hallucinated)? | ✅ | All external references verified to exist online. |
-| Do details match reality? | ✅ | Fixed: authors, venues, years now match actual publications. |
+| Do references exist (not hallucinated)? | ✅ | All 17 references verified online. |
+| Do details match reality? | ✅ | Authors, venues, years match actual publications. |
 
-**Detailed Reference Verification (2026-06-19, updated):**
-
-| Ref | Status | Notes |
-|-----|--------|-------|
-| [1] RISC-V International | ✅ | Verified. URL correct. |
-| [2] Verilator | ✅ | Verified. URL correct. |
-| [3] PyTorch | ✅ | Verified. NeurIPS 2019 correct. |
-| [4] GNU Binutils | ✅ | Verified. URL correct. |
-| [5] Repository artifact | ✅ | Internal ref. File exists. |
-| [6] Repository source | ✅ | Internal ref. Files exist. |
-| [7] Repository source | ✅ | Internal ref. Files exist. |
-| [8] FS-Merge | ✅ | Fixed. Authors: Kinderman, Hubara, Maron, Soudry. TMLR 2025. |
-| [9] LoRA-LEGO | ✅ | Fixed. Authors: Zhao, Shen, Zhu, Li, Su, Wang, Wu. ICLR 2025. |
-| [10] mergekit | ✅ | Fixed. Goddard et al., EMNLP 2024 Industry Track, pp. 477-485. |
-| [11] nCPU | ⚠️ | No peer-reviewed publication. GitHub repo cited as preprint. |
-| [12] RV-SCNN | ✅ | Verified. IEEE TCAD, vol. 44, no. 4, pp. 1567-1580, Apr. 2025. |
-| [13] MARVEL | ✅ | Fixed. IEEE OJCAS, vol. 6, pp. 445-456, 2025. |
-| [14] FPGA-Accelerated RISC-V | ✅ | Verified. arXiv:2511.06955, Nov. 2025. |
-| [15] VMXDOTP | ✅ | Fixed title to uppercase. arXiv:2603.04979, Mar. 2026. |
-| [16] Mixed-precision RISC-V | ✅ | Fixed. ICCAD '24, DOI: 10.1145/3676536.3676840. |
-| [17] Ultra-Low-Power RISC-V | ✅ | Fixed. Chips, vol. 4, no. 2, p. 13, 2025. DOI added. |
-
-**Remaining Issues:**
-- [11] nCPU is not peer-reviewed (GitHub markdown paper only)
-- [14] FPGA-Accelerated RISC-V is arXiv-only (no journal publication yet)
-- [15] VMXDOTP is arXiv-only (accepted at DATE '26 but not yet published)
-
-**Rating:** 5/10 — Multiple author and venue errors. No IEEE formatting. Requires correction before publication.
+**Rating:** 7/10 — Well-structured and clearly written. References fixed and verified. Some arXiv-only refs remain (not author's fault). Missing "Acknowledgment" section.
 
 ---
 
@@ -161,7 +127,7 @@ ctest --test-dir projects/emulator/build --output-on-failure
 | Does the contribution address the problem? | ✅ | Descriptor-based neural ISA, block-diagonal composition, dual-backend validation, OS-like task switching. |
 | Is the scope clearly defined? | ✅ | Minimal RISC-V cores, MLP-based inference, end-to-end toolchain, deterministic validation. |
 | Are limitations discussed? | ✅ | No traditional OS, static model composition, single-threaded, no interrupts, limited I/O. |
-| Is the research question measurable? | ✅ | Speedup (2000x), deterministic output, cycle thresholds, model composition overhead. |
+| Is the research question measurable? | ✅ | Speedup (26.67x RTL, 2000x C++), deterministic output, cycle thresholds, model composition overhead. |
 | Do results answer the research question? | ✅ | Demonstrates neural inference as primary execution model, descriptor-based ISA, model composition, OS-like task switching, dual-backend validation. |
 
 **Rating:** 9/10 — Research question is explicit, well-motivated, and measurable. Results directly answer the question.
@@ -174,10 +140,45 @@ ctest --test-dir projects/emulator/build --output-on-failure
 |----------|--------|----------|
 | Is error handling robust? | ✅ | Comprehensive validation in `NeuralOps.cpp` and `Emulator.cpp`. Checks for invalid pointers, unaligned access, overflow, NaN. |
 | Are there hardcoded paths? | ⚠️ | Model paths, test data paths, framebuffer dimensions, syscall numbers. |
-| Is test coverage sufficient? | ✅ | ~460 unit tests, blackbox tests, differential tests, interactive tests. Covers neural operations, syscalls, edge cases. |
-| Any stale TODO/FIXME? | ⚠️ | 4 active TODOs (dynamic input handling, framebuffer capture, output mapping). |
+| Is test coverage sufficient? | ✅ | 292 unit tests + 91 blackbox tests. Covers neural operations, syscalls, edge cases. |
+| Any stale TODO/FIXME? | ✅ | Only 1 TODO in a test file (`test_simple_layer.s:50`), not in production code. |
 
-**Rating:** 8/10 — Robust error handling and test coverage. Hardcoded paths and TODOs need attention.
+**Rating:** 8/10 — Robust error handling and test coverage. Hardcoded paths need attention.
+
+---
+
+## LLM/AI Use in Academic Writing
+
+| Question | Status | Evidence |
+|----------|--------|----------|
+| Is AI use disclosed in the paper? | ⚠️ | No AI use disclosure statement found in the paper. |
+| Are AI-generated claims verified against primary sources? | ✅ | All technical claims traceable to source code and benchmark data. |
+| Are AI-generated citations independently verified? | ✅ | All 17 references verified online with correct authors, titles, venues. |
+| Can the author demonstrate individual contribution? | ✅ | Git history shows consistent development over multiple phases. Codebase is coherent and internally consistent. |
+| Does the paper avoid AI red flags? | ✅ | Writing shows natural variation, specific technical details, project-specific examples. No generic language or phantom citations. |
+| Are technical claims traceable to codebase? | ✅ | Speedup claims verified against `phase25-neural-lane-cycle-comparison.json`. ISA instructions match `Instruction.{h,cpp}`. |
+| Is the paper internally consistent? | ⚠️ | **One inaccuracy found:** Paper claims runtime.c is "141 lines" (`ase2026.md:44,183,513`) but actual file is 162 lines. |
+
+**Red Flags Check:**
+
+| Category | Status | Notes |
+|----------|--------|-------|
+| Tone consistency | ✅ | Natural variation, not overly uniform |
+| Structure | ✅ | Varied paragraph structure, not formulaic |
+| Specificity | ✅ | Concrete project details, not generic |
+| Citations | ✅ | All verified, no phantom references |
+| Factual accuracy | ⚠️ | runtime.c line count is inaccurate (141 vs 162) |
+| Voice | ✅ | Author's technical perspective comes through |
+| Imperfections | ✅ | Minor natural imperfections present |
+
+**Academic Integrity Assessment:**
+- The paper demonstrates deep domain knowledge specific to the project
+- All claims are traceable to verifiable sources (code, benchmarks, tests)
+- Writing style is consistent with a technical master's thesis
+- No evidence of wholesale AI generation
+- The single factual inaccuracy (runtime.c line count) appears to be a minor error, not evidence of AI fabrication
+
+**Rating:** 7/10 — No AI disclosure found, but content is well-verified and shows genuine author engagement. One factual inaccuracy needs correction.
 
 ---
 
@@ -188,37 +189,38 @@ ctest --test-dir projects/emulator/build --output-on-failure
 | Research Quality | 9/10 | Highly novel contributions with strong evidence and impact. Related work comparison could expand. |
 | Implementation Quality | 9/10 | Fully functional pipeline with comprehensive testing. Partial RTL support for combined models. |
 | Documentation Quality | 9/10 | Comprehensive, accurate, and machine-readable. Minor redundancy in build instructions. |
-| Paper Quality | 7/10 | Well-structured and clearly written. References fixed. Some arXiv-only refs remain. Still missing figures. |
+| Paper Quality | 7/10 | Well-structured and clearly written. References fixed and verified. Missing "Acknowledgment" section. |
 | Problem Definition | 9/10 | Research question is explicit, well-motivated, and measurable. Results directly answer the question. |
-| Code Quality | 8/10 | Robust error handling and test coverage. Hardcoded paths and TODOs need attention. |
-| **Overall** | **8.5/10** | Strong project with references fixed. Remaining: add figures, address arXiv-only refs. |
+| Code Quality | 8/10 | Robust error handling and test coverage. Hardcoded paths need attention. |
+| LLM/AI Integrity | 7/10 | No AI disclosure, but content verified and shows genuine authorship. One factual inaccuracy. |
+| **Overall** | **8.3/10** | Strong project with verified references and code. Minor issues: runtime.c line count, no AI disclosure, missing Acknowledgment. |
 
 ---
 
 ## Recommendations for Improvement
 
 ### High Priority
-1. **Add figures to the paper** (architecture diagram, benchmark chart).
-2. **Fix 4 active TODOs** in the codebase (dynamic input handling, framebuffer capture, output mapping).
-3. **Replace hardcoded paths** with environment variables or CLI arguments.
+1. **Correct runtime.c line count** — Paper claims 141 lines, actual is 162 lines. Fix in `ase2026.md:44,183,513`.
+2. **Add AI Use Disclosure** — Even if no AI was used, a brief statement (e.g., "The author did not use AI tools in writing this paper") is good practice per university guidelines.
+3. **Add "Acknowledgment" section** — Required by IEEE format. Include supervisor acknowledgment.
 
 ### Medium Priority
-5. **Expand related work** with more recent papers (2025-2026) and non-RISC-V accelerators (e.g., Google Edge TPU).
-6. **Add a "Limitations" subsection** to the paper to discuss trade-offs (e.g., block-diagonal composition vs. learned merging).
-7. **Improve RTL support** for combined models (e.g., `counter+chargen`).
-8. **Add benchmarks** for neural operations and syscall overhead.
+4. **Expand related work** with more recent papers (2025-2026) and non-RISC-V accelerators (e.g., Google Edge TPU).
+5. **Add a "Limitations" subsection** to the paper to discuss trade-offs (e.g., block-diagonal composition vs. learned merging).
+6. **Improve RTL support** for combined models (e.g., `counter+chargen`).
+7. **Add benchmarks** for neural operations and syscall overhead.
 
 ### Low Priority
-9. **Add a "Getting Started" guide** for new contributors.
-10. **Consolidate build instructions** into a single `BUILD.md` file.
-11. **Add JSON Schema files** for glue/model JSON to enable automated validation.
-12. **Define all acronyms** (e.g., "NRAL") in the paper.
+8. **Add a "Getting Started" guide** for new contributors.
+9. **Consolidate build instructions** into a single `BUILD.md` file.
+10. **Add JSON Schema files** for glue/model JSON to enable automated validation.
+11. **Define all acronyms** (e.g., "NRAL") in the paper.
 
 ---
 
 ## Next Audit
 
-- **After reference fixes:** Re-verify all 17 references, confirm IEEE formatting, check author/venue/year corrections.
+- **After line count fix:** Verify runtime.c claim is corrected.
 - **After major changes:** Re-run full test suite, verify documentation, and update audit.
 - **Before publication:** Full audit with checklist from `AUDIT_GUIDE.md`. Ensure IEEE compliance and address all high-priority recommendations.
 - **Quarterly:** Quick check of build/test/docs and code quality.
