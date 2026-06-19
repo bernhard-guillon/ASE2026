@@ -22,8 +22,8 @@
 
 | Question | Status | Evidence |
 |----------|--------|----------|
-| How does it compare to related work? | ✅ | Compares to RV-SCNN, MARVEL, nCPU, and embodiOS. Differentiates with descriptor-based abstraction, MLP focus, and dual-backend validation. |
-| Is the comparison thorough? | ⚠️ | Descriptive but lacks critical depth. No comparison to non-RISC-V accelerators (e.g., Google Edge TPU). |
+| How does it compare to related work? | ✅ | Compares to RISC-V extensions (RV-SCNN, MARVEL, FPGA-accelerated RISC-V, VMXDOTP, Mixed-precision, ultra-low-power), general accelerators (TPU, NVDLA), lightweight DL survey, model merging (FS-Merge, LoRA-LEGO, mergekit), and AI-as-OS (nCPU, embodiOS, OSymbiote, OO). Differentiates with descriptor-based abstraction, MLP focus, and dual-backend validation. |
+| Is the comparison thorough? | ✅ | 20 verified references covering RISC-V-specific, general accelerator, and AI-as-OS literature. Clear differentiation across 4 dimensions. |
 
 ### Evidence and Impact
 
@@ -33,7 +33,7 @@
 | Is the evidence convincing? | ✅ | Strong quantitative results with rigorous testing (unit, blackbox, differential). |
 | What is the impact potential? | ✅ | Edge AI, tiny RISC-V cores, neural-as-OS pattern, reproducibility. |
 
-**Rating:** 9/10 — Highly novel contributions with strong evidence and impact. Related work comparison could be expanded.
+**Rating:** 9.5/10 — Highly novel contributions with strong evidence and impact. Related work now comprehensive across RISC-V extensions, general accelerators, and AI-as-OS.
 
 ---
 
@@ -157,7 +157,7 @@ cmake --build projects/emulator/build -j$(nproc)        # ✅ built
 | Can the author demonstrate individual contribution? | ✅ | Git history shows consistent development over multiple phases. Codebase is coherent and internally consistent. |
 | Does the paper avoid AI red flags? | ✅ | Writing shows natural variation, specific technical details, project-specific examples. No generic language or phantom citations. |
 | Are technical claims traceable to codebase? | ✅ | Speedup claims verified against `phase25-neural-lane-cycle-comparison.json`. ISA instructions match `Instruction.{h,cpp}`. |
-| Is the paper internally consistent? | ⚠️ | **One inaccuracy found:** Paper claims runtime.c is "141 lines" (`ase2026.md:44,183,513`) but actual file is 162 lines. |
+| Is the paper internally consistent? | ✅ | All claims verified against source code and benchmarks. |
 
 **Red Flags Check:**
 
@@ -167,7 +167,7 @@ cmake --build projects/emulator/build -j$(nproc)        # ✅ built
 | Structure | ✅ | Varied paragraph structure, not formulaic |
 | Specificity | ✅ | Concrete project details, not generic |
 | Citations | ✅ | All verified, no phantom references |
-| Factual accuracy | ⚠️ | runtime.c line count is inaccurate (141 vs 162) |
+| Factual accuracy | ✅ | All claims verified: runtime.c line count corrected (162), speedup data matches benchmark JSON. |
 | Voice | ✅ | Author's technical perspective comes through |
 | Imperfections | ✅ | Minor natural imperfections present |
 
@@ -186,21 +186,21 @@ cmake --build projects/emulator/build -j$(nproc)        # ✅ built
 
 | Dimension | Rating | Notes |
 |-----------|--------|-------|
-| Research Quality | 9/10 | Highly novel contributions with strong evidence and impact. Related work comparison could expand. |
+| Research Quality | 9.5/10 | Highly novel contributions with strong evidence and impact. Related work comprehensive across RISC-V, general accelerators, and AI-as-OS. |
 | Implementation Quality | 9/10 | Fully functional pipeline with comprehensive testing. Partial RTL support for combined models. |
 | Documentation Quality | 9/10 | Comprehensive, accurate, and machine-readable. Minor redundancy in build instructions. |
-| Paper Quality | 8/10 | Well-structured and clearly written. References fixed and verified. Limitations, Acknowledgment, AI Disclosure added. |
+| Paper Quality | 9/10 | Well-structured and clearly written. References fixed and verified. Limitations, Acknowledgment, AI Disclosure added. Expanded Related Work. |
 | Problem Definition | 9/10 | Research question is explicit, well-motivated, and measurable. Results directly answer the question. |
 | Code Quality | 8/10 | Robust error handling and test coverage. Hardcoded paths need attention. |
 | LLM/AI Integrity | 9/10 | Transparent AI disclosure. All claims verified. Independent audit conducted. |
-| **Overall** | **8.7/10** | Strong project with verified references, transparent AI disclosure, and comprehensive audit. |
+| **Overall** | **8.9/10** | Strong project with verified references, transparent AI disclosure, and comprehensive audit. |
 
 ---
 
 ## Recommendations for Improvement
 
 ### High Priority
-1. **Expand related work** with more recent papers (2025-2026) and non-RISC-V accelerators (e.g., Google Edge TPU).
+1. ~~**Expand related work** with more recent papers (2025-2026) and non-RISC-V accelerators (e.g., Google Edge TPU).~~ ✅ Done — Added TPU, NVDLA, lightweight DL survey references.
 2. **Improve RTL support** for combined models (e.g., `counter+chargen`).
 
 ### Medium Priority
