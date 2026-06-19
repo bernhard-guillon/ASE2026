@@ -78,7 +78,7 @@ From `documentation/collected-data/phase25-neural-lane-cycle-comparison.json`:
 
 ## Paper
 
-The full project paper is at `documentation/ase2026.md` and can be compiled to PDF via the build instructions in the [Documentation section](#documentation). The latest release PDF is available from the badge at the top of this page.
+The full project paper is at [`documentation/ase2026.pdf`](documentation/ase2026.pdf) and can be compiled from the Markdown source via the instructions in the [Documentation section](#documentation). The latest release PDF is available from the badge at the top of this page.
 
 ## Project Audit
 
