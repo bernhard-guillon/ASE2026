@@ -49,6 +49,7 @@ function Table(tbl)
     table.insert(out, "\\begin{table}[ht]")
     table.insert(out, "\\centering")
     table.insert(out, "\\caption{" .. escape_latex(get_inlines_text(tbl.caption.long)) .. "}")
+    table.insert(out, "\\resizebox{\\columnwidth}{!}{%")
   else
     table.insert(out, "\\vspace{1mm}")
   end
@@ -85,6 +86,7 @@ function Table(tbl)
   table.insert(out, "\\end{tabular}")
 
   if has_caption then
+    table.insert(out, "}% end resizebox")
     table.insert(out, "\\end{table}")
     table.insert(out, "\\vspace{2mm}")
   else
