@@ -136,7 +136,21 @@ ctest --test-dir projects/emulator/build -R "verilator" --output-on-failure
 - Check IEEE format compliance (columns, fonts, margins)
 - Verify all acronyms are defined on first use
 
-### 7. Paper Figures and Diagrams
+### 7. Paper Length
+
+**Questions to answer:**
+- Does the paper comply with the 10-page limit (excluding references)?
+- Is the paper concise and focused?
+- Are all sections necessary and contribute to the narrative?
+- Are there any unnecessary background or filler content?
+
+**How to check:**
+- Count the pages in the generated PDF (excluding references)
+- Verify the paper is ≤10 pages excluding references
+- Check that every figure and table is referenced and contributes to the narrative
+- Ensure the paper is self-contained with all key concepts explained
+
+### 8. Paper Figures and Diagrams
 
 **Questions to answer:**
 - Are figures clear and readable?
