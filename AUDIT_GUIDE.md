@@ -19,7 +19,35 @@ Use it to evaluate the project's current state and identify improvements.
 - Read `projects/emulator/block-diagonal-composition.md` for related work
 - Run `ctest --test-dir projects/emulator/build -R "verilator" --output-on-failure` to verify dual-backend validation
 
-### 2. Implementation Quality
+### 2. Problem Definition and Research Question
+
+**Questions to answer:**
+- Is the problem clearly defined and scoped?
+- Is the research question explicitly stated in the paper?
+- Is the research question specific, measurable, and answerable?
+- Does the paper's methodology directly address the research question?
+- Do the evaluation results answer the research question?
+- Does the conclusion explicitly state how the problem was addressed?
+- Is there a clear line from problem → research question → methodology → evaluation → conclusion?
+- Does the paper avoid answering a different question than the one posed?
+
+**How to check:**
+- Read the introduction — is the problem motivated and the research question stated?
+- Read the methodology — does it describe how the research question is investigated?
+- Read the evaluation — do the results directly answer the research question?
+- Read the conclusion — does it explicitly state how the problem was addressed?
+- Check consistency: the same research question must appear (or be implied) in the abstract, introduction, evaluation, and conclusion.
+
+**Checklist (mandatory):**
+- [ ] **Problem explicitly stated** in the introduction
+- [ ] **Research question explicitly stated** (not just implied)
+- [ ] **Methodology addresses** the research question
+- [ ] **Evaluation results answer** the research question
+- [ ] **Conclusion addresses** the problem and research question
+- [ ] **Traceable thread**: problem → RQ → methodology → evaluation → conclusion
+- [ ] **No scope drift**: the paper does not answer a different question
+
+### 3. Implementation Quality
 
 **Questions to answer:**
 - Does the end-to-end pipeline work? (train → export → compile → assemble → run)
@@ -49,7 +77,7 @@ ctest --test-dir projects/emulator/build -R "verilator" --output-on-failure
 - `projects/emulator/utest/` — GoogleTest unit tests
 - `projects/emulator/blackbox_tests/` — integration tests
 
-### 3. Documentation Quality
+### 4. Documentation Quality
 
 **Questions to answer:**
 - Is there a clear project overview? (README.md, AGENTS.md)
@@ -66,9 +94,9 @@ ctest --test-dir projects/emulator/build -R "verilator" --output-on-failure
 - Check if an AI agent can parse sections without ambiguity
 
 **Known issues (as of latest commit):**
-- `AUDIT.md` — evaluation date says "2024" (should be 2026)
+- ~~`AUDIT.md` — evaluation date says "2024" (should be 2026)~~ ✅ Fixed — now reads "2026-06-19".
 
-### 4. Paper Quality
+### 5. Paper Quality
 
 **Questions to answer:**
 - Does the abstract clearly state the problem, approach, and results?
@@ -92,7 +120,7 @@ ctest --test-dir projects/emulator/build -R "verilator" --output-on-failure
 - Check IEEE format compliance
 - Verify all claims are properly cited
 
-### 5. Paper Writing Quality
+### 6. Paper Writing Quality
 
 **Questions to answer:**
 - Is the writing clear and concise?
@@ -108,7 +136,7 @@ ctest --test-dir projects/emulator/build -R "verilator" --output-on-failure
 - Check IEEE format compliance (columns, fonts, margins)
 - Verify all acronyms are defined on first use
 
-### 6. Paper Figures and Diagrams
+### 7. Paper Figures and Diagrams
 
 **Questions to answer:**
 - Are figures clear and readable?
@@ -123,7 +151,7 @@ ctest --test-dir projects/emulator/build -R "verilator" --output-on-failure
 - Check that captions explain the figure content
 - Verify figures are properly labeled (Figure 1, Figure 2, etc.)
 
-### 7. Paper References
+### 8. Paper References
 
 **Questions to answer:**
 - Are all claims properly cited?
@@ -173,7 +201,7 @@ Key rules:
 - Preprints: Cite as "arXiv:XXXX.XXXXX" with the actual submission year
 - GitHub repos: Cite with repository URL, version/tag, and access date
 
-### 8. Code Quality
+### 9. Code Quality
 
 **Questions to answer:**
 - Is error handling robust? (check NeuralOps.cpp, Emulator.cpp)
@@ -190,7 +218,7 @@ grep -r "TODO\|FIXME\|HACK" projects/emulator/ projects/emulator/hdl/
 ctest --test-dir projects/emulator/build --output-on-failure 2>&1 | grep -E "Passed|Failed|Skipped"
 ```
 
-### 9. LLM/AI Use in Academic Writing
+### 10. LLM/AI Use in Academic Writing
 
 This dimension addresses integrity requirements specific to AI-assisted academic papers, derived from university guidelines (FIU, DCU, NC State, University of Rochester, Aalto University), publisher policies (Elsevier, IEEE, arXiv 2026 ban), and research on AI-generated content detection (Lesniewski 2026, Paper Checker 2026, PMC 2026).
 
@@ -285,6 +313,15 @@ Use this checklist when auditing the project:
 - [ ] Measurable results (cycle counts, accuracy, speedup)
 - [ ] Impact potential articulated
 
+### Problem Definition
+- [ ] **Problem explicitly stated** in the introduction
+- [ ] **Research question explicitly stated** in the paper
+- [ ] **Methodology addresses** the research question
+- [ ] **Evaluation results answer** the research question
+- [ ] **Conclusion addresses** both problem and research question
+- [ ] **Traceable thread**: problem → RQ → methodology → evaluation → conclusion
+- [ ] **No scope drift**: paper does not answer a different question
+
 ### Implementation
 - [ ] End-to-end pipeline works (train → run)
 - [ ] Both backends functional (emulator + verilator)
@@ -340,11 +377,12 @@ Use this checklist when auditing the project:
 2. **Build and test** — Run the build and test commands above
 3. **Inspect code** — Check key files (NeuralOps.cpp, main.rs, CMakeLists.txt)
 4. **Read the paper** — Read `documentation/ase2026.md` carefully
-5. **Verify claims** — Check that documentation matches reality
-6. **Verify references** — Search each reference online, confirm authors/titles/venues
-7. **Check AI/LLM integrity** — Verify disclosure, check for red flags, trace claims to codebase
-8. **Fill checklist** — Use the checklist above
-9. **Document findings** — Update AUDIT.md with current ratings
+5. **Verify problem definition** — Identify the stated problem and research question; trace their thread through abstract → introduction → methodology → evaluation → conclusion
+6. **Verify claims** — Check that documentation matches reality
+7. **Verify references** — Search each reference online, confirm authors/titles/venues
+8. **Check AI/LLM integrity** — Verify disclosure, check for red flags, trace claims to codebase
+9. **Fill checklist** — Use the checklist above
+10. **Document findings** — Update AUDIT.md with current ratings
 
 ## Re-audit Schedule
 
