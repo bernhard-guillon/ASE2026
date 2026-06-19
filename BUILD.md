@@ -62,7 +62,7 @@ ctest --test-dir projects/emulator/build --output-on-failure
 ### Run Specific Test Categories
 
 ```bash
-# Unit tests (fast, ~292 tests)
+# Unit tests (fast, ~411 tests)
 ./projects/emulator/build/test_*
 
 # Blackbox tests only

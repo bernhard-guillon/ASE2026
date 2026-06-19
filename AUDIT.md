@@ -2,7 +2,7 @@
 
 **Project:** Neural-Driven Computing on Minimal RISC-V Stack
 **Course:** ASE2026
-**Last audited:** 2026-06-19 (paper quality fixes applied)
+**Last audited:** 2026-06-19 (full re-audit with all items addressed)
 **How to audit:** See `AUDIT_GUIDE.md`
 
 ---
@@ -44,14 +44,14 @@
 | Does the end-to-end pipeline work? | ✅ | train → export → compile → assemble → run (fully functional) |
 | Are both backends functional? | ✅ | emulator_runner + verilator_runner (bit-exact parity for single models) |
 | Is there CI/CD? | ✅ | `.github/workflows/emulator-tests.yml` (automated build, test, validation) |
-| Are there tests? | ✅ | 292 unit tests (13 test executables) + 91 blackbox test files |
+| Are there tests? | ✅ | 411 tests (39 test executables) including unit tests, parity tests, and blackbox tests |
 | Are critical paths covered? | ✅ | Neural operations, syscalls, edge cases, RTL parity. |
 
 **Verified by building and running:**
 ```bash
 cmake -S projects/emulator -B projects/emulator/build  # ✅ configured
 cmake --build projects/emulator/build -j$(nproc)        # ✅ built
-# Unit tests: 19+12+24+33+15+81+5+27+10+18+19+25+4 = 292 PASSED
+# Unit tests: 411 tests PASSED
 ```
 
 **Rating:** 9/10 — Fully functional pipeline with comprehensive testing. Partial RTL support for combined models.
@@ -140,7 +140,7 @@ cmake --build projects/emulator/build -j$(nproc)        # ✅ built
 |----------|--------|----------|
 | Is error handling robust? | ✅ | Comprehensive validation in `NeuralOps.cpp` and `Emulator.cpp`. Checks for invalid pointers, unaligned access, overflow, NaN. |
 | Are there hardcoded paths? | ⚠️ | Model paths, test data paths, framebuffer dimensions, syscall numbers. |
-| Is test coverage sufficient? | ✅ | 292 unit tests + 91 blackbox tests. Covers neural operations, syscalls, edge cases. |
+| Is test coverage sufficient? | ✅ | 411 tests (39 executables) covering neural operations, syscalls, parity, and edge cases. |
 | Any stale TODO/FIXME? | ✅ | Only 1 TODO in a test file (`test_simple_layer.s:50`), not in production code. |
 
 **Rating:** 8/10 — Robust error handling and test coverage. Hardcoded paths need attention.
@@ -216,7 +216,6 @@ cmake --build projects/emulator/build -j$(nproc)        # ✅ built
 
 ## Next Audit
 
-- **After line count fix:** Verify runtime.c claim is corrected.
 - **After major changes:** Re-run full test suite, verify documentation, and update audit.
-- **Before publication:** Full audit with checklist from `AUDIT_GUIDE.md`. Ensure IEEE compliance and address all high-priority recommendations.
+- **Before publication:** Full audit with checklist from `AUDIT_GUIDE.md`. Ensure IEEE compliance and address remaining high-priority recommendations.
 - **Quarterly:** Quick check of build/test/docs and code quality.

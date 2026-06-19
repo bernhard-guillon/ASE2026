@@ -46,7 +46,7 @@ This compiles the C++ emulator, Rust assembler, and all model ELFs.
 ctest --test-dir projects/emulator/build --output-on-failure
 ```
 
-This runs 292 unit tests + 91 blackbox tests + Python integration tests.
+This runs 411 tests including unit tests, parity tests, and blackbox tests.
 
 ## Build Targets
 

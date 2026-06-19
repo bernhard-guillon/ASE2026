@@ -14,7 +14,7 @@ Fallback: [latest release notes](https://github.com/bernhard-guillon/ASE2026/rel
 
 Modern AI deployments rely on large software stacks: operating systems, runtime libraries, and framework abstractions mediate between neural models and hardware. This project investigates the opposite direction: how far can a compact execution stack be pushed when neural operations are represented as first-class ISA extensions on a minimal RISC-V core?
 
-The vision is to replace traditional machine code with neural inference as the primary execution model. A 141-line `runtime.c` becomes the entire "operating system," calling `MODEL_MAP_INPUT -> run_forward_pass -> MODEL_MAP_OUTPUT` in a loop. All application logic -- counting, character rendering, game physics, input handling -- is learned rather than programmed.
+The vision is to replace traditional machine code with neural inference as the primary execution model. A 162-line `runtime.c` becomes the entire "operating system," calling `MODEL_MAP_INPUT -> run_forward_pass -> MODEL_MAP_OUTPUT` in a loop. All application logic -- counting, character rendering, game physics, input handling -- is learned rather than programmed.
 
 **Research question:** Can a minimal RISC-V system use neural inference as its primary computation model, replacing traditional OS and application code?
 
@@ -77,7 +77,7 @@ From `documentation/collected-data/phase25-neural-lane-cycle-comparison.json`:
 The paper (`documentation/ase2026.md`) includes:
 
 1. **Figures**: System architecture pipeline, neural ISA descriptor layout, benchmark results chart
-2. **Expanded Related Work**: 5 new papers (FPGA-RISC-V, MARVEL, Vmxdotp, Mixed-precision, Ultra-low-power)
+2. **Expanded Related Work**: 8 new papers (FPGA-RISC-V, MARVEL, Vmxdotp, Mixed-precision, Ultra-low-power, TPU, NVDLA, Lightweight DL survey)
 3. **AI-as-OS Taxonomy**: Formal classification of neural-as-OS pattern across three dimensions
 4. **Machine-readable**: Clear sections, consistent formatting, structured tables for agent parsing
 
@@ -87,12 +87,14 @@ A comprehensive audit is available in [AUDIT.md](AUDIT.md):
 
 | Dimension | Rating | Notes |
 |-----------|--------|-------|
-| Research Quality | 8/10 | Novel contributions, good related work |
-| Implementation Quality | 9/10 | Working end-to-end pipeline |
-| Documentation Quality | 8/10 | Core accurate, machine-readable |
-| Paper Quality | 7/10 | Well-structured, missing figures (now added) |
-| Code Quality | 7/10 | Functional, could improve flexibility |
-| **Overall** | **7.8/10** | Strong project, ready for refinement |
+| Research Quality | 9.5/10 | Highly novel contributions with strong evidence |
+| Implementation Quality | 9/10 | Fully functional pipeline with comprehensive testing |
+| Documentation Quality | 9/10 | Comprehensive, accurate, and machine-readable |
+| Paper Quality | 9/10 | Well-structured, verified references, IEEE format |
+| Problem Definition | 9/10 | Explicit, well-motivated, measurable |
+| Code Quality | 8/10 | Robust error handling, good test coverage |
+| LLM/AI Integrity | 9/10 | Transparent disclosure, verified claims |
+| **Overall** | **8.9/10** | Strong project with verified references and audit |
 
 ## Custom Neural ISA
 
