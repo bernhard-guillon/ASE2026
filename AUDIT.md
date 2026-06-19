@@ -208,7 +208,7 @@ cmake --build projects/emulator/build -j$(nproc)        # ✅ built
 4. **Replace hardcoded paths** with environment variables or CLI arguments.
 
 ### Low Priority
-5. **Add a "Getting Started" guide** for new contributors.
+5. ~~**Add a "Getting Started" guide** for new contributors.~~ ✅ Done — Created `GETTING_STARTED.md`.
 6. **Consolidate build instructions** into a single `BUILD.md` file.
 7. **Add JSON Schema files** for glue/model JSON to enable automated validation.
 
