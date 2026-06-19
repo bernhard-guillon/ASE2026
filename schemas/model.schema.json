@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ASE2026/model-schema.json",
+  "title": "Model JSON",
+  "description": "Schema for neural model weight files exported from PyTorch training.",
+  "type": "object",
+  "required": ["metadata", "layers"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["model_type", "version", "architecture", "precision", "framework", "input_mapping"],
+      "properties": {
+        "model_type": {
+          "type": "string",
+          "description": "Type of model (e.g., 'character_generator', 'squash_renderer', 'counter255')."
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Version number of the model format."
+        },
+        "architecture": {
+          "type": "string",
+          "description": "Architecture string (e.g., '255_256_256_400' for MLP layer sizes)."
+        },
+        "precision": {
+          "type": "string",
+          "enum": ["float32"],
+          "description": "Weight precision. Only float32 is currently supported."
+        },
+        "framework": {
+          "type": "string",
+          "enum": ["pytorch"],
+          "description": "Training framework used to produce the model."
+        },
+        "input_mapping": {
+          "type": "string",
+          "description": "Input mapping identifier for this model."
+        }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "description": "Ordered list of layers in the model.",
+      "items": {
+        "type": "object",
+        "required": ["name", "input_size", "output_size", "activation", "weights_shape", "weights", "bias"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique name for this layer (e.g., 'fc0', 'fc1')."
+          },
+          "input_size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of input features."
+          },
+          "output_size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of output features."
+          },
+          "activation": {
+            "type": "string",
+            "enum": ["relu", "sigmoid", "softmax", "none"],
+            "description": "Activation function applied after this layer."
+          },
+          "weights_shape": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 1 },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "Shape of the weights matrix [input_size, output_size]."
+          },
+          "weights": {
+            "type": "array",
+            "description": "Flattened weight matrix as a 2D array [input_size][output_size].",
+            "items": {
+              "type": "array",
+              "items": { "type": "number" }
+            }
+          },
+          "bias": {
+            "type": "array",
+            "description": "Bias vector of length output_size.",
+            "items": { "type": "number" }
+          }
+        }
+      }
+    }
+  }
+}

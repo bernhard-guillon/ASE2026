@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ASE2026/glue-schema.json",
+  "title": "Glue JSON",
+  "description": "Schema for neural model composition (glue) files that define how multiple models are merged into block-diagonal layers.",
+  "type": "object",
+  "required": ["input_mapping", "output_mapping", "initial_state", "models", "merged_layers", "output_ranges"],
+  "properties": {
+    "input_mapping": {
+      "type": "string",
+      "description": "Identifier for the combined input mapping function."
+    },
+    "output_mapping": {
+      "type": "string",
+      "description": "Identifier for the combined output mapping function."
+    },
+    "initial_state": {
+      "type": "object",
+      "description": "Initial state values for models that require persistent state (e.g., counters). Keys are model names.",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "models": {
+      "type": "array",
+      "description": "List of models to compose.",
+      "items": {
+        "type": "object",
+        "required": ["name", "path"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique identifier for this model within the glue file."
+          },
+          "path": {
+            "type": "string",
+            "description": "Relative path to the model JSON file."
+          }
+        }
+      }
+    },
+    "merged_layers": {
+      "type": "array",
+      "description": "List of merged layers defining the block-diagonal composition.",
+      "items": {
+        "type": "object",
+        "required": ["name", "activation", "blocks"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name for this merged layer."
+          },
+          "activation": {
+            "type": "string",
+            "enum": ["relu", "sigmoid", "softmax", "none"],
+            "description": "Activation function applied after this layer."
+          },
+          "blocks": {
+            "type": "array",
+            "description": "Block-diagonal blocks for this layer.",
+            "items": {
+              "type": "object",
+              "required": ["model", "layer", "out_offset"],
+              "properties": {
+                "model": {
+                  "type": "string",
+                  "description": "Reference to a model name in the 'models' array."
+                },
+                "layer": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Index of the layer within the referenced model."
+                },
+                "in_offset": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 0,
+                  "description": "Offset into the input vector for this block."
+                },
+                "out_offset": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Offset into the output vector for this block."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "output_ranges": {
+      "type": "array",
+      "description": "Named regions of the output vector.",
+      "items": {
+        "type": "object",
+        "required": ["name", "offset", "size"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name for this output region (e.g., 'framebuffer', 'counter_state')."
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Start offset within the output vector."
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of elements in this region."
+          }
+        }
+      }
+    }
+  }
+}

@@ -210,7 +210,7 @@ cmake --build projects/emulator/build -j$(nproc)        # ✅ built
 ### Low Priority
 5. ~~**Add a "Getting Started" guide** for new contributors.~~ ✅ Done — Created `GETTING_STARTED.md`.
 6. ~~**Consolidate build instructions** into a single `BUILD.md` file.~~ ✅ Done — Created `BUILD.md`.
-7. **Add JSON Schema files** for glue/model JSON to enable automated validation.
+7. ~~**Add JSON Schema files** for glue/model JSON to enable automated validation.~~ ✅ Done — Created `schemas/glue.schema.json` and `schemas/model.schema.json`.
 
 ---
 
