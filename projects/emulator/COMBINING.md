@@ -411,15 +411,15 @@ Input Buffer (313 neurons):
 ║                     Merged Layer 0 (772 output)                     ║
 ║  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌───────────┐   ║
 ║  │ Router  │ │ Counter  │ │ Chargers │ │GameSt  │ │ Renderer  │   ║
-║  │  2 →  4 │ │ 255 → 256│ │ 255 → 256│ │ 56 → 64│ │  48 → 128 │   ║
+║  │  2 → 16 │ │ 255 → 256│ │ 255 → 256│ │ 56 → 64│ │  48 → 128 │   ║
 ║  │  (relu) │ │  (relu)  │ │  (relu)  │ │ (relu) │ │  (relu)   │   ║
 ║  └────┬────┘ └────┬─────┘ └────┬─────┘ └───┬────┘ └─────┬─────┘   ║
-║       │4          │256         │256        │64          │128       ║
+║       │16         │256         │256        │64          │128       ║
 ╠═══════╪═══════════╪════════════╪═══════════╪════════════╪══════════╣
 ║                     Merged Layer 1 (1010 output)                    ║
 ║  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌───────────┐   ║
 ║  │ Router  │ │ Counter  │ │ Chargers │ │GameSt  │ │ Renderer  │   ║
-║  │  4 →  2 │ │ 256 → 256│ │ 256 → 256│ │ 64 → 64│ │ 128 → 256 │   ║
+║  │ 16 →  2 │ │ 256 → 256│ │ 256 → 256│ │ 64 → 64│ │ 128 → 256 │   ║
 ║  │ (sigmoid│ │  (relu)  │ │  (relu)  │ │ (relu) │ │  (relu)   │   ║
 ║  └────┬────┘ └────┬─────┘ └────┬─────┘ └───┬────┘ └─────┬─────┘   ║
 ║       │2          │256         │256        │64          │256       ║
@@ -438,7 +438,7 @@ Output Buffer (1009 neurons):
 │ Router │ Counter   │ Chargers   │ Squash    │ Squash     │
 │ Gates  │ State     │ Framebuf   │ State     │ Framebuf   │
 │  (2)   │  (255)    │  (400)     │  (52)     │  (300)     │
-│[0..1]  │[768..1008]│ [4..403]   │[404..455] │[456..755]  │
+│[0..1]  │[768..1008]│ [4..403]   │[404..455] │[468..767]  │
 └────┬───┴───────────┴─────┬──────┴───────────┴─────┬──────┘
      │                     │                        │
      ▼                     ▼                        ▼
@@ -452,7 +452,7 @@ Output Buffer (1009 neurons):
 The router is a small 3-layer MLP that learns to switch between the two
 sub-models based on the Tab key state.
 
-**Architecture:** `2 → 4 → 2 → 2` (relu, sigmoid, none)
+**Architecture:** `2 → 16 → 2` (relu hidden, sigmoid output)
 
 **Training approach:**
 - Input: Tab state one-hot `[tab_chargen, tab_squash]`
