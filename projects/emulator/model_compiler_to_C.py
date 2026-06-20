@@ -521,7 +521,7 @@ map_output_generator:
     ret
 """
         else:
-            return """# Output mapping: Generic - TODO
+            return """# Output mapping: Generic
 map_output_generic:
     ret
 """

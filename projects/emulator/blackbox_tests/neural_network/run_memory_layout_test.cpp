@@ -29,6 +29,9 @@ bool loadBinaryFile(const char* filename, std::vector<uint8_t>& buffer) {
     paths.push_back("weight-export/" + std::string(filename));  // From source root
     paths.push_back("../../weight-export/" + std::string(filename));  // From build
     paths.push_back("../../../weight-export/" + std::string(filename));  // Alt from build
+#ifdef WEIGHT_EXPORT_DIR
+    paths.push_back(std::string(WEIGHT_EXPORT_DIR) + "/" + filename);
+#endif
     
     for (const auto& path : paths) {
         std::ifstream file(path, std::ios::binary);
@@ -75,7 +78,7 @@ int main() {
     // Load generator model
     std::cout << "1. Loading character generator model...\n";
     std::vector<uint8_t> gen_model;
-    if (!loadBinaryFile("../../weight-export/character_generator.bin", gen_model)) {
+    if (!loadBinaryFile("character_generator.bin", gen_model)) {
         std::cerr << "FAILED: Could not load generator model\n";
         return 1;
     }

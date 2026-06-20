@@ -148,7 +148,7 @@ map_output_framebuffer:
         
         # Modify 1: Remove hardcoded input character
         asm_code = asm_code.replace(
-            "li a0, 65                    # TODO: Read from external source",
+            "li a0, 65",
             "# a0 already contains character code (read by emulator)"
         )
         
