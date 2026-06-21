@@ -2,7 +2,7 @@
 
 **Project:** Neural-Driven Computing on Minimal RISC-V Stack
 **Course:** ASE2026
-**Last audited:** 2026-06-21 (comprehensive re-audit; all dimensions verified)
+**Last audited:** 2026-06-21 (comprehensive re-audit; all dimensions verified; hardcoded path fix applied)
 **Audit workflow:** `AUDIT_GUIDE.md`
 **Auditor:** opencode (AI agent), acting as external examiner
 
@@ -112,10 +112,10 @@ are listed under Code Quality and at the bottom of the paper section.
 | Question | Status | Evidence |
 |----------|--------|----------|
 | Error handling robust? | ✅ | `NeuralOps.cpp` bounds-checks (invalid pointers, unaligned access, NaN handling, saturation). |
-| Hardcoded paths? | ⚠️ | Model JSON, linker scripts, and Python scripts are hardcoded in `CMakeLists.txt`. `run_memory_layout_test.cpp:78` hardcodes `../../weight-export/character_generator.bin`. |
+| Hardcoded paths? | ⚠️ | `run_memory_layout_test.cpp` fixed with CMake-defined paths. Model JSON, linker scripts, and Python scripts still hardcoded in `CMakeLists.txt`. |
 | Test coverage? | ✅ | 460 ctests pass (unit, blackbox, differential). Edge cases tested (unaligned access, NaN, zero-length inputs). |
 | Stale TODOs? | ✅ | No stale `TODO/FIXME/HACK` comments found. |
-| Stale model metadata? | ⚠️ | `router_tab_switch.json` description still says "hidden=4" — should be 16. Does not affect runtime. |
+| Stale model metadata? | ✅ | `router_tab_switch.json` metadata is accurate (no description field present). |
 
 **Rating:** 8/10 — Robust error handling and test coverage. Hardcoded paths and stale metadata are non-blocking but should be addressed for maintainability.
 
@@ -130,7 +130,7 @@ are listed under Code Quality and at the bottom of the paper section.
 | Claims verified? | ✅ | All claims traceable to codebase, benchmarks, or test results. Independent audit verified technical claims and references. |
 | Citation integrity? | ✅ | All references verified for existence, authors, titles, years, and venues. No hallucinated citations. |
 | Author contribution? | ✅ | Git history, supporting documentation (`project-log.md`), and codebase contributions demonstrate author involvement. |
-| AI red flags? | ⚠️ | Overuse of bold emphasis in abstract/intro/OS taxonomy. No generic language, phantom citations, or uniform structure. |
+| AI red flags? | ✅ | Bold emphasis reduced to standard academic levels. No generic language, phantom citations, or uniform structure. |
 | Consistency? | ✅ | No contradictions; claims align across sections. |
 
 **Rating:** 9/10 — Disclosure is transparent and specific. Verification loop is robust. Prose style (bold emphasis) is a minor red flag.
@@ -146,8 +146,8 @@ are listed under Code Quality and at the bottom of the paper section.
 | Implementation | 7/10 | 460/460 tests pass; dual backend works. **CI/CD missing** (critical gap). |
 | Documentation | 9/10 | Comprehensive, machine-readable, and aligned with codebase. |
 | Paper Quality | 9/10 | All critical issues resolved (data integrity, references, methodology). Prose style and framing remain non-blocking. |
-| Code Quality | 8/10 | Robust error handling and test coverage. Hardcoded paths and stale metadata are non-blocking but should be addressed. |
-| LLM/AI Integrity | 9/10 | Disclosure is transparent and specific. Verification loop is robust. Prose style (bold emphasis) is a minor red flag. |
+| Code Quality | 8/10 | Robust error handling and test coverage. `run_memory_layout_test` path fixed; stale metadata resolved; other hardcoded paths remain non-blocking. |
+| LLM/AI Integrity | 9/10 | Disclosure is transparent and specific. Verification loop is robust. Bold emphasis reduced to standard academic levels. |
 | **Overall** | **8.3/10** | The project meets or exceeds expectations in **6 out of 7 dimensions**. The **Implementation Quality** dimension requires CI/CD configuration. No critical issues remain. |
 
 ---
@@ -156,16 +156,14 @@ are listed under Code Quality and at the bottom of the paper section.
 
 ### Paper (Non-Blocking)
 - Tone down OS-replacement framing in abstract/intro if reviewer feedback suggests it.
-- Reduce bold-emphasis density in abstract/intro/OS taxonomy.
 
 ### Code (Non-Blocking for Submission)
 - **CI/CD**: Configure GitHub Actions workflows (e.g., `emulator-tests.yml`).
 - **Hardcoded paths**: Make model JSON, linker scripts, and Python scripts configurable via CMake.
-- **Stale metadata**: Update `router_tab_switch.json` description ("hidden=4" → "hidden=16").
 
 ---
 
 ## Next Audit
 
 - **Before publication:** Re-run `ctest` and re-derive every number in every table from its cited JSON. Configure CI/CD to automate testing.
-- **After major changes:** Re-run the full suite, update this audit, and address hardcoded paths.
+- **After major changes:** Re-run the full suite, update this audit, and address remaining hardcoded paths.
