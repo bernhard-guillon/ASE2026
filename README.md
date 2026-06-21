@@ -82,17 +82,7 @@ The full project paper is at [`documentation/ase2026.pdf`](documentation/ase2026
 
 ## Project Audit
 
-A comprehensive audit is available in [AUDIT.md](AUDIT.md):
-
-| Dimension | Rating | Notes |
-|-----------|--------|-------|
-| Research Quality | 9.5/10 | Highly novel contributions with strong evidence |
-| Implementation Quality | 9/10 | Fully functional pipeline with comprehensive testing |
-| Documentation Quality | 9/10 | Comprehensive, accurate, and machine-readable |
-| Problem Definition | 10/10 | Explicit, well-motivated, measurable, directly answers research question |
-| Code Quality | 7/10 | Robust error handling, hardcoded paths need fixing, 4 stale TODOs |
-| LLM/AI Integrity | 10/10 | Transparent disclosure, verified claims, reproducible methodology |
-| **Overall** | **9.5/10** | **Exceptional project**: neural inference as OS replacement, comprehensive audit, all enhancements complete |
+A comprehensive audit is available in [AUDIT.md](AUDIT.md), covering research quality, problem definition, implementation, documentation, paper quality, code quality, LLM/AI integrity, and numerical consistency.
 
 ## Custom Neural ISA
 
