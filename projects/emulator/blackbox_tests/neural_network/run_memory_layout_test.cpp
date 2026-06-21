@@ -20,34 +20,40 @@
 
 // Helper function: Load binary file with multiple path attempts
 bool loadBinaryFile(const char* filename, std::vector<uint8_t>& buffer) {
-    // Try different path options (order matters: build dir first, then source tree)
     std::vector<std::string> paths;
-    paths.push_back(filename);  // Current directory
-    paths.push_back("blackbox_tests/neural_network/" + std::string(filename));  // From source root
-    paths.push_back("../../blackbox_tests/neural_network/" + std::string(filename));  // From build dir
-    paths.push_back("../../../blackbox_tests/neural_network/" + std::string(filename));  // Alt from build
-    paths.push_back("weight-export/" + std::string(filename));  // From source root
-    paths.push_back("../../weight-export/" + std::string(filename));  // From build
-    paths.push_back("../../../weight-export/" + std::string(filename));  // Alt from build
+
 #ifdef WEIGHT_EXPORT_DIR
     paths.push_back(std::string(WEIGHT_EXPORT_DIR) + "/" + filename);
 #endif
-    
+#ifdef TEST_DATA_DIR
+    paths.push_back(std::string(TEST_DATA_DIR) + "/" + filename);
+#endif
+#ifdef BUILD_DIR
+    paths.push_back(std::string(BUILD_DIR) + "/" + filename);
+#endif
+    paths.push_back(filename);
+    paths.push_back("weight-export/" + std::string(filename));
+    paths.push_back("blackbox_tests/neural_network/" + std::string(filename));
+
     for (const auto& path : paths) {
         std::ifstream file(path, std::ios::binary);
         if (file.is_open()) {
             file.seekg(0, std::ios::end);
             size_t file_size = file.tellg();
             file.seekg(0, std::ios::beg);
-            
+
             buffer.resize(file_size);
             file.read(reinterpret_cast<char*>(buffer.data()), file_size);
             file.close();
             return true;
         }
     }
-    
+
     std::cerr << "ERROR: Could not open file: " << filename << std::endl;
+    std::cerr << "Searched paths:" << std::endl;
+    for (const auto& path : paths) {
+        std::cerr << "  - " << path << std::endl;
+    }
     return false;
 }
 
