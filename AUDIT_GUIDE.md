@@ -215,6 +215,30 @@ Key rules:
 - Preprints: Cite as "arXiv:XXXX.XXXXX" with the actual submission year
 - GitHub repos: Cite with repository URL, version/tag, and access date
 
+### 8b. Numerical Consistency of Tables, Figures, and Cited Data (added)
+
+A paper can have real references and a working code base and still misreport its
+own results. This dimension checks that every number in the paper is internally
+consistent and matches the data it cites.
+
+**Questions to answer:**
+- Does every benchmark number in a table/figure match the cited data file (e.g., `collected-data/*.json`)?
+- Do tables that describe the *same* quantity agree with each other?
+- Do table captions accurately describe what the numbers are (e.g., "minimum cycles where all chars pass" must be the *passing threshold*, not the smallest probed value)?
+- Do model architectures stated in the text match the architectures in the figures, the summary tables, AND the actual training code / model JSON?
+- Do headline numbers in the abstract (speedups, accuracies) match the evaluation section and the data?
+
+**How to check:**
+- For each results table, open the cited JSON and re-derive the numbers programmatically.
+- Cross-reference every architecture string (e.g., `2→4→2→2`) across the introduction, figures, tables, training scripts (`train_*.py`), and model JSON.
+- Diff any two tables that report the same metric.
+
+**Red flags:**
+- A table reporting the smallest *swept/probed* value instead of the measured result.
+- Two tables in the same paper giving different values for the same row.
+- An architecture quoted differently in the text vs. the accuracy table vs. the code.
+- A self-audit (`AUDIT.md`) that claims "verified against data" without the numbers actually matching.
+
 ### 9. Code Quality
 
 **Questions to answer:**

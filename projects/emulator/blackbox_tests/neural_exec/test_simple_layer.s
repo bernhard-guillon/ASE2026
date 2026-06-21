@@ -47,7 +47,7 @@ inference_loop:
     # Step 1: Read input and map to network input
     # For generator: a0 contains character code (set externally or hardcoded for testing)
     # For now, use a test character 'A' = 65
-    li a0, 65                    # TODO: Read from external source
+    li a0, 65
     call map_input_generator
     
     # Step 2: Run forward pass through all layers

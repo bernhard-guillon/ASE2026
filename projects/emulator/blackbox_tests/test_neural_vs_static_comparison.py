@@ -53,7 +53,6 @@ class CharacterComparisonTest:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
             
             # For now, just verify it runs without error
-            # TODO: Add framebuffer capture mechanism
             return result.returncode == 0
         except subprocess.TimeoutExpired:
             return False

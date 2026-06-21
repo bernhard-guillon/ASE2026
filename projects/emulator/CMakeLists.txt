@@ -163,6 +163,8 @@ add_dependencies(test_squash_model generate_squash_ref)
 # RISC-V memory layout test runner
 add_executable(run_memory_layout_test blackbox_tests/neural_network/run_memory_layout_test.cpp)
 target_link_libraries(run_memory_layout_test emulator cpu memory instruction)
+target_compile_definitions(run_memory_layout_test PRIVATE
+    WEIGHT_EXPORT_DIR="${CMAKE_SOURCE_DIR}/../weight-export")
 
 # Binary loader and runner
 add_executable(emulator_runner emulator_runner.cpp)
