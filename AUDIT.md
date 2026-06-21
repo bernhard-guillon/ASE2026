@@ -115,7 +115,7 @@ are listed under Code Quality and at the bottom of the paper section.
 | Hardcoded paths? | ⚠️ | `run_memory_layout_test.cpp` fixed with CMake-defined paths. Model JSON, linker scripts, and Python scripts still hardcoded in `CMakeLists.txt`. |
 | Test coverage? | ✅ | 460 ctests pass (unit, blackbox, differential). Edge cases tested (unaligned access, NaN, zero-length inputs). |
 | Stale TODOs? | ✅ | No stale `TODO/FIXME/HACK` comments found. |
-| Stale model metadata? | ⚠️ | `router_tab_switch.json` description still says "hidden=4" — should be 16. Does not affect runtime. |
+| Stale model metadata? | ✅ | `router_tab_switch.json` metadata is accurate (no description field present). |
 
 **Rating:** 8/10 — Robust error handling and test coverage. Hardcoded paths and stale metadata are non-blocking but should be addressed for maintainability.
 
@@ -146,7 +146,7 @@ are listed under Code Quality and at the bottom of the paper section.
 | Implementation | 7/10 | 460/460 tests pass; dual backend works. **CI/CD missing** (critical gap). |
 | Documentation | 9/10 | Comprehensive, machine-readable, and aligned with codebase. |
 | Paper Quality | 9/10 | All critical issues resolved (data integrity, references, methodology). Prose style and framing remain non-blocking. |
-| Code Quality | 8/10 | Robust error handling and test coverage. `run_memory_layout_test` path fixed; other hardcoded paths and stale metadata remain non-blocking. |
+| Code Quality | 8/10 | Robust error handling and test coverage. `run_memory_layout_test` path fixed; stale metadata resolved; other hardcoded paths remain non-blocking. |
 | LLM/AI Integrity | 9/10 | Disclosure is transparent and specific. Verification loop is robust. Prose style (bold emphasis) is a minor red flag. |
 | **Overall** | **8.3/10** | The project meets or exceeds expectations in **6 out of 7 dimensions**. The **Implementation Quality** dimension requires CI/CD configuration. No critical issues remain. |
 
@@ -161,7 +161,6 @@ are listed under Code Quality and at the bottom of the paper section.
 ### Code (Non-Blocking for Submission)
 - **CI/CD**: Configure GitHub Actions workflows (e.g., `emulator-tests.yml`).
 - **Hardcoded paths**: Make model JSON, linker scripts, and Python scripts configurable via CMake.
-- **Stale metadata**: Update `router_tab_switch.json` description ("hidden=4" → "hidden=16").
 
 ---
 
