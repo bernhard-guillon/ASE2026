@@ -130,7 +130,7 @@ are listed under Code Quality and at the bottom of the paper section.
 | Claims verified? | ✅ | All claims traceable to codebase, benchmarks, or test results. Independent audit verified technical claims and references. |
 | Citation integrity? | ✅ | All references verified for existence, authors, titles, years, and venues. No hallucinated citations. |
 | Author contribution? | ✅ | Git history, supporting documentation (`project-log.md`), and codebase contributions demonstrate author involvement. |
-| AI red flags? | ⚠️ | Overuse of bold emphasis in abstract/intro/OS taxonomy. No generic language, phantom citations, or uniform structure. |
+| AI red flags? | ✅ | Bold emphasis reduced to standard academic levels. No generic language, phantom citations, or uniform structure. |
 | Consistency? | ✅ | No contradictions; claims align across sections. |
 
 **Rating:** 9/10 — Disclosure is transparent and specific. Verification loop is robust. Prose style (bold emphasis) is a minor red flag.
@@ -147,7 +147,7 @@ are listed under Code Quality and at the bottom of the paper section.
 | Documentation | 9/10 | Comprehensive, machine-readable, and aligned with codebase. |
 | Paper Quality | 9/10 | All critical issues resolved (data integrity, references, methodology). Prose style and framing remain non-blocking. |
 | Code Quality | 8/10 | Robust error handling and test coverage. `run_memory_layout_test` path fixed; stale metadata resolved; other hardcoded paths remain non-blocking. |
-| LLM/AI Integrity | 9/10 | Disclosure is transparent and specific. Verification loop is robust. Prose style (bold emphasis) is a minor red flag. |
+| LLM/AI Integrity | 9/10 | Disclosure is transparent and specific. Verification loop is robust. Bold emphasis reduced to standard academic levels. |
 | **Overall** | **8.3/10** | The project meets or exceeds expectations in **6 out of 7 dimensions**. The **Implementation Quality** dimension requires CI/CD configuration. No critical issues remain. |
 
 ---
@@ -156,7 +156,6 @@ are listed under Code Quality and at the bottom of the paper section.
 
 ### Paper (Non-Blocking)
 - Tone down OS-replacement framing in abstract/intro if reviewer feedback suggests it.
-- Reduce bold-emphasis density in abstract/intro/OS taxonomy.
 
 ### Code (Non-Blocking for Submission)
 - **CI/CD**: Configure GitHub Actions workflows (e.g., `emulator-tests.yml`).
